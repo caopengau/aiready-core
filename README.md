@@ -238,11 +238,11 @@ We welcome contributions! This tool is part of the [AIReady](https://github.com/
 
 MIT - See LICENSE file
 
-## 🔗 Related Tools
+## 🔗 Related Tools (Coming Soon)
 
-- **[@aiready/context-analyzer](../context-analyzer)** - Analyze token costs and context fragmentation
-- **[@aiready/doc-drift](../doc-drift)** - Track documentation freshness
-- **[@aiready/consistency](../consistency)** - Check naming pattern consistency
+- **@aiready/context-analyzer** - Analyze token costs and context fragmentation
+- **@aiready/doc-drift** - Track documentation freshness
+- **@aiready/consistency** - Check naming pattern consistency
 
 ---
 
