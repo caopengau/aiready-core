@@ -37,7 +37,8 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "CONTRIBUTING.md"
   ],
   "devDependencies": {
     "tsup": "^8.3.5",
