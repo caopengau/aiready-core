@@ -47,6 +47,9 @@ aiready-patterns ./src --similarity 0.9
 # Only look at larger patterns
 aiready-patterns ./src --min-lines 10
 
+# Memory optimization for large codebases
+aiready-patterns ./src --max-blocks 1000 --batch-size 200
+
 # Export to JSON
 aiready-patterns ./src --output json --output-file report.json
 
@@ -204,6 +207,38 @@ Estimated tokens wasted when AI tools process duplicate code:
 3. **Focus on critical issues**: Fix >95% similar patterns first
 4. **Use pattern types**: Prioritize refactoring by category (API handlers → validators → utilities)
 5. **Export reports**: Generate HTML reports for team reviews
+
+## ⚠️ Performance & Memory
+
+### Large Codebases
+
+Pattern detection uses **O(B²)** complexity where B = number of code blocks. For large repos:
+
+```bash
+# Default: Limits to 500 blocks to prevent OOM
+aiready-patterns ./src
+
+# Increase for more thorough analysis (requires more memory)
+aiready-patterns ./src --max-blocks 1000
+
+# Reduce for faster analysis
+aiready-patterns ./src --max-blocks 200
+
+# Filter to larger patterns only
+aiready-patterns ./src --min-lines 15
+```
+
+**Memory Usage Guidelines:**
+- < 100 files: No limits needed
+- 100-500 files: Default (500 blocks) works well
+- 500-1000 files: Use `--max-blocks 1000` with `--min-lines 10`
+- 1000+ files: Use `--max-blocks 500` with `--min-lines 15`, or run per module
+
+**Node Memory Limit:**
+```bash
+# Increase Node.js heap size if needed
+NODE_OPTIONS="--max-old-space-size=4096" npx @aiready/pattern-detect ./src
+```
 
 ## 🔧 CI/CD Integration
 

@@ -5,6 +5,8 @@ import { detectDuplicatePatterns, type PatternType } from './detector';
 export interface PatternDetectOptions extends ScanOptions {
   minSimilarity?: number; // 0-1, default 0.85
   minLines?: number; // Minimum lines to consider, default 5
+  maxBlocks?: number; // Maximum blocks to analyze (prevents OOM), default 500
+  batchSize?: number; // Batch size for comparisons, default 100
 }
 
 export interface PatternSummary {
@@ -51,7 +53,7 @@ function getRefactoringSuggestion(
 export async function analyzePatterns(
   options: PatternDetectOptions
 ): Promise<AnalysisResult[]> {
-  const { minSimilarity = 0.85, minLines = 5, ...scanOptions } = options;
+  const { minSimilarity = 0.85, minLines = 5, maxBlocks = 500, batchSize = 100, ...scanOptions } = options;
 
   const files = await scanFiles(scanOptions);
   const results: AnalysisResult[] = [];
@@ -65,12 +67,13 @@ export async function analyzePatterns(
   );
 
   // Detect duplicate patterns across all files
-  const duplicates = detectDuplicatePatterns(fileContents, {
+  const duplicates = await detectDuplicatePatterns(fileContents, {
     minSimilarity,
     minLines,
+    maxBlocks,
+    batchSize,
   });
 
-  // Convert to results format
   for (const file of files) {
     const fileDuplicates = duplicates.filter(
       (dup) => dup.file1 === file || dup.file2 === file

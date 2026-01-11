@@ -16,6 +16,8 @@ program
   .argument('<directory>', 'Directory to analyze')
   .option('-s, --similarity <number>', 'Minimum similarity score (0-1)', '0.85')
   .option('-l, --min-lines <number>', 'Minimum lines to consider', '5')
+  .option('--max-blocks <number>', 'Maximum blocks to analyze (prevents OOM)', '500')
+  .option('--batch-size <number>', 'Batch size for comparisons', '100')
   .option('--include <patterns>', 'File patterns to include (comma-separated)')
   .option('--exclude <patterns>', 'File patterns to exclude (comma-separated)')
   .option(
@@ -31,6 +33,8 @@ program
       rootDir: directory,
       minSimilarity: parseFloat(options.similarity),
       minLines: parseInt(options.minLines),
+      maxBlocks: parseInt(options.maxBlocks),
+      batchSize: parseInt(options.batchSize),
       include: options.include?.split(','),
       exclude: options.exclude?.split(','),
     });

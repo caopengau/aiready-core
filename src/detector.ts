@@ -29,6 +29,8 @@ interface FileContent {
 interface DetectionOptions {
   minSimilarity: number;
   minLines: number;
+  maxBlocks?: number;
+  batchSize?: number;
 }
 
 interface CodeBlock {
@@ -226,15 +228,15 @@ function calculateSimilarity(block1: string, block2: string): number {
 /**
  * Detect duplicate patterns across files with enhanced analysis
  */
-export function detectDuplicatePatterns(
+export async function detectDuplicatePatterns(
   files: FileContent[],
   options: DetectionOptions
-): DuplicatePattern[] {
-  const { minSimilarity, minLines } = options;
+): Promise<DuplicatePattern[]> {
+  const { minSimilarity, minLines, maxBlocks = 500, batchSize = 100 } = options;
   const duplicates: DuplicatePattern[] = [];
 
   // Extract blocks from all files
-  const allBlocks: CodeBlock[] = files.flatMap((file) =>
+  let allBlocks: CodeBlock[] = files.flatMap((file) =>
     extractCodeBlocks(file.content, minLines).map((block) => ({
       ...block,
       file: file.file,
@@ -245,9 +247,36 @@ export function detectDuplicatePatterns(
 
   console.log(`Extracted ${allBlocks.length} code blocks for analysis`);
 
+  // Limit blocks to prevent OOM
+  if (allBlocks.length > maxBlocks) {
+    console.log(`⚠️  Limiting to ${maxBlocks} blocks (sorted by size) to prevent memory issues`);
+    console.log(`   Use --max-blocks to increase limit or --min-lines to filter smaller blocks`);
+    allBlocks = allBlocks
+      .sort((a, b) => b.linesOfCode - a.linesOfCode)
+      .slice(0, maxBlocks);
+  }
+
+  // Process in batches to reduce memory pressure
+  const totalComparisons = (allBlocks.length * (allBlocks.length - 1)) / 2;
+  console.log(`Processing ${totalComparisons.toLocaleString()} comparisons in batches...`);
+
+  let comparisonsProcessed = 0;
+  const startTime = Date.now();
+
   // Compare all pairs of blocks
   for (let i = 0; i < allBlocks.length; i++) {
+    // Progress reporting every batch
+    if (i % batchSize === 0 && i > 0) {
+      const progress = (comparisonsProcessed / totalComparisons * 100).toFixed(1);
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+      console.log(`   ${progress}% complete (${comparisonsProcessed.toLocaleString()}/${totalComparisons.toLocaleString()} comparisons, ${elapsed}s elapsed)`);
+      
+      // Allow garbage collection between batches
+      await new Promise(resolve => setImmediate(resolve));
+    }
+
     for (let j = i + 1; j < allBlocks.length; j++) {
+      comparisonsProcessed++;
       const block1 = allBlocks[i];
       const block2 = allBlocks[j];
 
