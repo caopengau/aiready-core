@@ -70,6 +70,28 @@ aiready-patterns ./src --output json --output-file report.json
 aiready-patterns ./src --output html
 ```
 
+#### Presets (quick copy/paste)
+
+```bash
+# Speed-first (large repos)
+aiready-patterns ./src \
+  --min-shared-tokens 12 \
+  --max-candidates 60 \
+  --max-blocks 300
+
+# Coverage-first (more findings)
+aiready-patterns ./src \
+  --min-shared-tokens 6 \
+  --max-candidates 150
+
+# Short-block focus (helpers/utilities)
+aiready-patterns ./src \
+  --min-lines 5 \
+  --min-shared-tokens 6 \
+  --max-candidates 120 \
+  --exclude "**/test/**"
+```
+
 ### Programmatic API
 
 ```typescript
