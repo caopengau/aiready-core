@@ -1,0 +1,73 @@
+{
+  "name": "@aiready/context-analyzer",
+  "version": "0.1.0",
+  "description": "AI context window cost analysis - detect fragmented code, deep import chains, and expensive context budgets",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "aiready-context": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts src/cli.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts src/cli.ts --format cjs,esm --dts --watch",
+    "test": "vitest run",
+    "lint": "eslint src",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "pnpm build",
+    "release": "pnpm build && pnpm publish --no-git-checks"
+  },
+  "keywords": [
+    "aiready",
+    "context-analysis",
+    "ai-context",
+    "token-cost",
+    "fragmentation",
+    "dependency-analysis",
+    "import-depth",
+    "cohesion",
+    "code-quality",
+    "ai-code",
+    "tech-debt",
+    "refactoring",
+    "copilot",
+    "chatgpt",
+    "claude",
+    "ai-assisted-development",
+    "context-window",
+    "token-optimization"
+  ],
+  "author": "AIReady Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/caopengau/aiready.git",
+    "directory": "packages/context-analyzer"
+  },
+  "homepage": "https://github.com/caopengau/aiready/tree/main/packages/context-analyzer",
+  "bugs": {
+    "url": "https://github.com/caopengau/aiready/issues"
+  },
+  "dependencies": {
+    "@aiready/core": "workspace:*",
+    "commander": "^12.1.0",
+    "chalk": "^5.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.9",
+    "eslint": "^9.18.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
