@@ -185,7 +185,7 @@ router.get('/posts/:id', createResourceHandler('Post', database.posts.findOne));
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `minSimilarity` | Similarity threshold (0-1). Use 0.40 for Jaccard (default), 0.85+ for Levenshtein | `0.40` |
+| `minSimilarity` | Similarity threshold (0-1). Default `0.40` (Jaccard). Raise for only obvious duplicates; lower to catch more | `0.40` |
 | `minSimilarity` | Similarity threshold (0-1). Default `0.40` (Jaccard). Raise for only obvious duplicates; lower to catch more | `0.40` |
 | `minLines` | Minimum lines to consider a pattern | `5` |
 | `maxBlocks` | Maximum code blocks to analyze (prevents OOM) | `500` |

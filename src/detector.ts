@@ -1,4 +1,4 @@
-import { similarityScore, estimateTokens } from '@aiready/core';
+import { estimateTokens } from '@aiready/core';
 
 export interface DuplicatePattern {
   file1: string;
