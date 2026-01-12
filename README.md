@@ -90,6 +90,12 @@ aiready-patterns ./src \
   --min-shared-tokens 6 \
   --max-candidates 120 \
   --exclude "**/test/**"
+
+# Deep dive with streaming (thorough scan with progress)
+aiready-patterns ./src \
+  --no-approx \
+  --max-comparisons 100000 \
+  --stream-results
 ```
 
 ### Programmatic API
