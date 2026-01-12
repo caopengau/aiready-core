@@ -217,10 +217,13 @@ Estimated tokens wasted when AI tools process duplicate code:
 - C = average candidates per block (~100)  
 - T = average tokens per block (~50)
 - **Jaccard similarity** is O(T) instead of O(N²) Levenshtein
+- **Default threshold: 0.70** (Jaccard scores lower than Levenshtein)
 
 **Exact Mode** (`--no-approx --no-fast-mode`): **O(B² × N²)** where:
 - B = number of blocks
 - N = average characters per block
+- **Levenshtein similarity** - more accurate, much slower
+- **Recommended threshold: 0.85+**
 - **Not recommended for >100 files**
 
 ### Performance Benchmarks
@@ -236,11 +239,14 @@ Estimated tokens wasted when AI tools process duplicate code:
 ### Tuning Options
 
 ```bash
-# Default (fast and accurate enough for most use cases)
+# Default (fast Jaccard mode, 65% threshold - good balance)
 aiready-patterns ./src
 
-# Stream results incrementally (see duplicates as they're found)
-aiready-patterns ./src --stream-results
+# Higher threshold for fewer, more similar matches
+aiready-patterns ./src --similarity 0.75
+
+# Lower threshold for more potential duplicates
+aiready-patterns ./src --similarity 0.55
 
 # Increase quality at cost of speed  
 aiready-patterns ./src --no-fast-mode --max-comparisons 100000
