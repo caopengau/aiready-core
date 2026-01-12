@@ -3,7 +3,7 @@ import type { AnalysisResult, Issue, ScanOptions } from '@aiready/core';
 import { detectDuplicatePatterns, type PatternType } from './detector';
 
 export interface PatternDetectOptions extends ScanOptions {
-  minSimilarity?: number; // 0-1, default 0.65 (Jaccard mode), 0.85+ for Levenshtein mode
+  minSimilarity?: number; // 0-1, default 0.40 (Jaccard mode), 0.85+ for Levenshtein mode
   minLines?: number; // Minimum lines to consider, default 5
   maxBlocks?: number; // Maximum blocks to analyze (prevents OOM), default 500
   batchSize?: number; // Batch size for comparisons, default 100

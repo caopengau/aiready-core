@@ -172,7 +172,7 @@ router.get('/posts/:id', createResourceHandler('Post', database.posts.findOne));
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `minSimilarity` | Similarity threshold (0-1). Use 0.65 for Jaccard (default), 0.85+ for Levenshtein | `0.65` |
+| `minSimilarity` | Similarity threshold (0-1). Use 0.40 for Jaccard (default), 0.85+ for Levenshtein | `0.40` |
 | `minLines` | Minimum lines to consider a pattern | `5` |
 | `maxBlocks` | Maximum code blocks to analyze (prevents OOM) | `500` |
 | `include` | File patterns to include | `['**/*.{ts,tsx,js,jsx,py,java}']` |
@@ -242,7 +242,7 @@ Estimated tokens wasted when AI tools process duplicate code:
 - C = average candidates per block (~100)  
 - T = average tokens per block (~50)
 - **Jaccard similarity** is O(T) instead of O(N²) Levenshtein
-- **Default threshold: 0.65** (Jaccard scores 20-25% lower than Levenshtein)
+- **Default threshold: 0.40** (comprehensive detection including tests and helpers)
 
 **Exact Mode** (`--no-approx --no-fast-mode`): **O(B² × N²)** where:
 - B = number of blocks
@@ -264,11 +264,11 @@ Estimated tokens wasted when AI tools process duplicate code:
 ### Tuning Options
 
 ```bash
-# Default (fast Jaccard mode, 65% threshold - good balance)
+# Default (fast Jaccard mode, 40% threshold - comprehensive detection)
 aiready-patterns ./src
 
-# Higher threshold for fewer, more similar matches
-aiready-patterns ./src --similarity 0.75
+# Higher threshold for only obvious duplicates
+aiready-patterns ./src --similarity 0.65
 
 # Lower threshold for more potential duplicates
 aiready-patterns ./src --similarity 0.55

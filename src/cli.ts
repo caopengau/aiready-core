@@ -14,7 +14,7 @@ program
   .description('Detect duplicate patterns in your codebase')
   .version('0.1.0')
   .argument('<directory>', 'Directory to analyze')
-  .option('-s, --similarity <number>', 'Minimum similarity score (0-1)', '0.65')
+  .option('-s, --similarity <number>', 'Minimum similarity score (0-1)', '0.40')
   .option('-l, --min-lines <number>', 'Minimum lines to consider', '5')
   .option('--max-blocks <number>', 'Maximum blocks to analyze (prevents OOM)', '500')
   .option('--batch-size <number>', 'Batch size for comparisons', '100')
