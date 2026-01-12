@@ -5,6 +5,8 @@ export interface DuplicatePattern {
   file2: string;
   line1: number;
   line2: number;
+  endLine1: number;
+  endLine2: number;
   similarity: number;
   snippet: string;
   patternType: PatternType;
@@ -42,6 +44,7 @@ interface DetectionOptions {
 interface CodeBlock {
   content: string;
   startLine: number;
+  endLine: number;
   file: string;
   normalized: string;
   patternType: PatternType;
@@ -116,6 +119,7 @@ function categorizePattern(code: string): PatternType {
 function extractCodeBlocks(content: string, minLines: number): Array<{
   content: string;
   startLine: number;
+  endLine: number;
   patternType: PatternType;
   linesOfCode: number;
 }> {
@@ -123,6 +127,7 @@ function extractCodeBlocks(content: string, minLines: number): Array<{
   const blocks: Array<{
     content: string;
     startLine: number;
+    endLine: number;
     patternType: PatternType;
     linesOfCode: number;
   }> = [];
@@ -169,6 +174,7 @@ function extractCodeBlocks(content: string, minLines: number): Array<{
       blocks.push({
         content: blockContent,
         startLine: blockStart + 1,
+        endLine: i + 1,
         patternType: categorizePattern(blockContent),
         linesOfCode,
       });
@@ -271,10 +277,14 @@ export async function detectDuplicatePatterns(
   // Extract blocks from all files
   let allBlocks: CodeBlock[] = files.flatMap((file) =>
     extractCodeBlocks(file.content, minLines).map((block) => ({
-      ...block,
+      content: block.content,
+      startLine: block.startLine,
+      endLine: block.endLine,
       file: file.file,
       normalized: normalizeCode(block.content),
+      patternType: block.patternType,
       tokenCost: estimateTokens(block.content),
+      linesOfCode: block.linesOfCode,
     }))
   );
 
@@ -394,6 +404,8 @@ export async function detectDuplicatePatterns(
             file2: block2.file,
             line1: block1.startLine,
             line2: block2.startLine,
+            endLine1: block1.endLine,
+            endLine2: block2.endLine,
             similarity,
             snippet: block1.content.split('\n').slice(0, 5).join('\n') + '\n...',
             patternType: block1.patternType,
@@ -404,7 +416,7 @@ export async function detectDuplicatePatterns(
           
           if (streamResults) {
             console.log(`\n   ✅ Found: ${duplicate.patternType} ${Math.round(similarity * 100)}% similar`);
-            console.log(`      ${duplicate.file1}:${duplicate.line1} ⇔ ${duplicate.file2}:${duplicate.line2}`);
+            console.log(`      ${duplicate.file1}:${duplicate.line1}-${duplicate.endLine1} ⇔ ${duplicate.file2}:${duplicate.line2}-${duplicate.endLine2}`);
             console.log(`      Token cost: ${duplicate.tokenCost.toLocaleString()}`);
           }
         }
@@ -432,6 +444,8 @@ export async function detectDuplicatePatterns(
             file2: block2.file,
             line1: block1.startLine,
             line2: block2.startLine,
+            endLine1: block1.endLine,
+            endLine2: block2.endLine,
             similarity,
             snippet: block1.content.split('\n').slice(0, 5).join('\n') + '\n...',
             patternType: block1.patternType,
@@ -442,7 +456,7 @@ export async function detectDuplicatePatterns(
           
           if (streamResults) {
             console.log(`\n   ✅ Found: ${duplicate.patternType} ${Math.round(similarity * 100)}% similar`);
-            console.log(`      ${duplicate.file1}:${duplicate.line1} ⇔ ${duplicate.file2}:${duplicate.line2}`);
+            console.log(`      ${duplicate.file1}:${duplicate.line1}-${duplicate.endLine1} ⇔ ${duplicate.file2}:${duplicate.line2}-${duplicate.endLine2}`);
             console.log(`      Token cost: ${duplicate.tokenCost.toLocaleString()}`);
           }
         }

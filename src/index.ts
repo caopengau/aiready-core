@@ -22,6 +22,10 @@ export interface PatternSummary {
   topDuplicates: Array<{
     file1: string;
     file2: string;
+    line1: number;
+    line2: number;
+    endLine1: number;
+    endLine2: number;
     similarity: number;
     patternType: PatternType;
     tokenCost: number;
@@ -185,6 +189,10 @@ export function generateSummary(
       return {
         file1: issue.location.file,
         file2: fileMatch?.[1] || 'unknown',
+        line1: issue.location.line,
+        line2: 0, // Not available from Issue
+        endLine1: 0, // Not available from Issue
+        endLine2: 0, // Not available from Issue
         similarity: similarityMatch
           ? parseInt(similarityMatch[1]) / 100
           : 0,

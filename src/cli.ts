@@ -129,10 +129,10 @@ program
           )} ${getPatternIcon(dup.patternType)} ${chalk.white(dup.patternType)}`
         );
         console.log(
-          `   ${chalk.dim(dup.file1)}`
+          `   ${chalk.dim(dup.file1)}:${chalk.cyan(dup.line1)}-${chalk.cyan(dup.endLine1)}`
         );
         console.log(
-          `   ${chalk.dim('↔')} ${chalk.dim(dup.file2)}`
+          `   ${chalk.dim('↔')} ${chalk.dim(dup.file2)}:${chalk.cyan(dup.line2)}-${chalk.cyan(dup.endLine2)}`
         );
         console.log(
           `   ${chalk.red(`${dup.tokenCost.toLocaleString()} tokens wasted`)}\n`
