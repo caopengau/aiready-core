@@ -1,5 +1,5 @@
-import { writeFileSync } from 'fs';
-import { join } from 'path';
+import { writeFileSync, mkdirSync, existsSync } from 'fs';
+import { join, dirname } from 'path';
 import { loadConfig, mergeConfigWithDefaults } from '../index';
 
 /**
@@ -10,6 +10,34 @@ export interface CLIOptions {
   include?: string[];
   exclude?: string[];
   [key: string]: any;
+}
+
+/**
+ * Resolve output file path, defaulting to .aiready directory
+ * @param userPath - User-provided output path (optional)
+ * @param defaultFilename - Default filename to use
+ * @param workingDir - Working directory (default: process.cwd())
+ * @returns Resolved absolute path
+ */
+export function resolveOutputPath(
+  userPath: string | undefined,
+  defaultFilename: string,
+  workingDir: string = process.cwd()
+): string {
+  if (userPath) {
+    // User provided a path, use it as-is
+    return userPath;
+  }
+
+  // Default to .aiready directory
+  const aireadyDir = join(workingDir, '.aiready');
+  
+  // Ensure .aiready directory exists
+  if (!existsSync(aireadyDir)) {
+    mkdirSync(aireadyDir, { recursive: true });
+  }
+
+  return join(aireadyDir, defaultFilename);
 }
 
 /**
@@ -45,6 +73,11 @@ export function handleJSONOutput(
   successMessage?: string
 ): void {
   if (outputFile) {
+    // Ensure directory exists
+    const dir = dirname(outputFile);
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
+    }
     writeFileSync(outputFile, JSON.stringify(data, null, 2));
     console.log(successMessage || `✅ Results saved to ${outputFile}`);
   } else {
