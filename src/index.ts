@@ -1,6 +1,6 @@
 import { scanFiles, readFileContent } from '@aiready/core';
 import type { AnalysisResult, Issue, ScanOptions } from '@aiready/core';
-import { detectDuplicatePatterns, type PatternType } from './detector';
+import { detectDuplicatePatterns, type PatternType, type DuplicatePattern } from './detector';
 
 export interface PatternDetectOptions extends ScanOptions {
   minSimilarity?: number; // 0-1, default 0.40 (Jaccard similarity)
@@ -60,7 +60,7 @@ function getRefactoringSuggestion(
 
 export async function analyzePatterns(
   options: PatternDetectOptions
-): Promise<AnalysisResult[]> {
+): Promise<{ results: AnalysisResult[], duplicates: DuplicatePattern[], files: string[] }> {
   const {
     minSimilarity = 0.4, // Jaccard similarity default (40% threshold)
     minLines = 5,
@@ -149,7 +149,7 @@ export async function analyzePatterns(
     });
   }
 
-  return results;
+  return { results, duplicates, files };
 }
 
 /**
