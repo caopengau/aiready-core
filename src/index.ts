@@ -336,3 +336,4 @@ export function generateSummary(
 
 export { detectDuplicatePatterns } from './detector';
 export type { DuplicatePattern, PatternType } from './detector';
+export { getSmartDefaults };
