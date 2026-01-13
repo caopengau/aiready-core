@@ -20,6 +20,67 @@ import type {
 export type { ContextAnalyzerOptions, ContextAnalysisResult, ContextSummary, ModuleCluster };
 
 /**
+ * Generate smart defaults for context analysis based on repository size
+ */
+async function getSmartDefaults(
+  directory: string,
+  userOptions: Partial<ContextAnalyzerOptions>
+): Promise<ContextAnalyzerOptions> {
+  // Estimate repository size by scanning files
+  const files = await scanFiles({
+    rootDir: directory,
+    include: userOptions.include,
+    exclude: userOptions.exclude,
+  });
+
+  const estimatedBlocks = files.length;
+
+  // Smart defaults based on repository size
+  let maxDepth: number;
+  let maxContextBudget: number;
+  let minCohesion: number;
+  let maxFragmentation: number;
+
+  if (estimatedBlocks < 100) {
+    // Small project
+    maxDepth = 3;
+    maxContextBudget = 5000;
+    minCohesion = 0.7;
+    maxFragmentation = 0.3;
+  } else if (estimatedBlocks < 500) {
+    // Medium project
+    maxDepth = 4;
+    maxContextBudget = 8000;
+    minCohesion = 0.65;
+    maxFragmentation = 0.4;
+  } else if (estimatedBlocks < 2000) {
+    // Large project
+    maxDepth = 5;
+    maxContextBudget = 12000;
+    minCohesion = 0.6;
+    maxFragmentation = 0.5;
+  } else {
+    // Enterprise project
+    maxDepth = 6;
+    maxContextBudget = 20000;
+    minCohesion = 0.55;
+    maxFragmentation = 0.6;
+  }
+
+  return {
+    maxDepth,
+    maxContextBudget,
+    minCohesion,
+    maxFragmentation,
+    focus: 'all',
+    includeNodeModules: false,
+    rootDir: userOptions.rootDir || directory,
+    include: userOptions.include,
+    exclude: userOptions.exclude,
+  };
+}
+
+/**
  * Analyze AI context window cost for a codebase
  */
 export async function analyzeContext(
@@ -394,3 +455,5 @@ function analyzeIssues(params: {
 
   return { severity, issues, recommendations, potentialSavings: Math.floor(potentialSavings) };
 }
+
+export { getSmartDefaults };
