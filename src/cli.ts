@@ -15,26 +15,24 @@ program
   .version('0.1.0')
   .addHelpText('after', '\nCONFIGURATION:\n  Supports config files: aiready.json, aiready.config.json, .aiready.json, .aireadyrc.json, aiready.config.js, .aireadyrc.js\n  CLI options override config file settings')
   .argument('<directory>', 'Directory to analyze')
-  .option('--max-depth <number>', 'Maximum acceptable import depth', '5')
+  .option('--max-depth <number>', 'Maximum acceptable import depth')
   .option(
     '--max-context <number>',
-    'Maximum acceptable context budget (tokens)',
-    '10000'
+    'Maximum acceptable context budget (tokens)'
   )
-  .option('--min-cohesion <number>', 'Minimum acceptable cohesion score (0-1)', '0.6')
+  .option('--min-cohesion <number>', 'Minimum acceptable cohesion score (0-1)')
   .option(
     '--max-fragmentation <number>',
-    'Maximum acceptable fragmentation (0-1)',
-    '0.5'
+    'Maximum acceptable fragmentation (0-1)'
   )
   .option(
     '--focus <type>',
-    'Analysis focus: fragmentation, cohesion, depth, all',
-    'all'
+    'Analysis focus: fragmentation, cohesion, depth, all'
   )
-  .option('--include-node-modules', 'Include node_modules in analysis', false)
+  .option('--include-node-modules', 'Include node_modules in analysis')
   .option('--include <patterns>', 'File patterns to include (comma-separated)')
   .option('--exclude <patterns>', 'File patterns to exclude (comma-separated)')
+  .option('--max-results <number>', 'Maximum number of results to show in console output')
   .option(
     '-o, --output <format>',
     'Output format: console, json, html',
@@ -60,6 +58,7 @@ program
         includeNodeModules: false,
         include: undefined,
         exclude: undefined,
+        maxResults: 10,
       };
 
       // Merge config with defaults
@@ -76,6 +75,7 @@ program
         includeNodeModules: options.includeNodeModules !== undefined ? options.includeNodeModules : mergedConfig.includeNodeModules,
         include: options.include?.split(',') || mergedConfig.include,
         exclude: options.exclude?.split(',') || mergedConfig.exclude,
+        maxResults: options.maxResults ? parseInt(options.maxResults) : mergedConfig.maxResults,
       };
 
       const results = await analyzeContext(finalOptions);
@@ -115,7 +115,7 @@ program
       }
 
       // Console output
-      displayConsoleReport(summary, results, elapsedTime);
+      displayConsoleReport(summary, results, elapsedTime, finalOptions.maxResults);
     } catch (error) {
       console.error(chalk.red('\n❌ Analysis failed:'));
       console.error(chalk.red(error instanceof Error ? error.message : String(error)));
@@ -131,7 +131,8 @@ program.parse();
 function displayConsoleReport(
   summary: ReturnType<typeof generateSummary>,
   results: Awaited<ReturnType<typeof analyzeContext>>,
-  elapsedTime: string
+  elapsedTime: string,
+  maxResults: number = 10
 ) {
   const terminalWidth = process.stdout.columns || 80;
   const dividerWidth = Math.min(60, terminalWidth - 2);
@@ -190,7 +191,7 @@ function displayConsoleReport(
     );
     console.log(chalk.gray(`   Maximum depth: ${summary.maxImportDepth}\n`));
 
-    summary.deepFiles.slice(0, 5).forEach((item) => {
+    summary.deepFiles.slice(0, maxResults).forEach((item) => {
       const fileName = item.file.split('/').slice(-2).join('/');
       console.log(
         `   ${chalk.cyan('→')} ${chalk.white(fileName)} ${chalk.dim(`(depth: ${item.depth})`)}`
@@ -208,7 +209,7 @@ function displayConsoleReport(
       )
     );
 
-    summary.fragmentedModules.slice(0, 5).forEach((module) => {
+    summary.fragmentedModules.slice(0, maxResults).forEach((module) => {
       console.log(
         `   ${chalk.yellow('●')} ${chalk.white(module.domain)} - ${chalk.dim(`${module.files.length} files, ${(module.fragmentationScore * 100).toFixed(0)}% scattered`)}`
       );
@@ -230,7 +231,7 @@ function displayConsoleReport(
       )
     );
 
-    summary.lowCohesionFiles.slice(0, 5).forEach((item) => {
+    summary.lowCohesionFiles.slice(0, maxResults).forEach((item) => {
       const fileName = item.file.split('/').slice(-2).join('/');
       const scorePercent = (item.score * 100).toFixed(0);
       const color = item.score < 0.4 ? chalk.red : chalk.yellow;
@@ -245,7 +246,7 @@ function displayConsoleReport(
   if (summary.topExpensiveFiles.length > 0) {
     console.log(chalk.bold('💸 Most Expensive Files (Context Budget):\n'));
 
-    summary.topExpensiveFiles.slice(0, 5).forEach((item) => {
+    summary.topExpensiveFiles.slice(0, maxResults).forEach((item) => {
       const fileName = item.file.split('/').slice(-2).join('/');
       const severityColor =
         item.severity === 'critical'
