@@ -5,6 +5,7 @@ import { analyzeUnified, generateUnifiedSummary } from './index';
 import chalk from 'chalk';
 import { writeFileSync } from 'fs';
 import { join } from 'path';
+import { loadConfig, mergeConfigWithDefaults } from '@aiready/core';
 
 const program = new Command();
 
@@ -28,18 +29,39 @@ program
     const startTime = Date.now();
 
     try {
-      const tools = options.tools.split(',').map((t: string) => t.trim()) as ('patterns' | 'context')[];
+      // Load config file if it exists
+      const config = loadConfig(directory);
 
-      const results = await analyzeUnified({
+      // Define defaults
+      const defaults = {
+        tools: ['patterns', 'context'],
+        include: undefined,
+        exclude: undefined,
+        output: {
+          format: 'console',
+          file: undefined,
+        },
+      };
+
+      // Merge config with defaults
+      const mergedConfig = mergeConfigWithDefaults(config, defaults);
+
+      // Override with CLI options (CLI takes precedence)
+      const finalOptions = {
         rootDir: directory,
-        tools,
-        include: options.include?.split(','),
-        exclude: options.exclude?.split(','),
-      });
+        tools: options.tools ? options.tools.split(',').map((t: string) => t.trim()) as ('patterns' | 'context')[] : mergedConfig.tools,
+        include: options.include?.split(',') || mergedConfig.include,
+        exclude: options.exclude?.split(',') || mergedConfig.exclude,
+      };
+
+      const results = await analyzeUnified(finalOptions);
 
       const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(2);
 
-      if (options.output === 'json') {
+      const outputFormat = options.output || mergedConfig.output?.format || 'console';
+      const outputFile = options.outputFile || mergedConfig.output?.file;
+
+      if (outputFormat === 'json') {
         const outputData = {
           ...results,
           summary: {
@@ -48,9 +70,9 @@ program
           },
         };
 
-        if (options.outputFile) {
-          writeFileSync(options.outputFile, JSON.stringify(outputData, null, 2));
-          console.log(chalk.green(`✅ Results saved to ${options.outputFile}`));
+        if (outputFile) {
+          writeFileSync(outputFile, JSON.stringify(outputData, null, 2));
+          console.log(chalk.green(`✅ Results saved to ${outputFile}`));
         } else {
           console.log(JSON.stringify(outputData, null, 2));
         }
@@ -81,28 +103,52 @@ program
     const startTime = Date.now();
 
     try {
+      // Load config file if it exists
+      const config = loadConfig(directory);
+
+      // Define defaults
+      const defaults = {
+        minSimilarity: 0.4,
+        minLines: 5,
+        include: undefined,
+        exclude: undefined,
+        output: {
+          format: 'console',
+          file: undefined,
+        },
+      };
+
+      // Merge config with defaults
+      const mergedConfig = mergeConfigWithDefaults(config, defaults);
+
+      // Override with CLI options (CLI takes precedence)
+      const finalOptions = {
+        rootDir: directory,
+        minSimilarity: options.similarity ? parseFloat(options.similarity) : mergedConfig.minSimilarity,
+        minLines: options.minLines ? parseInt(options.minLines) : mergedConfig.minLines,
+        include: options.include?.split(',') || mergedConfig.include,
+        exclude: options.exclude?.split(',') || mergedConfig.exclude,
+      };
+
       const { analyzePatterns, generateSummary } = await import('@aiready/pattern-detect');
 
-      const results = await analyzePatterns({
-        rootDir: directory,
-        minSimilarity: parseFloat(options.similarity),
-        minLines: parseInt(options.minLines),
-        include: options.include?.split(','),
-        exclude: options.exclude?.split(','),
-      });
+      const results = await analyzePatterns(finalOptions);
 
       const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(2);
       const summary = generateSummary(results);
 
-      if (options.output === 'json') {
+      const outputFormat = options.output || mergedConfig.output?.format || 'console';
+      const outputFile = options.outputFile || mergedConfig.output?.file;
+
+      if (outputFormat === 'json') {
         const outputData = {
           results,
           summary: { ...summary, executionTime: parseFloat(elapsedTime) },
         };
 
-        if (options.outputFile) {
-          writeFileSync(options.outputFile, JSON.stringify(outputData, null, 2));
-          console.log(chalk.green(`✅ Results saved to ${options.outputFile}`));
+        if (outputFile) {
+          writeFileSync(outputFile, JSON.stringify(outputData, null, 2));
+          console.log(chalk.green(`✅ Results saved to ${outputFile}`));
         } else {
           console.log(JSON.stringify(outputData, null, 2));
         }
@@ -133,28 +179,52 @@ program
     const startTime = Date.now();
 
     try {
+      // Load config file if it exists
+      const config = loadConfig(directory);
+
+      // Define defaults
+      const defaults = {
+        maxDepth: 5,
+        maxContextBudget: 10000,
+        include: undefined,
+        exclude: undefined,
+        output: {
+          format: 'console',
+          file: undefined,
+        },
+      };
+
+      // Merge config with defaults
+      const mergedConfig = mergeConfigWithDefaults(config, defaults);
+
+      // Override with CLI options (CLI takes precedence)
+      const finalOptions = {
+        rootDir: directory,
+        maxDepth: options.maxDepth ? parseInt(options.maxDepth) : mergedConfig.maxDepth,
+        maxContextBudget: options.maxContext ? parseInt(options.maxContext) : mergedConfig.maxContextBudget,
+        include: options.include?.split(',') || mergedConfig.include,
+        exclude: options.exclude?.split(',') || mergedConfig.exclude,
+      };
+
       const { analyzeContext, generateSummary } = await import('@aiready/context-analyzer');
 
-      const results = await analyzeContext({
-        rootDir: directory,
-        maxDepth: parseInt(options.maxDepth),
-        maxContextBudget: parseInt(options.maxContext),
-        include: options.include?.split(','),
-        exclude: options.exclude?.split(','),
-      });
+      const results = await analyzeContext(finalOptions);
 
       const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(2);
       const summary = generateSummary(results);
 
-      if (options.output === 'json') {
+      const outputFormat = options.output || mergedConfig.output?.format || 'console';
+      const outputFile = options.outputFile || mergedConfig.output?.file;
+
+      if (outputFormat === 'json') {
         const outputData = {
           results,
           summary: { ...summary, executionTime: parseFloat(elapsedTime) },
         };
 
-        if (options.outputFile) {
-          writeFileSync(options.outputFile, JSON.stringify(outputData, null, 2));
-          console.log(chalk.green(`✅ Results saved to ${options.outputFile}`));
+        if (outputFile) {
+          writeFileSync(outputFile, JSON.stringify(outputData, null, 2));
+          console.log(chalk.green(`✅ Results saved to ${outputFile}`));
         } else {
           console.log(JSON.stringify(outputData, null, 2));
         }

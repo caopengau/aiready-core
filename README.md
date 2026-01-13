@@ -96,6 +96,59 @@ aiready scan . --output json --output-file results.json
 aiready patterns . --similarity 0.6 --min-lines 10
 ```
 
+### Default Exclusions
+
+By default, these common build and output directories are excluded from analysis:
+
+- Dependencies: `**/node_modules/**`
+- Build outputs: `**/dist/**`, `**/build/**`, `**/out/**`, `**/output/**`, etc.
+- Framework caches: `**/.next/**`, `**/.nuxt/**`, `**/.cache/**`, `**/.turbo/**`
+- Test/coverage: `**/coverage/**`, `**/.nyc_output/**`, `**/.jest/**`
+- Version control/IDE: `**/.git/**`, `**/.vscode/**`, `**/.idea/**`
+- Build artifacts: `**/*.min.js`, `**/*.bundle.js`, `**/*.tsbuildinfo`
+
+Use `--include` and `--exclude` options to customize file selection.
+
+### Configuration
+
+AIReady supports configuration files to persist your settings. Create one of these files in your project root:
+
+- `aiready.json`
+- `aiready.config.json`
+- `.aiready.json`
+- `.aireadyrc.json`
+- `aiready.config.js`
+- `.aireadyrc.js`
+
+#### Example Configuration
+
+```json
+{
+  "scan": {
+    "include": ["**/*.{ts,tsx,js,jsx}"],
+    "exclude": ["**/test/**", "**/*.test.*", "**/*.spec.*"]
+  },
+  "tools": {
+    "pattern-detect": {
+      "minSimilarity": 0.5,
+      "minLines": 8,
+      "approx": false
+    },
+    "context-analyzer": {
+      "maxDepth": 4,
+      "maxContextBudget": 8000,
+      "includeNodeModules": false
+    }
+  },
+  "output": {
+    "format": "console",
+    "file": "aiready-report.json"
+  }
+}
+```
+
+Configuration values are merged with defaults, and CLI options take precedence over config file settings.
+
 ### CI/CD Integration
 
 ```bash
