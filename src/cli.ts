@@ -6,13 +6,16 @@ import chalk from 'chalk';
 import { writeFileSync } from 'fs';
 import { join } from 'path';
 import { loadConfig, mergeConfigWithDefaults } from '@aiready/core';
+import { readFileSync } from 'fs';
+
+const packageJson = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf8'));
 
 const program = new Command();
 
 program
   .name('aiready')
   .description('AIReady - Unified AI-readiness analysis tools')
-  .version('0.1.0')
+  .version(packageJson.version)
   .addHelpText('after', '\nCONFIGURATION:\n  Supports config files: aiready.json, aiready.config.json, .aiready.json, .aireadyrc.json, aiready.config.js, .aireadyrc.js\n  CLI options override config file settings');
 
 program
@@ -133,7 +136,7 @@ program
 
       const { analyzePatterns, generateSummary } = await import('@aiready/pattern-detect');
 
-      const results = await analyzePatterns(finalOptions);
+      const { results } = await analyzePatterns(finalOptions);
 
       const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(2);
       const summary = generateSummary(results);

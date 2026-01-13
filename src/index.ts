@@ -32,8 +32,9 @@ export async function analyzeUnified(
 
   // Run pattern detection
   if (tools.includes('patterns')) {
-    result.patterns = await analyzePatterns(options);
-    result.summary.totalIssues += result.patterns.length;
+    const patternResult = await analyzePatterns(options);
+    result.patterns = patternResult.results;
+    result.summary.totalIssues += patternResult.results.length;
   }
 
   // Run context analysis
