@@ -13,6 +13,7 @@ program
   .name('aiready-context')
   .description('Analyze AI context window cost and code structure')
   .version('0.1.0')
+  .addHelpText('after', '\nCONFIGURATION:\n  Supports config files: aiready.json, aiready.config.json, .aiready.json, .aireadyrc.json, aiready.config.js, .aireadyrc.js\n  CLI options override config file settings')
   .argument('<directory>', 'Directory to analyze')
   .option('--max-depth <number>', 'Maximum acceptable import depth', '5')
   .option(
