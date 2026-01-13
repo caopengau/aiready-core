@@ -113,4 +113,4 @@ MIT - See [LICENSE](./LICENSE)
 
 ---
 
-**Part of the [AIReady](https://github.com/aiready) toolkit** | [Documentation](https://aiready.dev) | [GitHub](https://github.com/caopengau/aiready-core)
+**Part of the [AIReady](https://github.com/caopengau/aiready) toolkit** | Docs: see the monorepo [README](https://github.com/caopengau/aiready#readme) | Status: website not live yet
