@@ -5,7 +5,7 @@ import { analyzeContext, generateSummary } from './index';
 import chalk from 'chalk';
 import { writeFileSync } from 'fs';
 import { join } from 'path';
-import { loadConfig, mergeConfigWithDefaults } from '@aiready/core';
+import { loadMergedConfig, handleJSONOutput, handleCLIError, getElapsedTime } from '@aiready/core';
 
 const program = new Command();
 
@@ -45,9 +45,6 @@ program
     const startTime = Date.now();
 
     try {
-      // Load config file if it exists
-      const config = loadConfig(directory);
-
       // Define defaults
       const defaults = {
         maxDepth: 5,
@@ -61,26 +58,22 @@ program
         maxResults: 10,
       };
 
-      // Merge config with defaults
-      const mergedConfig = mergeConfigWithDefaults(config, defaults);
-
-      // Override with CLI options (CLI takes precedence)
-      const finalOptions = {
-        rootDir: directory,
-        maxDepth: options.maxDepth ? parseInt(options.maxDepth) : mergedConfig.maxDepth,
-        maxContextBudget: options.maxContext ? parseInt(options.maxContext) : mergedConfig.maxContextBudget,
-        minCohesion: options.minCohesion ? parseFloat(options.minCohesion) : mergedConfig.minCohesion,
-        maxFragmentation: options.maxFragmentation ? parseFloat(options.maxFragmentation) : mergedConfig.maxFragmentation,
-        focus: (options.focus || mergedConfig.focus) as any,
-        includeNodeModules: options.includeNodeModules !== undefined ? options.includeNodeModules : mergedConfig.includeNodeModules,
-        include: options.include?.split(',') || mergedConfig.include,
-        exclude: options.exclude?.split(',') || mergedConfig.exclude,
-        maxResults: options.maxResults ? parseInt(options.maxResults) : mergedConfig.maxResults,
-      };
+      // Load and merge config with CLI options
+      const finalOptions = loadMergedConfig(directory, defaults, {
+        maxDepth: options.maxDepth ? parseInt(options.maxDepth) : undefined,
+        maxContextBudget: options.maxContext ? parseInt(options.maxContext) : undefined,
+        minCohesion: options.minCohesion ? parseFloat(options.minCohesion) : undefined,
+        maxFragmentation: options.maxFragmentation ? parseFloat(options.maxFragmentation) : undefined,
+        focus: (options.focus as 'fragmentation' | 'cohesion' | 'depth' | 'all') || undefined,
+        includeNodeModules: options.includeNodeModules,
+        include: options.include?.split(','),
+        exclude: options.exclude?.split(','),
+        maxResults: options.maxResults ? parseInt(options.maxResults) : undefined,
+      }) as any;
 
       const results = await analyzeContext(finalOptions);
 
-      const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(2);
+      const elapsedTime = getElapsedTime(startTime);
       const summary = generateSummary(results);
 
       if (options.output === 'json') {
@@ -91,17 +84,7 @@ program
           analysisTime: elapsedTime,
         };
 
-        if (options.outputFile) {
-          writeFileSync(
-            options.outputFile,
-            JSON.stringify(jsonOutput, null, 2)
-          );
-          console.log(
-            chalk.green(`\n✓ JSON report saved to ${options.outputFile}`)
-          );
-        } else {
-          console.log(JSON.stringify(jsonOutput, null, 2));
-        }
+        handleJSONOutput(jsonOutput, options.outputFile, `\n✓ JSON report saved to ${options.outputFile}`);
         return;
       }
 
@@ -117,9 +100,7 @@ program
       // Console output
       displayConsoleReport(summary, results, elapsedTime, finalOptions.maxResults);
     } catch (error) {
-      console.error(chalk.red('\n❌ Analysis failed:'));
-      console.error(chalk.red(error instanceof Error ? error.message : String(error)));
-      process.exit(1);
+      handleCLIError(error, 'Analysis');
     }
   });
 
