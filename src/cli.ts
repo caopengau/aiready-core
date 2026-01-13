@@ -45,11 +45,19 @@ program
       };
 
       // Load and merge config with CLI options
-      const finalOptions = loadMergedConfig(directory, defaults, {
+      const baseOptions = loadMergedConfig(directory, defaults, {
         tools: options.tools ? options.tools.split(',').map((t: string) => t.trim()) as ('patterns' | 'context')[] : undefined,
         include: options.include?.split(','),
         exclude: options.exclude?.split(','),
       }) as any;
+
+      // Apply smart defaults for pattern detection if patterns tool is enabled
+      let finalOptions = { ...baseOptions };
+      if (baseOptions.tools.includes('patterns')) {
+        const { getSmartDefaults } = await import('@aiready/pattern-detect');
+        const patternSmartDefaults = await getSmartDefaults(directory, baseOptions);
+        finalOptions = { ...patternSmartDefaults, ...finalOptions };
+      }
 
       const results = await analyzeUnified(finalOptions);
 
@@ -84,6 +92,9 @@ program
   .argument('<directory>', 'Directory to analyze')
   .option('-s, --similarity <number>', 'Minimum similarity score (0-1)', '0.40')
   .option('-l, --min-lines <number>', 'Minimum lines to consider', '5')
+  .option('--max-candidates <number>', 'Maximum candidates per block (performance tuning)')
+  .option('--min-shared-tokens <number>', 'Minimum shared tokens for candidates (performance tuning)')
+  .option('--full-scan', 'Disable smart defaults for comprehensive analysis (slower)')
   .option('--include <patterns>', 'File patterns to include (comma-separated)')
   .option('--exclude <patterns>', 'File patterns to exclude (comma-separated)')
   .option('-o, --output <format>', 'Output format: console, json', 'console')
@@ -94,10 +105,12 @@ program
     const startTime = Date.now();
 
     try {
-      // Define defaults
+      // Determine if smart defaults should be used
+      const useSmartDefaults = !options.fullScan;
+
+      // Define defaults (only for options not handled by smart defaults)
       const defaults = {
-        minSimilarity: 0.4,
-        minLines: 5,
+        useSmartDefaults,
         include: undefined,
         exclude: undefined,
         output: {
@@ -106,13 +119,30 @@ program
         },
       };
 
+      // Set fallback defaults only if smart defaults are disabled
+      if (!useSmartDefaults) {
+        (defaults as any).minSimilarity = 0.4;
+        (defaults as any).minLines = 5;
+      }
+
       // Load and merge config with CLI options
-      const finalOptions = loadMergedConfig(directory, defaults, {
+      const cliOptions: any = {
         minSimilarity: options.similarity ? parseFloat(options.similarity) : undefined,
         minLines: options.minLines ? parseInt(options.minLines) : undefined,
+        useSmartDefaults,
         include: options.include?.split(','),
         exclude: options.exclude?.split(','),
-      });
+      };
+
+      // Only include performance tuning options if explicitly specified
+      if (options.maxCandidates) {
+        cliOptions.maxCandidatesPerBlock = parseInt(options.maxCandidates);
+      }
+      if (options.minSharedTokens) {
+        cliOptions.minSharedTokens = parseInt(options.minSharedTokens);
+      }
+
+      const finalOptions = loadMergedConfig(directory, defaults, cliOptions);
 
       const { analyzePatterns, generateSummary } = await import('@aiready/pattern-detect');
 

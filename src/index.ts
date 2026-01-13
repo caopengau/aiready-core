@@ -2,9 +2,15 @@ import { analyzePatterns } from '@aiready/pattern-detect';
 import { analyzeContext } from '@aiready/context-analyzer';
 import type { AnalysisResult, ScanOptions } from '@aiready/core';
 import type { ContextAnalysisResult } from '@aiready/context-analyzer';
+import type { PatternDetectOptions } from '@aiready/pattern-detect';
 
 export interface UnifiedAnalysisOptions extends ScanOptions {
   tools?: ('patterns' | 'context')[];
+  minSimilarity?: number;
+  minLines?: number;
+  maxCandidatesPerBlock?: number;
+  minSharedTokens?: number;
+  useSmartDefaults?: boolean;
 }
 
 export interface UnifiedAnalysisResult {
