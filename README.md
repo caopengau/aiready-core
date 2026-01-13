@@ -97,6 +97,29 @@ aiready-patterns ./src \
   --stream-results
 ```
 
+### Configuration
+
+Create an `aiready.json` or `aiready.config.json` file in your project root to persist settings:
+
+```json
+{
+  "scan": {
+    "include": ["**/*.{ts,tsx,js,jsx}"],
+    "exclude": ["**/test/**", "**/*.test.*"]
+  },
+  "tools": {
+    "pattern-detect": {
+      "minSimilarity": 0.5,
+      "minLines": 8,
+      "approx": false,
+      "batchSize": 200
+    }
+  }
+}
+```
+
+CLI options override config file settings.
+
 ### Programmatic API
 
 ```typescript
@@ -223,13 +246,26 @@ router.get('/posts/:id', createResourceHandler('Post', database.posts.findOne));
 
 By default, these patterns are excluded:
 ```bash
+# Dependencies
 **/node_modules/**
-**/dist/**
-**/build/**
-**/.git/**
-**/coverage/**
-**/*.min.js
-**/*.bundle.js
+
+# Build outputs
+**/dist/**, **/build/**, **/out/**, **/output/**, **/target/**, **/bin/**, **/obj/**
+
+# Framework-specific build dirs
+**/.next/**, **/.nuxt/**, **/.vuepress/**, **/.cache/**, **/.turbo/**
+
+# Test and coverage
+**/coverage/**, **/.nyc_output/**, **/.jest/**
+
+# Version control and IDE
+**/.git/**, **/.svn/**, **/.hg/**, **/.vscode/**, **/.idea/**, **/*.swp, **/*.swo
+
+# Build artifacts and minified files
+**/*.min.js, **/*.min.css, **/*.bundle.js, **/*.tsbuildinfo
+
+# Logs and temporary files
+**/logs/**, **/*.log, **/.DS_Store
 ```
 
 Override with `--exclude` flag:

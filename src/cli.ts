@@ -6,6 +6,7 @@ import type { PatternType } from './detector';
 import chalk from 'chalk';
 import { writeFileSync } from 'fs';
 import { join } from 'path';
+import { loadConfig, mergeConfigWithDefaults } from '@aiready/core';
 
 const program = new Command();
 
@@ -33,18 +34,41 @@ program
     console.log(chalk.blue('🔍 Analyzing patterns...\n'));
 
     const startTime = Date.now();
-    const results = await analyzePatterns({
+
+    // Load config file if it exists
+    const config = loadConfig(directory);
+
+    // Define defaults
+    const defaults = {
+      minSimilarity: 0.4,
+      minLines: 5,
+      batchSize: 100,
+      approx: true,
+      minSharedTokens: 8,
+      maxCandidatesPerBlock: 100,
+      streamResults: true,
+      include: undefined,
+      exclude: undefined,
+    };
+
+    // Merge config with defaults
+    const mergedConfig = mergeConfigWithDefaults(config, defaults);
+
+    // Override with CLI options (CLI takes precedence)
+    const finalOptions = {
       rootDir: directory,
-      minSimilarity: parseFloat(options.similarity),
-      minLines: parseInt(options.minLines),
-      batchSize: parseInt(options.batchSize),
-      approx: options.approx !== false, // default true; --no-approx sets to false
-      minSharedTokens: parseInt(options.minSharedTokens),
-      maxCandidatesPerBlock: parseInt(options.maxCandidates),
-      streamResults: options.streamResults !== false, // default true; --no-stream-results sets to false
-      include: options.include?.split(','),
-      exclude: options.exclude?.split(','),
-    });
+      minSimilarity: options.similarity ? parseFloat(options.similarity) : mergedConfig.minSimilarity,
+      minLines: options.minLines ? parseInt(options.minLines) : mergedConfig.minLines,
+      batchSize: options.batchSize ? parseInt(options.batchSize) : mergedConfig.batchSize,
+      approx: options.approx !== false && mergedConfig.approx, // CLI --no-approx takes precedence
+      minSharedTokens: options.minSharedTokens ? parseInt(options.minSharedTokens) : mergedConfig.minSharedTokens,
+      maxCandidatesPerBlock: options.maxCandidates ? parseInt(options.maxCandidates) : mergedConfig.maxCandidatesPerBlock,
+      streamResults: options.streamResults !== false && mergedConfig.streamResults,
+      include: options.include?.split(',') || mergedConfig.include,
+      exclude: options.exclude?.split(',') || mergedConfig.exclude,
+    };
+
+    const results = await analyzePatterns(finalOptions);
 
     const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(2);
     const summary = generateSummary(results);
