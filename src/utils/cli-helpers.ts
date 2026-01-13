@@ -14,6 +14,7 @@ export interface CLIOptions {
 
 /**
  * Resolve output file path, defaulting to .aiready directory
+ * Creates parent directories if they don't exist.
  * @param userPath - User-provided output path (optional)
  * @param defaultFilename - Default filename to use
  * @param workingDir - Working directory (default: process.cwd())
@@ -24,20 +25,24 @@ export function resolveOutputPath(
   defaultFilename: string,
   workingDir: string = process.cwd()
 ): string {
+  let outputPath: string;
+  
   if (userPath) {
     // User provided a path, use it as-is
-    return userPath;
+    outputPath = userPath;
+  } else {
+    // Default to .aiready directory
+    const aireadyDir = join(workingDir, '.aiready');
+    outputPath = join(aireadyDir, defaultFilename);
   }
-
-  // Default to .aiready directory
-  const aireadyDir = join(workingDir, '.aiready');
   
-  // Ensure .aiready directory exists
-  if (!existsSync(aireadyDir)) {
-    mkdirSync(aireadyDir, { recursive: true });
+  // Ensure parent directory exists (works for both default and custom paths)
+  const parentDir = dirname(outputPath);
+  if (!existsSync(parentDir)) {
+    mkdirSync(parentDir, { recursive: true });
   }
 
-  return join(aireadyDir, defaultFilename);
+  return outputPath;
 }
 
 /**
