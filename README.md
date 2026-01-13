@@ -67,6 +67,9 @@ npx @aiready/context-analyzer ./src
 # Basic usage
 aiready-context ./src
 
+# Show more results in console (default: 10)
+aiready-context ./src --max-results 25
+
 # Focus on specific concerns
 aiready-context ./src --focus fragmentation
 aiready-context ./src --focus cohesion  
@@ -75,7 +78,7 @@ aiready-context ./src --focus depth
 # Set thresholds
 aiready-context ./src --max-depth 5 --max-context 10000 --min-cohesion 0.6
 
-# Export to JSON (saved to .aiready/ by default)
+# Export to JSON for full details (saved to .aiready/ by default)
 aiready-context ./src --output json
 
 # Or specify custom path
@@ -87,6 +90,8 @@ aiready-context ./src --output json --output-file custom-report.json
 ## 🎛️ Tuning Guide
 
 **Smart defaults automatically adjust based on your repository size** to show ~10 most serious issues.
+
+> **💡 Tip:** By default, console output shows the top 10 results per category. Use `--max-results <number>` to see more, or use `--output json` to get complete details of all issues.
 
 ### Getting More/Fewer Results
 
@@ -132,9 +137,47 @@ aiready-context ./src --max-depth 5 --max-context 15000
 aiready-context ./src --max-depth 8 --max-context 25000 --min-cohesion 0.3
 ```
 
+## 📤 Output Options
+
+### Console Output (Default)
+
+Shows a summary with top 10 results per category:
+
+```bash
+# Default - shows top 10 items
+aiready-context ./src
+
+# Show more items (e.g., top 25)
+aiready-context ./src --max-results 25
+
+# Show all items (use a large number)
+aiready-context ./src --max-results 999
+```
+
+### JSON Output
+
+Get complete details of **all** issues (not limited to 10):
+
+```bash
+# Generate JSON with all issues
+aiready-context ./src --output json
+
+# Custom output path
+aiready-context ./src --output json --output-file reports/analysis.json
+```
+
+### HTML Report
+
+Visual report with charts and detailed breakdown:
+
+```bash
 # Generate HTML report
 aiready-context ./src --output html --output-file report.html
+```
 
+### Include/Exclude Patterns
+
+```bash
 # Include/exclude patterns
 aiready-context ./src --exclude "**/test/**,**/*.test.ts"
 ```
