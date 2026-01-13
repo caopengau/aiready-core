@@ -12,6 +12,7 @@ export interface PatternDetectOptions extends ScanOptions {
   streamResults?: boolean; // Output duplicates incrementally as found (default false)
   severity?: string; // Filter by severity: critical|high|medium|all (default: all)
   includeTests?: boolean; // Include test files in analysis (default: false)
+  useSmartDefaults?: boolean; // Use smart defaults based on repo size (default: true)
 }
 
 export interface PatternSummary {
@@ -58,11 +59,106 @@ function getRefactoringSuggestion(
   return baseMessages[patternType] + urgency;
 }
 
+/**
+ * Determine smart defaults based on repository size estimation
+ */
+async function getSmartDefaults(directory: string, userOptions: Partial<PatternDetectOptions>): Promise<PatternDetectOptions> {
+  // If user explicitly disabled smart defaults, return empty (no smart defaults)
+  if (userOptions.useSmartDefaults === false) {
+    return {};
+  }
+
+  // Quick size estimation by scanning files first
+  const scanOptions = {
+    rootDir: directory,
+    include: userOptions.include || ['**/*.{ts,tsx,js,jsx,py,java}'],
+    exclude: userOptions.exclude || [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/build/**',
+      '**/coverage/**',
+      '**/.git/**',
+      '**/.turbo/**'
+    ],
+  };
+
+  // Estimate size by doing a quick file scan and counting potential blocks
+  const { scanFiles } = await import('@aiready/core');
+  const files = await scanFiles(scanOptions);
+  const estimatedBlocks = files.length * 3; // Rough estimate: ~3 blocks per file
+
+  // Reverse computation: calculate optimal parameters to target ~30 second completion
+  // Based on empirical performance: ~100,000 block-candidate comparisons per second
+  
+  // maxCandidatesPerBlock: scale inversely with repo size to maintain ~30s target
+  const maxCandidatesPerBlock = Math.max(10, Math.min(100, Math.floor(80000 / estimatedBlocks)));
+  
+  // minSimilarity: increase with repo size to reduce noise in large repos
+  const minSimilarity = Math.min(0.65, 0.4 + (estimatedBlocks / 15000) * 0.25);
+  
+  // minLines: increase with repo size to focus on substantial duplications
+  const minLines = Math.max(5, Math.min(10, 5 + Math.floor(estimatedBlocks / 3000)));
+  
+  // minSharedTokens: increase with repo size for better pre-filtering
+  const minSharedTokens = Math.max(8, Math.min(15, 8 + Math.floor(estimatedBlocks / 4000)));
+  
+  // batchSize: larger for better I/O efficiency in bigger repos
+  const batchSize = estimatedBlocks > 2000 ? 300 : 150;
+
+  // severity: focus on high-impact issues in very large repos
+  const severity = estimatedBlocks > 8000 ? 'high' : 'all';
+
+  let defaults: PatternDetectOptions = {
+    rootDir: directory,
+    minSimilarity,
+    minLines,
+    batchSize,
+    approx: true,
+    minSharedTokens,
+    maxCandidatesPerBlock,
+    streamResults: false,
+    severity,
+    includeTests: false,
+  };
+
+  // Only apply smart defaults for options that aren't already set
+  const result: PatternDetectOptions = { ...defaults };
+  for (const [key, value] of Object.entries(defaults)) {
+    if (key in userOptions && userOptions[key as keyof PatternDetectOptions] !== undefined) {
+      (result as any)[key] = userOptions[key as keyof PatternDetectOptions];
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Log current configuration settings
+ */
+function logConfiguration(config: PatternDetectOptions, estimatedBlocks: number): void {
+  console.log('📋 Configuration:');
+  console.log(`   Repository size: ~${estimatedBlocks} code blocks`);
+  console.log(`   Similarity threshold: ${config.minSimilarity}`);
+  console.log(`   Minimum lines: ${config.minLines}`);
+  console.log(`   Approximate mode: ${config.approx ? 'enabled' : 'disabled'}`);
+  console.log(`   Max candidates per block: ${config.maxCandidatesPerBlock}`);
+  console.log(`   Min shared tokens: ${config.minSharedTokens}`);
+  console.log(`   Severity filter: ${config.severity}`);
+  console.log(`   Include tests: ${config.includeTests}`);
+  console.log('');
+}
+
 export async function analyzePatterns(
   options: PatternDetectOptions
 ): Promise<{ results: AnalysisResult[], duplicates: DuplicatePattern[], files: string[] }> {
+  // Apply smart defaults based on repository size for unset options
+  const smartDefaults = await getSmartDefaults(options.rootDir || '.', options);
+
+  // Merge options with smart defaults (options take precedence, smart defaults fill in gaps)
+  const finalOptions = { ...smartDefaults, ...options };
+
   const {
-    minSimilarity = 0.4, // Jaccard similarity default (40% threshold)
+    minSimilarity = 0.4,
     minLines = 5,
     batchSize = 100,
     approx = true,
@@ -72,9 +168,15 @@ export async function analyzePatterns(
     severity = 'all',
     includeTests = false,
     ...scanOptions
-  } = options;
+  } = finalOptions;
 
+  const { scanFiles } = await import('@aiready/core');
   const files = await scanFiles(scanOptions);
+
+  // Estimate blocks for logging
+  const estimatedBlocks = files.length * 3;
+  logConfiguration(finalOptions, estimatedBlocks);
+
   const results: AnalysisResult[] = [];
 
   // Read all files
