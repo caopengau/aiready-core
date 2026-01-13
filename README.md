@@ -197,11 +197,28 @@ Create an `aiready.json` or `aiready.config.json` file in your project root:
       "maxDepth": 4,
       "maxContextBudget": 8000,
       "minCohesion": 0.7,
-      "includeNodeModules": false
+      "maxFragmentation": 0.6,
+      "focus": "all",
+      "maxResults": 10
     }
+  },
+  "output": {
+    "format": "console"
   }
 }
 ```
+
+**Configuration Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `maxDepth` | number | `5` | Max acceptable import depth |
+| `maxContextBudget` | number | `10000` | Max acceptable token budget |
+| `minCohesion` | number | `0.6` | Min acceptable cohesion score (0-1) |
+| `maxFragmentation` | number | `0.5` | Max acceptable fragmentation (0-1) |
+| `focus` | string | `'all'` | Focus: `'fragmentation'`, `'cohesion'`, `'depth'`, `'all'` |
+| `maxResults` | number | `10` | Max results per category in console |
+| `includeNodeModules` | boolean | `false` | Include node_modules in analysis |
 
 ### Sample Output
 
