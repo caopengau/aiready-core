@@ -148,6 +148,30 @@ describe('calculateCohesion', () => {
     const cohesion = calculateCohesion(exports);
     expect(cohesion).toBeLessThan(0.5);
   });
+
+  it('should return 1 for test files even with mixed domains', () => {
+    const exports = [
+      { name: 'mockUser', type: 'function' as const, inferredDomain: 'user' },
+      { name: 'mockOrder', type: 'function' as const, inferredDomain: 'order' },
+      { name: 'setupTestDb', type: 'function' as const, inferredDomain: 'helper' },
+    ];
+
+    // Test file - should return 1 despite mixed domains
+    const cohesionTestFile = calculateCohesion(exports, 'src/__tests__/helpers.test.ts');
+    expect(cohesionTestFile).toBe(1);
+
+    // Mock file - should return 1 despite mixed domains
+    const cohesionMockFile = calculateCohesion(exports, 'src/test-utils/mocks.ts');
+    expect(cohesionMockFile).toBe(1);
+
+    // Fixture file - should return 1 despite mixed domains
+    const cohesionFixtureFile = calculateCohesion(exports, 'src/fixtures/data.ts');
+    expect(cohesionFixtureFile).toBe(1);
+
+    // Regular file - should have low cohesion
+    const cohesionRegularFile = calculateCohesion(exports, 'src/utils/helpers.ts');
+    expect(cohesionRegularFile).toBeLessThan(0.5);
+  });
 });
 
 describe('calculateFragmentation', () => {

@@ -200,10 +200,18 @@ export function detectCircularDependencies(
 /**
  * Calculate cohesion score (how related are exports in a file)
  * Uses entropy: low entropy = high cohesion
+ * @param exports - Array of export information
+ * @param filePath - Optional file path for context-aware scoring
  */
-export function calculateCohesion(exports: ExportInfo[]): number {
+export function calculateCohesion(exports: ExportInfo[], filePath?: string): number {
   if (exports.length === 0) return 1;
   if (exports.length === 1) return 1; // Single export = perfect cohesion
+
+  // Special case: Test/mock/fixture files are expected to have multi-domain exports
+  // They serve a single purpose (testing) even if they mock different domains
+  if (filePath && isTestFile(filePath)) {
+    return 1; // Test utilities are inherently cohesive despite mixed domains
+  }
 
   const domains = exports.map((e) => e.inferredDomain || 'unknown');
   const domainCounts = new Map<string, number>();
@@ -226,6 +234,22 @@ export function calculateCohesion(exports: ExportInfo[]): number {
   // Normalize to 0-1 (higher = better cohesion)
   const maxEntropy = Math.log2(total);
   return maxEntropy > 0 ? 1 - entropy / maxEntropy : 1;
+}
+
+/**
+ * Check if a file is a test/mock/fixture file
+ */
+function isTestFile(filePath: string): boolean {
+  const lower = filePath.toLowerCase();
+  return (
+    lower.includes('test') ||
+    lower.includes('spec') ||
+    lower.includes('mock') ||
+    lower.includes('fixture') ||
+    lower.includes('__tests__') ||
+    lower.includes('.test.') ||
+    lower.includes('.spec.')
+  );
 }
 
 /**
@@ -279,7 +303,7 @@ export function detectModuleClusters(
     const avgCohesion =
       files.reduce((sum, file) => {
         const node = graph.nodes.get(file);
-        return sum + (node ? calculateCohesion(node.exports) : 0);
+        return sum + (node ? calculateCohesion(node.exports, file) : 0);
       }, 0) / files.length;
 
     // Generate consolidation plan
@@ -349,33 +373,45 @@ function extractExports(content: string): ExportInfo[] {
 
 /**
  * Infer domain from export name
- * Uses common naming patterns
+ * Uses common naming patterns with word boundary matching
  */
 function inferDomain(name: string): string {
   const lower = name.toLowerCase();
 
-  // Common domain keywords
+  // Domain keywords ordered from most specific to most general
+  // This prevents generic terms like 'util' from matching before specific domains
   const domainKeywords = [
-    'user',
-    'auth',
-    'order',
-    'product',
+    'authentication',
+    'authorization',
     'payment',
-    'cart',
     'invoice',
     'customer',
+    'product',
+    'order',
+    'cart',
+    'user',
     'admin',
-    'api',
-    'util',
-    'helper',
-    'config',
-    'service',
     'repository',
     'controller',
+    'service',
+    'config',
     'model',
     'view',
+    'auth',
+    'api',
+    'helper',
+    'util',
   ];
 
+  // Try word boundary matching first for more accurate detection
+  for (const keyword of domainKeywords) {
+    const wordBoundaryPattern = new RegExp(`\\b${keyword}\\b`, 'i');
+    if (wordBoundaryPattern.test(name)) {
+      return keyword;
+    }
+  }
+
+  // Fallback to substring matching for compound words
   for (const keyword of domainKeywords) {
     if (lower.includes(keyword)) {
       return keyword;
