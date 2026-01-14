@@ -58,6 +58,10 @@ program
         include: undefined,
         exclude: undefined,
         maxResults: 10,
+        // domain config (optional)
+        domainKeywords: undefined,
+        domainPatterns: undefined,
+        pathDomainMap: undefined,
       };
 
       // Load and merge config with CLI options

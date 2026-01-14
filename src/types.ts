@@ -7,6 +7,10 @@ export interface ContextAnalyzerOptions extends ScanOptions {
   maxFragmentation?: number; // Maximum acceptable fragmentation (0-1), default 0.5
   focus?: 'fragmentation' | 'cohesion' | 'depth' | 'all'; // Analysis focus, default 'all'
   includeNodeModules?: boolean; // Include node_modules in analysis, default false
+  // Domain inference configuration
+  domainKeywords?: string[];
+  domainPatterns?: string[]; // regex strings
+  pathDomainMap?: Record<string, string>; // path segment -> domain
 }
 
 export interface ContextAnalysisResult {

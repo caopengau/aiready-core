@@ -16,7 +16,12 @@ interface FileContent {
  * Build a dependency graph from file contents
  */
 export function buildDependencyGraph(
-  files: FileContent[]
+  files: FileContent[],
+  domainOptions?: {
+    domainKeywords?: string[];
+    domainPatterns?: string[];
+    pathDomainMap?: Record<string, string>;
+  }
 ): DependencyGraph {
   const nodes = new Map<string, DependencyNode>();
   const edges = new Map<string, Set<string>>();
@@ -26,7 +31,7 @@ export function buildDependencyGraph(
     const imports = extractImportsFromContent(content);
     
     // Use AST-based extraction for better accuracy, fallback to regex
-    const exports = extractExportsWithAST(content, file);
+    const exports = extractExportsWithAST(content, file, domainOptions);
     
     const tokenCost = estimateTokens(content);
     const linesOfCode = content.split('\n').length;
@@ -309,7 +314,11 @@ export function detectModuleClusters(
  * Extract export information from file content
  * TODO: Use proper AST parsing for better accuracy
  */
-function extractExports(content: string): ExportInfo[] {
+function extractExports(
+  content: string,
+  filePath?: string,
+  domainOptions?: { domainKeywords?: string[]; domainPatterns?: string[]; pathDomainMap?: Record<string, string> }
+): ExportInfo[] {
   const exports: ExportInfo[] = [];
 
   // Simple regex-based extraction (improve with AST later)
@@ -336,7 +345,7 @@ function extractExports(content: string): ExportInfo[] {
     while ((match = pattern.exec(content)) !== null) {
       const name = match[1] || 'default';
       const type = types[index];
-      const inferredDomain = inferDomain(name);
+      const inferredDomain = inferDomain(name, filePath, domainOptions);
 
       exports.push({ name, type, inferredDomain });
     }
@@ -349,12 +358,27 @@ function extractExports(content: string): ExportInfo[] {
  * Infer domain from export name
  * Uses common naming patterns with word boundary matching
  */
-function inferDomain(name: string): string {
+function inferDomain(
+  name: string,
+  filePath?: string,
+  domainOptions?: { domainKeywords?: string[]; domainPatterns?: string[]; pathDomainMap?: Record<string, string> }
+): string {
   const lower = name.toLowerCase();
+
+  // Tokenize identifier: split camelCase, snake_case, kebab-case, and numbers
+  const tokens = Array.from(
+    new Set(
+      lower
+        .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+        .replace(/[^a-z0-9]+/gi, ' ')
+        .split(' ')
+        .filter(Boolean)
+    )
+  );
 
   // Domain keywords ordered from most specific to most general
   // This prevents generic terms like 'util' from matching before specific domains
-  const domainKeywords = [
+  const defaultKeywords = [
     'authentication',
     'authorization',
     'payment',
@@ -377,10 +401,32 @@ function inferDomain(name: string): string {
     'util',
   ];
 
+  const domainKeywords = domainOptions?.domainKeywords && domainOptions.domainKeywords.length
+    ? [...domainOptions.domainKeywords, ...defaultKeywords]
+    : defaultKeywords;
+
+  // Configurable regex patterns take highest precedence
+  const patterns = (domainOptions?.domainPatterns || [])
+    .map((p) => {
+      try {
+        return new RegExp(p, 'i');
+      } catch {
+        return null;
+      }
+    })
+    .filter((r): r is RegExp => !!r);
+
+  for (const re of patterns) {
+    if (re.test(lower)) {
+      const matched = domainKeywords.find((k) => re.test(k));
+      if (matched) return matched;
+      return 'unknown';
+    }
+  }
+
   // Try word boundary matching first for more accurate detection
   for (const keyword of domainKeywords) {
-    const wordBoundaryPattern = new RegExp(`\\b${keyword}\\b`, 'i');
-    if (wordBoundaryPattern.test(name)) {
+    if (tokens.includes(keyword)) {
       return keyword;
     }
   }
@@ -389,6 +435,16 @@ function inferDomain(name: string): string {
   for (const keyword of domainKeywords) {
     if (lower.includes(keyword)) {
       return keyword;
+    }
+  }
+
+  // Path-based fallback: check path segments
+  if (filePath && domainOptions?.pathDomainMap) {
+    const segments = filePath.toLowerCase().split('/');
+    for (const seg of segments) {
+      if (domainOptions.pathDomainMap[seg]) {
+        return domainOptions.pathDomainMap[seg];
+      }
     }
   }
 
@@ -439,20 +495,24 @@ function generateConsolidationPlan(
  * Extract exports using AST parsing (enhanced version)
  * Falls back to regex if AST parsing fails
  */
-export function extractExportsWithAST(content: string, filePath: string): ExportInfo[] {
+export function extractExportsWithAST(
+  content: string,
+  filePath: string,
+  domainOptions?: { domainKeywords?: string[]; domainPatterns?: string[]; pathDomainMap?: Record<string, string> }
+): ExportInfo[] {
   try {
     const { exports: astExports } = parseFileExports(content, filePath);
     
     return astExports.map(exp => ({
       name: exp.name,
       type: exp.type,
-      inferredDomain: inferDomain(exp.name),
+      inferredDomain: inferDomain(exp.name, filePath, domainOptions),
       imports: exp.imports,
       dependencies: exp.dependencies,
     }));
   } catch (error) {
     // Fallback to regex-based extraction
-    return extractExports(content);
+    return extractExports(content, filePath, domainOptions);
   }
 }
 
