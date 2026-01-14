@@ -13,6 +13,61 @@ interface FileContent {
 }
 
 /**
+ * Auto-detect domain keywords from workspace folder structure
+ * Extracts unique folder names from file paths as potential domain keywords
+ */
+function extractDomainKeywordsFromPaths(files: FileContent[]): string[] {
+  const folderNames = new Set<string>();
+  
+  for (const { file } of files) {
+    const segments = file.split('/');
+    // Extract meaningful folder names (skip common infrastructure folders)
+    const skipFolders = new Set(['src', 'lib', 'dist', 'build', 'node_modules', 'test', 'tests', '__tests__', 'spec', 'e2e', 'scripts', 'components', 'utils', 'helpers', 'util', 'helper', 'api', 'apis']);
+    
+    for (const segment of segments) {
+      const normalized = segment.toLowerCase();
+      if (normalized && !skipFolders.has(normalized) && !normalized.includes('.')) {
+        // Singularize common plural forms for better matching
+        const singular = singularize(normalized);
+        folderNames.add(singular);
+      }
+    }
+  }
+  
+  return Array.from(folderNames);
+}
+
+/**
+ * Simple singularization for common English plurals
+ */
+function singularize(word: string): string {
+  // Handle irregular plurals
+  const irregulars: Record<string, string> = {
+    people: 'person',
+    children: 'child',
+    men: 'man',
+    women: 'woman',
+  };
+  
+  if (irregulars[word]) {
+    return irregulars[word];
+  }
+  
+  // Common plural patterns
+  if (word.endsWith('ies')) {
+    return word.slice(0, -3) + 'y'; // categories -> category
+  }
+  if (word.endsWith('ses')) {
+    return word.slice(0, -2); // classes -> class
+  }
+  if (word.endsWith('s') && word.length > 3) {
+    return word.slice(0, -1); // orders -> order
+  }
+  
+  return word;
+}
+
+/**
  * Build a dependency graph from file contents
  */
 export function buildDependencyGraph(
@@ -26,12 +81,22 @@ export function buildDependencyGraph(
   const nodes = new Map<string, DependencyNode>();
   const edges = new Map<string, Set<string>>();
 
+  // Auto-detect domain keywords from workspace folder structure
+  const autoDetectedKeywords = extractDomainKeywordsFromPaths(files);
+  const enhancedOptions = {
+    ...domainOptions,
+    domainKeywords: [
+      ...(domainOptions?.domainKeywords || []),
+      ...autoDetectedKeywords,
+    ],
+  };
+
   // First pass: Create nodes
   for (const { file, content } of files) {
     const imports = extractImportsFromContent(content);
     
     // Use AST-based extraction for better accuracy, fallback to regex
-    const exports = extractExportsWithAST(content, file, domainOptions);
+    const exports = extractExportsWithAST(content, file, enhancedOptions, imports);
     
     const tokenCost = estimateTokens(content);
     const linesOfCode = content.split('\n').length;
@@ -68,8 +133,8 @@ function extractImportsFromContent(content: string): string[] {
     let match;
     while ((match = pattern.exec(content)) !== null) {
       const importPath = match[1];
-      if (importPath && !importPath.startsWith('@') && !importPath.startsWith('node:')) {
-        // Only include relative/local imports
+      // Exclude only node built-ins (node:), include all local and aliased imports
+      if (importPath && !importPath.startsWith('node:')) {
         imports.push(importPath);
       }
     }
@@ -317,7 +382,8 @@ export function detectModuleClusters(
 function extractExports(
   content: string,
   filePath?: string,
-  domainOptions?: { domainKeywords?: string[]; domainPatterns?: string[]; pathDomainMap?: Record<string, string> }
+  domainOptions?: { domainKeywords?: string[]; domainPatterns?: string[]; pathDomainMap?: Record<string, string> },
+  fileImports?: string[]
 ): ExportInfo[] {
   const exports: ExportInfo[] = [];
 
@@ -345,7 +411,7 @@ function extractExports(
     while ((match = pattern.exec(content)) !== null) {
       const name = match[1] || 'default';
       const type = types[index];
-      const inferredDomain = inferDomain(name, filePath, domainOptions);
+      const inferredDomain = inferDomain(name, filePath, domainOptions, fileImports);
 
       exports.push({ name, type, inferredDomain });
     }
@@ -361,7 +427,8 @@ function extractExports(
 function inferDomain(
   name: string,
   filePath?: string,
-  domainOptions?: { domainKeywords?: string[]; domainPatterns?: string[]; pathDomainMap?: Record<string, string> }
+  domainOptions?: { domainKeywords?: string[]; domainPatterns?: string[]; pathDomainMap?: Record<string, string> },
+  fileImports?: string[]
 ): string {
   const lower = name.toLowerCase();
 
@@ -378,6 +445,7 @@ function inferDomain(
 
   // Domain keywords ordered from most specific to most general
   // This prevents generic terms like 'util' from matching before specific domains
+  // NOTE: 'api', 'util', 'helper' are intentionally excluded as they are too generic
   const defaultKeywords = [
     'authentication',
     'authorization',
@@ -396,9 +464,6 @@ function inferDomain(
     'model',
     'view',
     'auth',
-    'api',
-    'helper',
-    'util',
   ];
 
   const domainKeywords = domainOptions?.domainKeywords && domainOptions.domainKeywords.length
@@ -438,12 +503,58 @@ function inferDomain(
     }
   }
 
-  // Path-based fallback: check path segments
-  if (filePath && domainOptions?.pathDomainMap) {
-    const segments = filePath.toLowerCase().split('/');
-    for (const seg of segments) {
-      if (domainOptions.pathDomainMap[seg]) {
-        return domainOptions.pathDomainMap[seg];
+  // Import-path domain inference: analyze import statements for domain hints
+  if (fileImports && fileImports.length > 0) {
+    for (const importPath of fileImports) {
+      // Parse all segments, including those after '@' or '.'
+      // e.g., '@/orders/service' -> ['orders', 'service']
+      //       '../payments/processor' -> ['payments', 'processor']
+      const allSegments = importPath.split('/');
+      const relevantSegments = allSegments.filter(s => {
+        if (!s) return false;
+        // Skip '.' and '..' but keep everything else
+        if (s === '.' || s === '..') return false;
+        // Skip '@' prefix but keep the path after it
+        if (s.startsWith('@') && s.length === 1) return false;
+        // Remove '@' prefix from scoped imports like '@/orders'
+        return true;
+      }).map(s => s.startsWith('@') ? s.slice(1) : s);
+      
+      for (const segment of relevantSegments) {
+        const segLower = segment.toLowerCase();
+        const singularSegment = singularize(segLower);
+        
+        // Check if any domain keyword matches the import path segment (with singularization)
+        for (const keyword of domainKeywords) {
+          if (singularSegment === keyword || segLower === keyword || segLower.includes(keyword)) {
+            return keyword;
+          }
+        }
+      }
+    }
+  }
+
+  // Path-based fallback: check file path segments
+  if (filePath) {
+    // Check configured path domain map first
+    if (domainOptions?.pathDomainMap) {
+      const segments = filePath.toLowerCase().split('/');
+      for (const seg of segments) {
+        if (domainOptions.pathDomainMap[seg]) {
+          return domainOptions.pathDomainMap[seg];
+        }
+      }
+    }
+    
+    // Auto-detect from path by checking against domain keywords (with singularization)
+    const pathSegments = filePath.toLowerCase().split('/');
+    for (const segment of pathSegments) {
+      const singularSegment = singularize(segment);
+      
+      for (const keyword of domainKeywords) {
+        if (singularSegment === keyword || segment === keyword || segment.includes(keyword)) {
+          return keyword;
+        }
       }
     }
   }
@@ -498,7 +609,8 @@ function generateConsolidationPlan(
 export function extractExportsWithAST(
   content: string,
   filePath: string,
-  domainOptions?: { domainKeywords?: string[]; domainPatterns?: string[]; pathDomainMap?: Record<string, string> }
+  domainOptions?: { domainKeywords?: string[]; domainPatterns?: string[]; pathDomainMap?: Record<string, string> },
+  fileImports?: string[]
 ): ExportInfo[] {
   try {
     const { exports: astExports } = parseFileExports(content, filePath);
@@ -506,13 +618,13 @@ export function extractExportsWithAST(
     return astExports.map(exp => ({
       name: exp.name,
       type: exp.type,
-      inferredDomain: inferDomain(exp.name, filePath, domainOptions),
+      inferredDomain: inferDomain(exp.name, filePath, domainOptions, fileImports),
       imports: exp.imports,
       dependencies: exp.dependencies,
     }));
   } catch (error) {
     // Fallback to regex-based extraction
-    return extractExports(content, filePath, domainOptions);
+    return extractExports(content, filePath, domainOptions, fileImports);
   }
 }
 
