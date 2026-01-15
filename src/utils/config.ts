@@ -1,5 +1,6 @@
 import { readFileSync, existsSync } from 'fs';
 import { join, resolve, dirname } from 'path';
+import { pathToFileURL } from 'url';
 import type { AIReadyConfig } from '../types';
 
 const CONFIG_FILES = [
@@ -11,7 +12,7 @@ const CONFIG_FILES = [
   '.aireadyrc.js'
 ];
 
-export function loadConfig(rootDir: string): AIReadyConfig | null {
+export async function loadConfig(rootDir: string): Promise<AIReadyConfig | null> {
   // Search upwards from the provided directory to find the nearest config
   let currentDir = resolve(rootDir);
 
@@ -24,9 +25,10 @@ export function loadConfig(rootDir: string): AIReadyConfig | null {
           let config: AIReadyConfig;
 
           if (configFile.endsWith('.js')) {
-            // For JS files, require them
-            delete require.cache[require.resolve(configPath)]; // Clear cache
-            config = require(configPath);
+            // For JS files, use dynamic ES import
+            const fileUrl = pathToFileURL(configPath).href;
+            const module = await import(`${fileUrl}?t=${Date.now()}`);
+            config = module.default || module;
           } else {
             // For JSON files, parse them
             const content = readFileSync(configPath, 'utf-8');
@@ -40,7 +42,8 @@ export function loadConfig(rootDir: string): AIReadyConfig | null {
 
           return config;
         } catch (error) {
-          throw new Error(`Failed to load config from ${configPath}: ${error}`);
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          throw new Error(`Failed to load config from ${configPath}: ${errorMessage}`);
         }
       }
     }

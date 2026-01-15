@@ -48,13 +48,13 @@ export function resolveOutputPath(
 /**
  * Load and merge configuration with CLI options
  */
-export function loadMergedConfig<T extends Record<string, any>>(
+export async function loadMergedConfig<T extends Record<string, any>>(
   directory: string,
   defaults: T,
   cliOptions: Partial<T>
-): T & { rootDir: string } {
+): Promise<T & { rootDir: string }> {
   // Load config file if it exists
-  const config = loadConfig(directory);
+  const config = await loadConfig(directory);
 
   // Merge config with defaults
   const mergedConfig = mergeConfigWithDefaults(config, defaults);
