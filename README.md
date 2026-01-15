@@ -9,10 +9,52 @@ When AI tools try to help with your code, they need to load files into their con
 - 🎯 **Low Cohesion**: Files mixing unrelated concerns (God objects)
 - 🗂️ **High Fragmentation**: Domains scattered across many directories
 
-**Quick Start:**
+## 🚀 Quick Start
+
+**Zero config, works out of the box:**
+
 ```bash
+# Run without installation (recommended)
 npx @aiready/context-analyzer ./src
+
+# Or use the unified CLI (includes all AIReady tools)
+npx @aiready/cli scan ./src
+
+# Or install globally for faster runs
+npm install -g @aiready/context-analyzer
+aiready-context ./src
 ```
+
+### 🎯 Input & Output
+
+**Input:** Path to your source code directory
+```bash
+aiready-context ./src
+```
+
+**Output:** Terminal report + optional JSON file (saved to `.aiready/` directory)
+```
+📊 Context Analysis Results
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📁 Files analyzed: 47
+⚠️  Issues found: 8 files with problems
+
+CRITICAL (3 files)
+  src/services/user.ts
+    • Context budget: 15,234 tokens (HIGH)
+    • Import depth: 8 levels (DEEP)
+    • Cohesion: 0.23 (LOW)
+```
+
+### ✨ Smart Defaults (Zero Config)
+
+- ✅ **Auto-excludes** test files (`**/*.test.*`, `**/*.spec.*`, `**/__tests__/**`)
+- ✅ **Auto-excludes** build outputs (`dist/`, `build/`, `.next/`, `cdk.out/`)
+- ✅ **Auto-excludes** dependencies (`node_modules/`)
+- ✅ **Auto-detects** frameworks (Next.js, AWS CDK) and adjusts analysis
+- ✅ **Adaptive thresholds**: Adjusts issue detection based on project complexity
+
+> Override defaults with `--include-tests` or `--exclude <patterns>` as needed
 
 ## 🎯 Why This Tool?
 
