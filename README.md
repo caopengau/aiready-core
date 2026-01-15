@@ -199,13 +199,17 @@ aiready patterns ./src
 # Context analysis (token costs, fragmentation)
 aiready context ./src
 
+# Consistency checking (naming, patterns)
+aiready consistency ./src
+
 # Full codebase analysis
 aiready scan ./src
 ```
 
-**Individual packages:**
+**Related packages:**
 - [**@aiready/cli**](https://www.npmjs.com/package/@aiready/cli) - Unified CLI with all tools
 - [**@aiready/context-analyzer**](https://www.npmjs.com/package/@aiready/context-analyzer) - Context window cost analysis
+- [**@aiready/consistency**](https://www.npmjs.com/package/@aiready/consistency) - Consistency checking
 
 ---
 
