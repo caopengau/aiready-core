@@ -23,7 +23,12 @@ export const DEFAULT_EXCLUDE = [
   '**/.cache/**',
   '**/.turbo/**',
 
-  // Test and coverage
+  // Test files and coverage
+  '**/*.test.*',
+  '**/*.spec.*',
+  '**/__tests__/**',
+  '**/test/**',
+  '**/tests/**',
   '**/coverage/**',
   '**/.nyc_output/**',
   '**/.jest/**',
