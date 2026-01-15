@@ -43,7 +43,7 @@ program
     const startTime = Date.now();
 
     // Load config file if it exists
-    const config = loadConfig(directory);
+    const config = await loadConfig(directory);
 
     // Define defaults
     const defaults = {
