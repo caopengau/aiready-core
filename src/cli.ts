@@ -61,7 +61,7 @@ program
       };
 
       // Load and merge config with CLI options
-      let finalOptions = loadMergedConfig(directory, defaults, {
+      let finalOptions = await loadMergedConfig(directory, defaults, {
         maxDepth: options.maxDepth ? parseInt(options.maxDepth) : undefined,
         maxContextBudget: options.maxContext ? parseInt(options.maxContext) : undefined,
         minCohesion: options.minCohesion ? parseFloat(options.minCohesion) : undefined,
