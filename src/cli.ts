@@ -329,7 +329,7 @@ function displayConsoleReport(
   console.log(chalk.cyan(divider));
   console.log(
     chalk.dim(
-      '\n⭐ Like AIReady? Star us on GitHub: https://github.com/caopengau/aiready-context-analyzer'
+      '\n⭐ Like aiready? Star us on GitHub: https://github.com/caopengau/aiready-context-analyzer'
     )
   );
   console.log(
@@ -352,7 +352,7 @@ function generateHTMLReport(
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AIReady Context Analysis Report</title>
+  <title>aiready Context Analysis Report</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;

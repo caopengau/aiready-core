@@ -815,6 +815,10 @@ MIT © AIReady Team
 
 ---
 
+## 🌐 Visit Our Website
+
+**Try AIReady tools online and optimize your AI context:** [getaiready.dev](https://getaiready.dev)
+
 **Made with ❤️ for AI-assisted development**
 
 *Stop wasting context tokens on fragmented code.*
