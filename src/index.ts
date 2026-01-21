@@ -3,7 +3,7 @@ import { analyzeContext } from '@aiready/context-analyzer';
 import { analyzeConsistency } from '@aiready/consistency';
 import type { AnalysisResult, ScanOptions } from '@aiready/core';
 import type { ContextAnalysisResult } from '@aiready/context-analyzer';
-import type { PatternDetectOptions } from '@aiready/pattern-detect';
+import type { PatternDetectOptions, DuplicatePattern } from '@aiready/pattern-detect';
 import type { ConsistencyReport } from '@aiready/consistency';
 
 export interface UnifiedAnalysisOptions extends ScanOptions {
@@ -17,6 +17,7 @@ export interface UnifiedAnalysisOptions extends ScanOptions {
 
 export interface UnifiedAnalysisResult {
   patterns?: AnalysisResult[];
+  duplicates?: DuplicatePattern[]; // Store actual duplicates for scoring
   context?: ContextAnalysisResult[];
   consistency?: ConsistencyReport;
   summary: {
@@ -80,6 +81,8 @@ export async function analyzeUnified(
     const patternResult = await analyzePatterns(options);
     // Sort results by severity
     result.patterns = sortBySeverity(patternResult.results);
+    // Store duplicates for scoring
+    result.duplicates = patternResult.duplicates;
     // Count actual issues, not file count
     result.summary.totalIssues += patternResult.results.reduce(
       (sum, file) => sum + file.issues.length,

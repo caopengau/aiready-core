@@ -87,10 +87,9 @@ program
         // Collect scores from each tool that was run
         if (results.patterns && baseOptions.tools.includes('patterns')) {
           const { calculatePatternScore } = await import('@aiready/pattern-detect');
-          const duplicates = results.patterns
-            .flatMap(r => r.issues)
-            .filter(i => i.type === 'duplicate-pattern');
-          const score = calculatePatternScore(duplicates as any, results.patterns.length);
+          // Use the actual duplicates array which has tokenCost field
+          const duplicates = results.duplicates || [];
+          const score = calculatePatternScore(duplicates, results.patterns.length);
           toolScores.set('pattern-detect', score);
         }
         
