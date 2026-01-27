@@ -1,0 +1,13 @@
+# Ignore generated CDK assets and build outputs
+infra/cdk.out/**
+**/cdk.out/**
+**/cdk.out/*
+**/asset.*
+**/dist/**
+**/.next/**
+**/build/**
+**/out/**
+node_modules/**
+.git/**
+# keep .aiready reports
+!.aiready/**
