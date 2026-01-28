@@ -247,4 +247,4 @@ aiready scan ./src
 
 ---
 
-**Made with 💙 by the AIReady team** | [GitHub](https://github.com/caopengau/aiready)
+**Made with 💙 by the AIReady team** | [Website](https://getaiready.dev)
