@@ -789,15 +789,15 @@ Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 ### Development Setup
 
 ```bash
-git clone https://github.com/caopengau/aiready.git
-cd aiready
+git clone https://github.com/caopengau/aiready-context-analyzer.git
+cd aiready-context-analyzer
 pnpm install
 
-# Build all packages
+# Build
 pnpm build
 
 # Run tests
-pnpm --filter @aiready/context-analyzer test
+pnpm test
 
 # Dev mode (watch)
 pnpm --filter @aiready/context-analyzer dev
@@ -810,8 +810,8 @@ MIT © AIReady Team
 ## 🔗 Related Tools
 
 - **[@aiready/pattern-detect](https://www.npmjs.com/package/@aiready/pattern-detect)** - Find semantic duplicate patterns
-- **[@aiready/doc-drift](https://github.com/caopengau/aiready)** - Detect stale documentation
-- **[@aiready/consistency](https://github.com/caopengau/aiready)** - Check naming consistency
+- **@aiready/doc-drift** - Detect stale documentation (coming soon)
+- **[@aiready/consistency](https://www.npmjs.com/package/@aiready/consistency)** - Check naming consistency
 
 ---
 
