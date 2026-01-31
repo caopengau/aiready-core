@@ -158,6 +158,8 @@ async function getSmartDefaults(directory: string, userOptions: Partial<PatternD
  * Log current configuration settings
  */
 function logConfiguration(config: PatternDetectOptions, estimatedBlocks: number): void {
+  // Allow callers to suppress verbose tool-level configuration logging
+  if ((config as any).suppressToolConfig) return;
   console.log('📋 Configuration:');
   console.log(`   Repository size: ~${estimatedBlocks} code blocks`);
   console.log(`   Similarity threshold: ${config.minSimilarity}`);
@@ -289,13 +291,12 @@ export async function analyzePatterns(
 
   if (groupByFilePair) {
     groups = groupDuplicatesByFilePair(duplicates);
-    console.log(`\n✅ Grouped ${duplicates.length} duplicates into ${groups.length} file pairs`);
   }
 
   if (createClusters) {
     const allClusters = createRefactorClusters(duplicates);
     clusters = filterClustersByImpact(allClusters, minClusterTokenCost, minClusterFiles);
-    console.log(`✅ Created ${clusters.length} refactor clusters (${allClusters.length - clusters.length} filtered by impact)`);
+    // Note: cluster filtering info is returned via clusters; do not log here.
   }
 
   return { results, duplicates, files, groups, clusters };
