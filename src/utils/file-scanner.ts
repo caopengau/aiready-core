@@ -59,9 +59,8 @@ export const DEFAULT_EXCLUDE = [
 /**
  * Scan files in a directory using glob patterns
  * 
- * Note: This scanner includes multiple language file types by default (.ts, .tsx, .js, .jsx, .py, .java)
- * to support potential multi-language analysis in the future. Individual tools (like @aiready/consistency)
- * should filter to their supported languages before processing.
+ * Note: This scanner supports multiple languages (.ts, .tsx, .js, .jsx, .py, .java, etc.)
+ * Individual tools can filter to their supported languages if needed.
  * 
  * @param options - Scan configuration
  * @returns Array of absolute file paths matching the patterns
@@ -69,7 +68,7 @@ export const DEFAULT_EXCLUDE = [
 export async function scanFiles(options: ScanOptions): Promise<string[]> {
   const {
     rootDir,
-    include = ['**/*.{ts,tsx,js,jsx,py,java}'], // Broad default - tools should filter further
+    include = ['**/*.{ts,tsx,js,jsx,py,java,go,rs,cs}'], // Multi-language support
     exclude,
   } = options;
 
