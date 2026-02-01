@@ -4,7 +4,27 @@
 
 When AI tools try to help with your code, they need to load files into their context window. Fragmented code structures make this expensive and sometimes impossible. This tool analyzes your codebase to identify:
 
-## 🌍 Language Support
+## �️ Architecture
+
+```
+                           🎯 USER
+                             │
+                             ▼
+                   🎛️  CLI (orchestrator)
+                             │
+                             ▼
+                     🏢 HUB (core)
+                             │
+      ┌──────────────────────┼───────────┬───────────┐
+      ▼                      ▼           ▼           ▼
+  📊 PATTERN          ┌─────────────┐  🔧 CONSIST  📚 DOC
+   DETECT             │ 📦 CONTEXT  │ ⬅ YOU ARE HERE
+   ✅ Ready           │  ANALYZER   │   ENCY        DRIFT
+                      │ ✅ Ready    │  ✅ Ready    🔜 Soon
+                      └─────────────┘
+```
+
+## �🌍 Language Support
 
 **Currently Supported (64% market coverage):**
 - ✅ **TypeScript** (`.ts`, `.tsx`) - Import chains, context budget, cohesion
