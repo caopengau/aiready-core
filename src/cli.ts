@@ -932,6 +932,7 @@ program
   .option('-o, --output <path>', 'Output HTML path (relative to directory)', 'packages/visualizer/visualization.html')
   .option('--open', 'Open generated HTML in default browser')
   .option('--serve [port]', 'Start a local static server to serve the visualization (optional port number)', false)
+  .option('--dev', 'Start Vite dev server (live reload) for interactive development', false)
   .addHelpText('after', `
 EXAMPLES:
   $ aiready visualize . --report aiready-improvement-report.json
@@ -1021,6 +1022,30 @@ NOTES:
           });
         } catch (err) {
           console.error('Failed to start local server:', err);
+        }
+      }
+      // Optionally start Vite dev server for live reload (dev mode)
+      if (options.dev) {
+        try {
+          const { spawn } = await import('child_process');
+          const webDir = resolvePath(dirPath, 'packages/visualizer');
+
+          // Ensure report is copied into web/src/report-data.json and watch for changes
+          const scriptsDir = resolvePath(webDir, 'scripts');
+          const watcher = spawn('node', ['scripts/watch-report.js'], { cwd: webDir, stdio: 'inherit' });
+
+          // Start vite dev server
+          const vite = spawn('pnpm', ['run', 'dev:web'], { cwd: webDir, stdio: 'inherit', shell: true });
+
+          const onExit = () => {
+            try { watcher.kill(); } catch (e) {}
+            try { vite.kill(); } catch (e) {}
+            process.exit(0);
+          };
+          process.on('SIGINT', onExit);
+          process.on('SIGTERM', onExit);
+        } catch (err) {
+          console.error('Failed to start dev server:', err);
         }
       }
     } catch (err: any) {
