@@ -44,6 +44,9 @@ export interface ModuleCluster {
   files: string[];
   totalTokens: number;
   fragmentationScore: number; // 0-1, higher = more scattered
+  pathEntropy?: number; // normalized [0-1] Shannon entropy of directory distribution
+  directoryDistance?: number; // normalized [0-1] based on common ancestor depth
+  importCohesion?: number; // 0-1 average pairwise Jaccard similarity of imports
   avgCohesion: number; // Average cohesion across files in cluster
   suggestedStructure: {
     targetFiles: number; // Recommended number of files

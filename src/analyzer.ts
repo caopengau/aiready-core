@@ -326,23 +326,105 @@ function isTestFile(filePath: string): boolean {
  */
 export function calculateFragmentation(
   files: string[],
-  domain: string
+  domain: string,
+  options?: { useLogScale?: boolean; logBase?: number }
 ): number {
   if (files.length <= 1) return 0; // Single file = no fragmentation
 
   // Calculate how many different directories contain these files
   const directories = new Set(files.map((f) => f.split('/').slice(0, -1).join('/')));
+  const uniqueDirs = directories.size;
 
-  // Fragmentation = unique directories / total files
-  // 0 = all in same dir, 1 = all in different dirs
-  return (directories.size - 1) / (files.length - 1);
+  // If log-scaling requested, normalize using logarithms so that
+  // going from 1 -> 2 directories shows a large jump while 10 -> 11
+  // is relatively small. Normalized value is log(uniqueDirs)/log(totalFiles).
+  if (options?.useLogScale) {
+    if (uniqueDirs <= 1) return 0;
+    const total = files.length;
+    const base = options.logBase || Math.E;
+    const num = Math.log(uniqueDirs) / Math.log(base);
+    const den = Math.log(total) / Math.log(base);
+    return den > 0 ? num / den : 0;
+  }
+
+  // Default (linear) Fragmentation = (unique directories - 1) / (total files - 1)
+  return (uniqueDirs - 1) / (files.length - 1);
+}
+
+/**
+ * Calculate path entropy for a set of files.
+ * Returns a normalized entropy in [0,1], where 0 = all files in one directory,
+ * and 1 = files are evenly distributed across directories.
+ */
+export function calculatePathEntropy(files: string[]): number {
+  if (!files || files.length === 0) return 0;
+
+  const dirCounts = new Map<string, number>();
+  for (const f of files) {
+    const dir = f.split('/').slice(0, -1).join('/') || '.';
+    dirCounts.set(dir, (dirCounts.get(dir) || 0) + 1);
+  }
+
+  const counts = Array.from(dirCounts.values());
+  if (counts.length <= 1) return 0; // single directory -> zero entropy
+
+  const total = counts.reduce((s, v) => s + v, 0);
+  let entropy = 0;
+  for (const c of counts) {
+    const p = c / total;
+    entropy -= p * Math.log2(p);
+  }
+
+  const maxEntropy = Math.log2(counts.length);
+  return maxEntropy > 0 ? entropy / maxEntropy : 0;
+}
+
+/**
+ * Calculate directory-distance metric based on common ancestor depth.
+ * For each file pair compute depth(commonAncestor) and normalize by the
+ * maximum path depth between the two files. Returns value in [0,1] where
+ * 0 means all pairs share a deep common ancestor (low fragmentation) and
+ * 1 means they share only the root (high fragmentation).
+ */
+export function calculateDirectoryDistance(files: string[]): number {
+  if (!files || files.length <= 1) return 0;
+
+  function pathSegments(p: string) {
+    return p.split('/').filter(Boolean);
+  }
+
+  function commonAncestorDepth(a: string[], b: string[]) {
+    const minLen = Math.min(a.length, b.length);
+    let i = 0;
+    while (i < minLen && a[i] === b[i]) i++;
+    return i; // number of shared segments from root
+  }
+
+  let totalNormalized = 0;
+  let comparisons = 0;
+
+  for (let i = 0; i < files.length; i++) {
+    for (let j = i + 1; j < files.length; j++) {
+      const segA = pathSegments(files[i]);
+      const segB = pathSegments(files[j]);
+      const shared = commonAncestorDepth(segA, segB);
+      const maxDepth = Math.max(segA.length, segB.length);
+      const normalizedShared = maxDepth > 0 ? shared / maxDepth : 0;
+      // distance is inverse of normalized shared depth
+      totalNormalized += 1 - normalizedShared;
+      comparisons++;
+    }
+  }
+
+  return comparisons > 0 ? totalNormalized / comparisons : 0;
 }
 
 /**
  * Group files by domain to detect module clusters
  */
 export function detectModuleClusters(
-  graph: DependencyGraph
+  graph: DependencyGraph,
+  options?: { useLogScale?: boolean }
 ): ModuleCluster[] {
   const domainMap = new Map<string, string[]>();
 
@@ -367,7 +449,42 @@ export function detectModuleClusters(
       return sum + (node?.tokenCost || 0);
     }, 0);
 
-    const fragmentationScore = calculateFragmentation(files, domain);
+    const baseFragmentation = calculateFragmentation(files, domain, { useLogScale: !!options?.useLogScale });
+
+    // Compute import-based cohesion across files in this domain cluster.
+    // This measures how much the files actually "talk" to each other.
+    // We'll compute average pairwise Jaccard similarity between each file's import lists.
+    let importSimilarityTotal = 0;
+    let importComparisons = 0;
+
+    for (let i = 0; i < files.length; i++) {
+      for (let j = i + 1; j < files.length; j++) {
+        const f1 = files[i];
+        const f2 = files[j];
+        const n1 = graph.nodes.get(f1)?.imports || [];
+        const n2 = graph.nodes.get(f2)?.imports || [];
+
+        // Treat two empty import lists as not coupled (similarity 0)
+        const similarity = (n1.length === 0 && n2.length === 0)
+          ? 0
+          : calculateJaccardSimilarity(n1, n2);
+
+        importSimilarityTotal += similarity;
+        importComparisons++;
+      }
+    }
+
+    const importCohesion = importComparisons > 0 ? importSimilarityTotal / importComparisons : 0;
+
+    // Coupling discount: if files are heavily importing each other, reduce fragmentation penalty.
+    // Following recommendation: up to 20% discount proportional to import cohesion.
+    const couplingDiscountFactor = 1 - 0.2 * importCohesion;
+
+    const fragmentationScore = baseFragmentation * couplingDiscountFactor;
+
+    // Additional metrics for richer reporting
+    const pathEntropy = calculatePathEntropy(files);
+    const directoryDistance = calculateDirectoryDistance(files);
 
     const avgCohesion =
       files.reduce((sum, file) => {
@@ -388,6 +505,9 @@ export function detectModuleClusters(
       files,
       totalTokens,
       fragmentationScore,
+      pathEntropy,
+      directoryDistance,
+      importCohesion,
       avgCohesion,
       suggestedStructure: {
         targetFiles,

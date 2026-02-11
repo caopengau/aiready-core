@@ -250,6 +250,14 @@ src/user/types.ts                // 600 tokens
 
 **🎯 Recommendation:** Domains with high fragmentation should be **consolidated** into cohesive modules.
 
+### 🔎 Additional Fragmentation Signals (new)
+
+- **Path Entropy:** A normalized Shannon-entropy over directory distribution. Distinguishes "9 files in one folder + 1 outlier" from "5 and 5" — higher entropy means more evenly spread (worse).
+- **Directory Distance:** Measures how deep the common ancestor is across file pairs. Files sharing a deep common ancestor are considered "closer" (lower distance) than files only sharing the repo root.
+- **Import Cohesion (coupling discount):** If fragmented files actively import each other, the analyzer reduces the fragmentation penalty (up to 20%). This rewards intentional modularization where cross-folder imports are a natural design instead of accidental scattering.
+
+These signals are included in the JSON summary (`fragmentedModules` entries) so you can prioritize consolidation efforts with more context: `fragmentationScore`, `pathEntropy`, `directoryDistance`, and `importCohesion`.
+
 ---
 
 ### ⚖️ The Tradeoff: Splitting vs. Consolidating

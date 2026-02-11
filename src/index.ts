@@ -9,6 +9,8 @@ import {
   calculateCohesion,
   calculateFragmentation,
   detectModuleClusters,
+  calculatePathEntropy,
+  calculateDirectoryDistance,
 } from './analyzer';
 import { calculateContextScore } from './scoring';
 import type {
@@ -206,7 +208,9 @@ export async function analyzeContext(
   const circularDeps = detectCircularDependencies(graph);
 
   // Detect module clusters for fragmentation analysis
-  const clusters = detectModuleClusters(graph);
+  // Enable log-scaling for fragmentation by default on medium+ repos
+  const useLogScale = files.length >= 500; // medium and larger projects
+  const clusters = detectModuleClusters(graph, { useLogScale });
   const fragmentationMap = new Map<string, number>();
   for (const cluster of clusters) {
     for (const file of cluster.files) {
@@ -374,7 +378,6 @@ export function generateSummary(
   const fragmentedModules: ModuleCluster[] = [];
   for (const [domain, files] of moduleMap.entries()) {
     if (files.length < 2) continue;
-
     const fragmentationScore =
       files.reduce((sum, f) => sum + f.fragmentationScore, 0) / files.length;
     if (fragmentationScore < 0.3) continue; // Skip well-organized modules
@@ -384,11 +387,40 @@ export function generateSummary(
       files.reduce((sum, f) => sum + f.cohesionScore, 0) / files.length;
     const targetFiles = Math.max(1, Math.ceil(files.length / 3));
 
+    // Compute path entropy and directory distance for reporting
+    const filePaths = files.map((f) => f.file);
+    const pathEntropy = calculatePathEntropy(filePaths);
+    const directoryDistance = calculateDirectoryDistance(filePaths);
+
+    // Compute import cohesion based on dependency lists (Jaccard similarity)
+    function jaccard(a: string[], b: string[]) {
+      const s1 = new Set(a || []);
+      const s2 = new Set(b || []);
+      if (s1.size === 0 && s2.size === 0) return 0;
+      const inter = new Set([...s1].filter((x) => s2.has(x)));
+      const uni = new Set([...s1, ...s2]);
+      return uni.size === 0 ? 0 : inter.size / uni.size;
+    }
+
+    let importSimTotal = 0;
+    let importPairs = 0;
+    for (let i = 0; i < files.length; i++) {
+      for (let j = i + 1; j < files.length; j++) {
+        importSimTotal += jaccard(files[i].dependencyList || [], files[j].dependencyList || []);
+        importPairs++;
+      }
+    }
+
+    const importCohesion = importPairs > 0 ? importSimTotal / importPairs : 0;
+
     fragmentedModules.push({
       domain,
       files: files.map((f) => f.file),
       totalTokens,
       fragmentationScore,
+      pathEntropy,
+      directoryDistance,
+      importCohesion,
       avgCohesion,
       suggestedStructure: {
         targetFiles,
