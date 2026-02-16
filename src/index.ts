@@ -299,20 +299,16 @@ export async function analyzeContext(
   // Merge Python and TS/JS results
   const allResults = [...results, ...pythonResults];
 
-  // Filter to only files with actual issues (not just info)
-  // This reduces output noise and focuses on actionable problems
-  const issuesOnly = allResults.filter(r => r.severity !== 'info');
-  
-  // Sort by severity and context budget
-  const sorted = issuesOnly.sort((a, b) => {
+  // Keep ALL results including info severity for visualization purposes
+  // The visualizer needs to show all files as nodes
+  const sorted = allResults.sort((a, b) => {
     const severityOrder = { critical: 0, major: 1, minor: 2, info: 3 };
     const severityDiff = severityOrder[a.severity] - severityOrder[b.severity];
     if (severityDiff !== 0) return severityDiff;
     return b.contextBudget - a.contextBudget;
   });
-  
-  // If we have issues, return them; otherwise return all results
-  return sorted.length > 0 ? sorted : results;
+
+  return sorted;
 }
 
 /**
