@@ -1226,7 +1226,7 @@ program
   .option('-o, --output <path>', 'Output HTML path (relative to directory)', 'packages/visualizer/visualization.html')
   .option('--open', 'Open generated HTML in default browser')
   .option('--serve [port]', 'Start a local static server to serve the visualization (optional port number)', false)
-  .option('--dev', 'Start Vite dev server (live reload) for interactive development', false)
+  .option('--dev', 'Start Vite dev server (live reload) for interactive development', true)
   .addHelpText('after', `
 EXAMPLES:
   $ aiready visualise . --report aiready-improvement-report.json
