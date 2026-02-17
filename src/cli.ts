@@ -77,7 +77,7 @@ program
   .option('-t, --tools <tools>', 'Tools to run (comma-separated: patterns,context,consistency)', 'patterns,context,consistency')
   .option('--include <patterns>', 'File patterns to include (comma-separated)')
   .option('--exclude <patterns>', 'File patterns to exclude (comma-separated)')
-  .option('-o, --output <format>', 'Output format: console, json', 'console')
+  .option('-o, --output <format>', 'Output format: console, json', 'json')
   .option('--output-file <path>', 'Output file path (for json)')
   .option('--score', 'Calculate and display AI Readiness Score (0-100) with breakdown')
   .option('--weights <weights>', 'Custom scoring weights (patterns:40,context:35,consistency:25)')
@@ -103,7 +103,7 @@ EXAMPLES:
         include: undefined,
         exclude: undefined,
         output: {
-          format: 'console',
+          format: 'json',
           file: undefined,
         },
       };
