@@ -1166,12 +1166,39 @@ program
             webDir = monorepoWebDir;
             visualizerAvailable = true;
           } else {
-            try {
-              const vizPkgPath = require.resolve('@aiready/visualizer/package.json');
-              webDir = resolvePath(vizPkgPath, '..');
-              visualizerAvailable = true;
-            } catch (e) {
-              visualizerAvailable = false;
+            // Try to resolve installed @aiready/visualizer package from node_modules
+            // Check multiple locations to support pnpm, npm, yarn, etc.
+            const nodemodulesLocations: string[] = [
+              resolvePath(dirPath, 'node_modules', '@aiready', 'visualizer'),
+              resolvePath(process.cwd(), 'node_modules', '@aiready', 'visualizer'),
+            ];
+            
+            // Walk up directory tree to find node_modules in parent directories
+            let currentDir = dirPath;
+            while (currentDir !== '/' && currentDir !== '.') {
+              nodemodulesLocations.push(resolvePath(currentDir, 'node_modules', '@aiready', 'visualizer'));
+              const parent = resolvePath(currentDir, '..');
+              if (parent === currentDir) break; // Reached filesystem root
+              currentDir = parent;
+            }
+            
+            for (const location of nodemodulesLocations) {
+              if (existsSync(location) && existsSync(resolvePath(location, 'package.json'))) {
+                webDir = location;
+                visualizerAvailable = true;
+                break;
+              }
+            }
+            
+            // Fallback: try require.resolve
+            if (!visualizerAvailable) {
+              try {
+                const vizPkgPath = require.resolve('@aiready/visualizer/package.json');
+                webDir = resolvePath(vizPkgPath, '..');
+                visualizerAvailable = true;
+              } catch (e) {
+                // Visualizer not found
+              }
             }
           }
           const spawnCwd = webDir || process.cwd();
@@ -1179,7 +1206,7 @@ program
           const nodeBin = existsSync(nodeBinCandidate) ? nodeBinCandidate : 'node';
           if (!visualizerAvailable) {
             console.error(chalk.red('❌ Cannot start dev server: @aiready/visualizer not available.'));
-            console.log(chalk.dim('Install @aiready/visualizer in your project or run this command from the monorepo root.'));
+            console.log(chalk.dim('Install @aiready/visualizer in your project with:\n  npm install @aiready/visualizer'));
             return;
           }
 
