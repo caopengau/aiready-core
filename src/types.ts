@@ -113,6 +113,15 @@ export interface AIReadyConfig {
     format?: 'console' | 'json' | 'html';
     file?: string;
   };
+
+  // Visualizer preferences
+  visualizer?: {
+    groupingDirs?: string[];
+    graph?: {
+      maxNodes?: number;
+      maxEdges?: number;
+    };
+  };
 }
 
 export interface Report {
