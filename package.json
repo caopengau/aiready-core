@@ -1,6 +1,6 @@
 {
   "name": "@aiready/core",
-  "version": "0.9.21",
+  "version": "0.9.22",
   "description": "Shared utilities for AIReady analysis tools",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
