@@ -7,22 +7,38 @@ The CLI provides both unified analysis (scan multiple tools at once) and individ
 ## 🏛️ Architecture
 
 ```
-                           🎯 USER
-                             │
-                             ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                   🎛️  CLI (@aiready/cli) ⬅ YOU ARE HERE        │
-│                Unified Interface & Orchestration                │
-└─────────────────┬───────────────────────────────────────────────┘
+                    🎯 USER
+                      │
+                      ▼
+┌──────────────────────────────────────────┐
+│      🎛️  CLI (@aiready/cli)              │
+│   Unified Interface & Orchestration      │
+│                YOU ARE HERE              │
+└─────────────────┬────────────────────────┘
                   │
-                  ▼
-             🏢 HUB (core)
-                  │
-      ┌───────────┼───────────┬───────────┐
-      ▼           ▼           ▼           ▼
-  📊 PATTERN  📦 CONTEXT  🔧 CONSIST  📚 DOC
-   DETECT      ANALYZER    ENCY        DRIFT
-   ✅ Ready    ✅ Ready    ✅ Ready    🔜 Soon
+    ┌─────────────┴─────────────┐
+    │                           │
+    ▼                           ▼
+┌────────┐                ┌────────┐
+│🎨 VIS- │                │ ANALY- │
+│UALIZER │                │  SIS   │
+│        │                │ SPOKES │
+│✅ Ready│                │        │
+└────────┘                └───┬────┘
+    │                         │
+    │         ┌───────────────┼───────────────┐
+    │         ▼               ▼               ▼
+    │   ┌────────┐      ┌────────┐      ┌────────┐
+    │   │📊 PAT- │      │📦 CON- │      │🔧 CON- │
+    │   │TERN    │      │TEXT    │      │SISTENCY│
+    │   │DETECT  │      │ANALYZER│      │        │
+    │   │✅ Ready│      │✅ Ready│      │✅ Ready│
+    │   └────────┘      └────────┘      └────────┘
+    │         │               │               │
+    └─────────┴───────────────┴───────────────┘
+                              │
+                              ▼
+                    🏢 HUB (@aiready/core)
 ```
 
 ## 🌍 Language Support
