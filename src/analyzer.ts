@@ -1057,7 +1057,6 @@ function isConfigOrSchemaFile(node: DependencyNode): boolean {
   const configPatterns = [
     'config', 'schema', 'settings', 'options', 'constants',
     'env', 'environment', '.config.', '-config.', '_config.',
-    'subscription', 'subscriptions',  // Database schema files
   ];
   
   const isConfigName = configPatterns.some(pattern => 

@@ -134,10 +134,10 @@ describe('file classification', () => {
 
     it('should classify config/schema files as cohesive-module', () => {
       const node = createNode({
-        file: 'src/subscription.ts',
+        file: 'src/db-schema.ts',
         exports: [
-          { name: 'subscriptionTable', type: 'const', inferredDomain: 'db' },
-          { name: 'subscriptionSchema', type: 'const', inferredDomain: 'schema' },
+          { name: 'userTable', type: 'const', inferredDomain: 'db' },
+          { name: 'userSchema', type: 'const', inferredDomain: 'schema' },
         ],
         imports: ['../db'],
         linesOfCode: 81,
