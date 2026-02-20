@@ -696,4 +696,107 @@ describe('file classification', () => {
       expect(recommendations).toContain('Parser/transformer file detected - handles multiple data sources');
     });
   });
+
+  describe('Next.js page detection', () => {
+    it('should classify Next.js calculator pages as nextjs-page', () => {
+      const node = createNode({
+        file: 'app/cents-per-km-calculator/page.tsx',
+        exports: [
+          { name: 'metadata', type: 'const', inferredDomain: 'seo' },
+          { name: 'faqJsonLd', type: 'const', inferredDomain: 'jsonld' },
+          { name: 'default', type: 'default', inferredDomain: 'page' },
+          { name: 'icon', type: 'const', inferredDomain: 'ui' },
+        ],
+        imports: ['../components/Calculator', '../lib/utils'],
+        linesOfCode: 208,
+      });
+
+      const classification = classifyFile(node, 0.25, ['seo', 'jsonld', 'page', 'ui']);
+      expect(classification).toBe('nextjs-page');
+    });
+
+    it('should classify investment property calculator page as nextjs-page', () => {
+      const node = createNode({
+        file: 'app/investment-property-tax-calculator/page.tsx',
+        exports: [
+          { name: 'metadata', type: 'const', inferredDomain: 'seo' },
+          { name: 'faqJsonLd', type: 'const', inferredDomain: 'jsonld' },
+          { name: 'default', type: 'default', inferredDomain: 'page' },
+        ],
+        imports: ['../components/Form'],
+        linesOfCode: 204,
+      });
+
+      const classification = classifyFile(node, 0.30, ['seo', 'jsonld', 'page']);
+      expect(classification).toBe('nextjs-page');
+    });
+
+    it('should not classify non-page.tsx files in /app/ as nextjs-page', () => {
+      const node = createNode({
+        file: 'app/components/Header.tsx',
+        exports: [
+          { name: 'Header', type: 'function', inferredDomain: 'ui' },
+        ],
+        imports: ['react'],
+        linesOfCode: 50,
+      });
+
+      const classification = classifyFile(node, 0.8, ['ui']);
+      expect(classification).toBe('cohesive-module');
+    });
+
+    it('should not classify page.tsx files outside /app/ as nextjs-page', () => {
+      const node = createNode({
+        file: 'src/pages/page.tsx', // Pages Router, not App Router
+        exports: [
+          { name: 'default', type: 'default', inferredDomain: 'page' },
+        ],
+        imports: ['react'],
+        linesOfCode: 100,
+      });
+
+      const classification = classifyFile(node, 0.5, ['page']);
+      expect(classification).not.toBe('nextjs-page');
+    });
+
+    it('should classify Next.js page with generateMetadata as nextjs-page', () => {
+      const node = createNode({
+        file: 'app/dynamic-page/page.tsx',
+        exports: [
+          { name: 'generateMetadata', type: 'function', inferredDomain: 'seo' },
+          { name: 'default', type: 'default', inferredDomain: 'page' },
+        ],
+        imports: ['../lib/api'],
+        linesOfCode: 150,
+      });
+
+      const classification = classifyFile(node, 0.4, ['seo', 'page']);
+      expect(classification).toBe('nextjs-page');
+    });
+  });
+
+  describe('nextjs-page cohesion adjustment', () => {
+    it('should return 1 for nextjs-page', () => {
+      const result = adjustCohesionForClassification(0.25, 'nextjs-page');
+      expect(result).toBe(1);
+    });
+  });
+
+  describe('nextjs-page fragmentation adjustment', () => {
+    it('should reduce fragmentation by 80% for nextjs-page', () => {
+      const result = adjustFragmentationForClassification(0.5, 'nextjs-page');
+      expect(result).toBe(0.1); // 0.5 * 0.2
+    });
+  });
+
+  describe('nextjs-page recommendations', () => {
+    it('should provide nextjs-page recommendations', () => {
+      const recommendations = getClassificationRecommendations(
+        'nextjs-page',
+        'app/calculator/page.tsx',
+        ['Low cohesion']
+      );
+      expect(recommendations).toContain('Next.js App Router page detected - metadata/JSON-LD/component pattern is cohesive');
+    });
+  });
 });
