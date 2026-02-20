@@ -919,7 +919,7 @@ export function classifyFile(
   cohesionScore: number,
   domains: string[]
 ): FileClassification {
-  const { exports, imports, linesOfCode } = node;
+  const { exports, imports, linesOfCode, file } = node;
   
   // 1. Check for barrel export (index file that re-exports)
   if (isBarrelExport(node)) {
@@ -931,21 +931,38 @@ export function classifyFile(
     return 'type-definition';
   }
   
-  // 3. Check for cohesive module (single domain + high cohesion)
+  // 3. Check for config/schema file (special case - acceptable multi-domain)
+  if (isConfigOrSchemaFile(node)) {
+    return 'cohesive-module'; // Treat as cohesive since it's intentional
+  }
+  
+  // 4. Check for cohesive module (single domain + reasonable cohesion)
   const uniqueDomains = domains.filter(d => d !== 'unknown');
   const hasSingleDomain = uniqueDomains.length <= 1;
-  const hasHighCohesion = cohesionScore >= 0.7;
+  const hasReasonableCohesion = cohesionScore >= 0.5; // Lowered threshold
   
-  if (hasSingleDomain && hasHighCohesion) {
+  // Single domain files are almost always cohesive (even with lower cohesion score)
+  if (hasSingleDomain) {
     return 'cohesive-module';
   }
   
-  // 4. Check for mixed concerns (multiple domains + low cohesion)
-  const hasMultipleDomains = uniqueDomains.length > 1;
-  const hasLowCohesion = cohesionScore < 0.5;
+  // 5. Check for utility file pattern (multiple domains but utility purpose)
+  if (isUtilityFile(node)) {
+    return 'cohesive-module'; // Utilities often have mixed imports by design
+  }
   
-  if (hasMultipleDomains || hasLowCohesion) {
+  // 6. Check for mixed concerns (multiple domains + low cohesion)
+  const hasMultipleDomains = uniqueDomains.length > 1;
+  const hasLowCohesion = cohesionScore < 0.4; // Lowered threshold
+  
+  if (hasMultipleDomains && hasLowCohesion) {
     return 'mixed-concerns';
+  }
+  
+  // 7. Default to cohesive-module for files with reasonable cohesion
+  // This reduces false positives for legitimate files
+  if (cohesionScore >= 0.5) {
+    return 'cohesive-module';
   }
   
   return 'unknown';
@@ -1021,6 +1038,84 @@ function isTypeDefinitionFile(node: DependencyNode): boolean {
                       typeExports.length / exports.length > 0.7;
   
   return isTypesFile || mostlyTypes;
+}
+
+/**
+ * Detect if a file is a config/schema file
+ * 
+ * Characteristics:
+ * - Named with config, schema, or settings patterns
+ * - Often defines database schemas, configuration objects
+ * - Multiple domains are acceptable (centralized config)
+ */
+function isConfigOrSchemaFile(node: DependencyNode): boolean {
+  const { file, exports } = node;
+  
+  const fileName = file.split('/').pop()?.toLowerCase();
+  
+  // Check filename patterns for config/schema files
+  const configPatterns = [
+    'config', 'schema', 'settings', 'options', 'constants',
+    'env', 'environment', '.config.', '-config.', '_config.',
+    'subscription', 'subscriptions',  // Database schema files
+  ];
+  
+  const isConfigName = configPatterns.some(pattern => 
+    fileName?.includes(pattern) || fileName?.startsWith(pattern) || fileName?.endsWith(`${pattern}.ts`)
+  );
+  
+  // Check if file is in a config/settings directory
+  const isConfigPath = file.toLowerCase().includes('/config/') || 
+                       file.toLowerCase().includes('/schemas/') ||
+                       file.toLowerCase().includes('/settings/');
+  
+  // Check for schema-like exports (often have table/model definitions)
+  const hasSchemaExports = exports.some(e => 
+    e.name.toLowerCase().includes('table') ||
+    e.name.toLowerCase().includes('schema') ||
+    e.name.toLowerCase().includes('config') ||
+    e.name.toLowerCase().includes('setting')
+  );
+  
+  return isConfigName || isConfigPath || hasSchemaExports;
+}
+
+/**
+ * Detect if a file is a utility/helper file
+ * 
+ * Characteristics:
+ * - Named with util, helper, or utility patterns
+ * - Often contains mixed helper functions by design
+ * - Multiple domains are acceptable (utility purpose)
+ */
+function isUtilityFile(node: DependencyNode): boolean {
+  const { file, exports } = node;
+  
+  const fileName = file.split('/').pop()?.toLowerCase();
+  
+  // Check filename patterns for utility files
+  const utilityPatterns = [
+    'util', 'utility', 'utilities', 'helper', 'helpers',
+    'common', 'shared', 'lib', 'toolbox', 'toolkit',
+    '.util.', '-util.', '_util.',
+  ];
+  
+  const isUtilityName = utilityPatterns.some(pattern => 
+    fileName?.includes(pattern)
+  );
+  
+  // Check if file is in a utils/helpers directory
+  const isUtilityPath = file.toLowerCase().includes('/utils/') || 
+                        file.toLowerCase().includes('/helpers/') ||
+                        file.toLowerCase().includes('/lib/') ||
+                        file.toLowerCase().includes('/common/');
+  
+  // Check if file has many small utility-like exports
+  const hasManySmallExports = exports.length >= 3 && exports.every(e => 
+    e.type === 'function' || e.type === 'const'
+  );
+  
+  return isUtilityName || isUtilityPath || hasManySmallExports;
 }
 
 /**

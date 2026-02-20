@@ -82,23 +82,25 @@ describe('file classification', () => {
       expect(classification).toBe('mixed-concerns');
     });
 
-    it('should classify files with low cohesion as mixed-concerns', () => {
+    it('should classify files with multiple domains and very low cohesion as mixed-concerns', () => {
       const node = createNode({
-        file: 'src/utils.ts',
+        file: 'src/services/mixed-service.ts', // NOT a utility/config path
         exports: [
-          { name: 'formatDate', type: 'function', inferredDomain: 'date' },
-          { name: 'parseJSON', type: 'function', inferredDomain: 'json' },
-          { name: 'validateEmail', type: 'function', inferredDomain: 'email' },
+          { name: 'DateFormatter', type: 'class', inferredDomain: 'date' }, // Use class to avoid utility detection
+          { name: 'JSONParser', type: 'class', inferredDomain: 'json' },
+          { name: 'EmailValidator', type: 'class', inferredDomain: 'email' },
         ],
         imports: [],
         linesOfCode: 150,
       });
 
-      const classification = classifyFile(node, 0.4, ['date', 'json', 'email']);
+      // Multiple domains + very low cohesion (< 0.4) = mixed concerns
+      // Note: NOT in /utils/ or /helpers/ path, uses classes (not just functions/consts)
+      const classification = classifyFile(node, 0.3, ['date', 'json', 'email']);
       expect(classification).toBe('mixed-concerns');
     });
 
-    it('should return unknown for files that do not fit other categories', () => {
+    it('should classify single domain files as cohesive-module regardless of cohesion', () => {
       const node = createNode({
         file: 'src/component.ts',
         exports: [
@@ -108,9 +110,42 @@ describe('file classification', () => {
         linesOfCode: 100,
       });
 
-      // Medium cohesion (0.6), single domain - not quite cohesive-module (needs 0.7)
+      // Single domain = cohesive module (even with medium cohesion)
       const classification = classifyFile(node, 0.6, ['ui']);
-      expect(classification).toBe('unknown');
+      expect(classification).toBe('cohesive-module');
+    });
+
+    it('should classify utility files as cohesive-module by design', () => {
+      const node = createNode({
+        file: 'src/utils/helpers.ts',
+        exports: [
+          { name: 'formatDate', type: 'function', inferredDomain: 'date' },
+          { name: 'parseJSON', type: 'function', inferredDomain: 'json' },
+          { name: 'validateEmail', type: 'function', inferredDomain: 'email' },
+        ],
+        imports: [],
+        linesOfCode: 150,
+      });
+
+      // Utility files are classified as cohesive by design
+      const classification = classifyFile(node, 0.4, ['date', 'json', 'email']);
+      expect(classification).toBe('cohesive-module');
+    });
+
+    it('should classify config/schema files as cohesive-module', () => {
+      const node = createNode({
+        file: 'src/subscription.ts',
+        exports: [
+          { name: 'subscriptionTable', type: 'const', inferredDomain: 'db' },
+          { name: 'subscriptionSchema', type: 'const', inferredDomain: 'schema' },
+        ],
+        imports: ['../db'],
+        linesOfCode: 81,
+      });
+
+      // Config/schema files are classified as cohesive
+      const classification = classifyFile(node, 0.4, ['db', 'schema']);
+      expect(classification).toBe('cohesive-module');
     });
   });
 
