@@ -5,6 +5,7 @@ import type {
   DependencyNode,
   ExportInfo,
   ModuleCluster,
+  FileClassification,
 } from './types';
 import { buildCoUsageMatrix, buildTypeGraph, inferDomainFromSemantics } from './semantic-analysis';
 
@@ -900,4 +901,190 @@ function calculateDomainCohesion(exports: ExportInfo[]): number {
 
   const maxEntropy = Math.log2(total);
   return maxEntropy > 0 ? 1 - entropy / maxEntropy : 1;
+}
+
+/**
+ * Classify a file based on its characteristics to help distinguish
+ * real issues from false positives.
+ * 
+ * Classification types:
+ * - barrel-export: Re-exports from other modules (index.ts files)
+ * - type-definition: Primarily type/interface definitions
+ * - cohesive-module: Single domain, high cohesion (acceptable large files)
+ * - mixed-concerns: Multiple domains, potential refactoring candidate
+ * - unknown: Unable to classify
+ */
+export function classifyFile(
+  node: DependencyNode,
+  cohesionScore: number,
+  domains: string[]
+): FileClassification {
+  const { exports, imports, linesOfCode } = node;
+  
+  // 1. Check for barrel export (index file that re-exports)
+  if (isBarrelExport(node)) {
+    return 'barrel-export';
+  }
+  
+  // 2. Check for type definition file
+  if (isTypeDefinitionFile(node)) {
+    return 'type-definition';
+  }
+  
+  // 3. Check for cohesive module (single domain + high cohesion)
+  const uniqueDomains = domains.filter(d => d !== 'unknown');
+  const hasSingleDomain = uniqueDomains.length <= 1;
+  const hasHighCohesion = cohesionScore >= 0.7;
+  
+  if (hasSingleDomain && hasHighCohesion) {
+    return 'cohesive-module';
+  }
+  
+  // 4. Check for mixed concerns (multiple domains + low cohesion)
+  const hasMultipleDomains = uniqueDomains.length > 1;
+  const hasLowCohesion = cohesionScore < 0.5;
+  
+  if (hasMultipleDomains || hasLowCohesion) {
+    return 'mixed-concerns';
+  }
+  
+  return 'unknown';
+}
+
+/**
+ * Detect if a file is a barrel export (re-exports from other modules)
+ * 
+ * Characteristics of barrel exports:
+ * - Named "index.ts" or "index.js"
+ * - Many re-export statements (export * from, export { x } from)
+ * - Little to no actual implementation code
+ * - High export count relative to lines of code
+ */
+function isBarrelExport(node: DependencyNode): boolean {
+  const { file, exports, imports, linesOfCode } = node;
+  
+  // Check filename pattern
+  const fileName = file.split('/').pop()?.toLowerCase();
+  const isIndexFile = fileName === 'index.ts' || fileName === 'index.js' || 
+                      fileName === 'index.tsx' || fileName === 'index.jsx';
+  
+  // Calculate re-export ratio
+  // Re-exports typically have form: export { x } from 'module' or export * from 'module'
+  // They have imports AND exports, with exports coming from those imports
+  const hasReExports = exports.length > 0 && imports.length > 0;
+  const highExportToLinesRatio = exports.length > 3 && linesOfCode < exports.length * 5;
+  
+  // Little actual code (mostly import/export statements)
+  const sparseCode = linesOfCode > 0 && linesOfCode < 50 && exports.length >= 2;
+  
+  // Index files with re-export patterns
+  if (isIndexFile && hasReExports) {
+    return true;
+  }
+  
+  // Non-index files that are clearly barrel exports
+  if (highExportToLinesRatio && imports.length >= exports.length * 0.5) {
+    return true;
+  }
+  
+  // Very sparse files with multiple re-exports
+  if (sparseCode && imports.length > 0) {
+    return true;
+  }
+  
+  return false;
+}
+
+/**
+ * Detect if a file is primarily a type definition file
+ * 
+ * Characteristics:
+ * - Mostly type/interface exports
+ * - Little to no runtime code
+ * - Often named *.d.ts or types.ts
+ */
+function isTypeDefinitionFile(node: DependencyNode): boolean {
+  const { file, exports } = node;
+  
+  // Check filename pattern
+  const fileName = file.split('/').pop()?.toLowerCase();
+  const isTypesFile = fileName?.includes('types') || fileName?.includes('.d.ts') ||
+                      fileName === 'types.ts' || fileName === 'interfaces.ts';
+  
+  // Count type exports vs other exports
+  const typeExports = exports.filter(e => e.type === 'type' || e.type === 'interface');
+  const runtimeExports = exports.filter(e => e.type === 'function' || e.type === 'class' || e.type === 'const');
+  
+  // High ratio of type exports
+  const mostlyTypes = exports.length > 0 && 
+                      typeExports.length > runtimeExports.length &&
+                      typeExports.length / exports.length > 0.7;
+  
+  return isTypesFile || mostlyTypes;
+}
+
+/**
+ * Adjust fragmentation score based on file classification
+ * 
+ * This reduces false positives by:
+ * - Ignoring fragmentation for barrel exports (they're meant to aggregate)
+ * - Ignoring fragmentation for type definitions (centralized types are good)
+ * - Reducing fragmentation for cohesive modules (large but focused is OK)
+ */
+export function adjustFragmentationForClassification(
+  baseFragmentation: number,
+  classification: FileClassification
+): number {
+  switch (classification) {
+    case 'barrel-export':
+      // Barrel exports are meant to have multiple domains - no fragmentation
+      return 0;
+    case 'type-definition':
+      // Centralized type definitions are good practice - no fragmentation
+      return 0;
+    case 'cohesive-module':
+      // Cohesive modules get a significant discount
+      return baseFragmentation * 0.3;
+    case 'mixed-concerns':
+      // Mixed concerns keep full fragmentation score
+      return baseFragmentation;
+    default:
+      // Unknown gets a small discount (benefit of doubt)
+      return baseFragmentation * 0.7;
+  }
+}
+
+/**
+ * Get classification-specific recommendations
+ */
+export function getClassificationRecommendations(
+  classification: FileClassification,
+  file: string,
+  issues: string[]
+): string[] {
+  switch (classification) {
+    case 'barrel-export':
+      return [
+        'Barrel export file detected - multiple domains are expected here',
+        'Consider if this barrel export improves or hinders discoverability',
+      ];
+    case 'type-definition':
+      return [
+        'Type definition file - centralized types improve consistency',
+        'Consider splitting if file becomes too large (>500 lines)',
+      ];
+    case 'cohesive-module':
+      return [
+        'Module has good cohesion despite its size',
+        'Consider documenting the module boundaries for AI assistants',
+      ];
+    case 'mixed-concerns':
+      return [
+        'Consider splitting this file by domain',
+        'Identify independent responsibilities and extract them',
+        'Review import dependencies to understand coupling',
+      ];
+    default:
+      return issues;
+  }
 }

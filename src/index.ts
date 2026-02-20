@@ -11,6 +11,9 @@ import {
   detectModuleClusters,
   calculatePathEntropy,
   calculateDirectoryDistance,
+  classifyFile,
+  adjustFragmentationForClassification,
+  getClassificationRecommendations,
 } from './analyzer';
 import { calculateContextScore } from './scoring';
 import type {
@@ -22,6 +25,7 @@ import type {
   DomainSignals,
   CoUsageData,
   TypeDependency,
+  FileClassification,
 } from './types';
 import {
   buildCoUsageMatrix,
@@ -42,6 +46,12 @@ export type {
   DomainSignals,
   CoUsageData,
   TypeDependency,
+  FileClassification,
+};
+
+export {
+  classifyFile,
+  adjustFragmentationForClassification,
 };
 
 export {
@@ -196,6 +206,7 @@ export async function analyzeContext(
         contextBudget: metric.contextBudget,
         fragmentationScore: 0,
         relatedFiles: [],
+        fileClassification: 'unknown' as const, // Python files not yet classified
         severity,
         issues,
         recommendations,
@@ -275,6 +286,41 @@ export async function analyzeContext(
       ...new Set(node.exports.map((e) => e.inferredDomain || 'unknown')),
     ];
 
+    // Classify the file to help distinguish real issues from false positives
+    const fileClassification = classifyFile(node, cohesionScore, domains);
+    
+    // Adjust fragmentation based on classification
+    const adjustedFragmentationScore = adjustFragmentationForClassification(
+      fragmentationScore,
+      fileClassification
+    );
+
+    // Get classification-specific recommendations
+    const classificationRecommendations = getClassificationRecommendations(
+      fileClassification,
+      file,
+      issues
+    );
+
+    // Re-analyze issues with adjusted fragmentation
+    const {
+      severity: adjustedSeverity,
+      issues: adjustedIssues,
+      recommendations: finalRecommendations,
+      potentialSavings: adjustedSavings,
+    } = analyzeIssues({
+      file,
+      importDepth,
+      contextBudget,
+      cohesionScore,
+      fragmentationScore: adjustedFragmentationScore,
+      maxDepth,
+      maxContextBudget,
+      minCohesion,
+      maxFragmentation,
+      circularDeps,
+    });
+
     results.push({
       file,
       tokenCost: node.tokenCost,
@@ -287,12 +333,13 @@ export async function analyzeContext(
       domains,
       exportCount: node.exports.length,
       contextBudget,
-      fragmentationScore,
+      fragmentationScore: adjustedFragmentationScore,
       relatedFiles,
-      severity,
-      issues,
-      recommendations,
-      potentialSavings,
+      fileClassification,
+      severity: adjustedSeverity,
+      issues: adjustedIssues,
+      recommendations: [...finalRecommendations, ...classificationRecommendations.slice(0, 1)],
+      potentialSavings: adjustedSavings,
     });
   }
 

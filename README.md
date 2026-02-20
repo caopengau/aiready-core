@@ -290,6 +290,57 @@ These signals are included in the JSON summary (`fragmentedModules` entries) so 
 
 ---
 
+### 🏷️ File Classification (Reducing False Positives)
+
+**What it measures:** The tool now classifies files into categories to distinguish real issues from acceptable patterns:
+
+| Classification | Description | Fragmentation Treatment |
+|---------------|-------------|------------------------|
+| **barrel-export** | Re-exports from other modules (index.ts) | 0% (expected behavior) |
+| **type-definition** | Primarily type/interface definitions | 0% (centralized types are good) |
+| **cohesive-module** | Single domain, high cohesion (≥70%) | 30% of original (large but focused is OK) |
+| **mixed-concerns** | Multiple domains, low cohesion | 100% (real issue) |
+| **unknown** | Doesn't fit other categories | 70% of original (benefit of doubt) |
+
+**Why it matters:** Previous versions could flag files that were actually well-designed:
+
+```typescript
+// ❌ Old behavior: Flagged as "high fragmentation (99%)"
+// shared/src/index.ts - barrel export with 6 domains
+export * from './user';
+export * from './order';
+export * from './product';
+// ... more re-exports
+
+// ✅ New behavior: Classified as "barrel-export"
+// Fragmentation score: 0% (this is what barrel files DO)
+// Recommendation: "Barrel export file detected - multiple domains are expected here"
+```
+
+```typescript
+// ❌ Old behavior: Flagged as "high fragmentation (98%)"
+// gst-calculator/client.tsx - 346 lines, 7 dependencies, 1 domain
+
+// ✅ New behavior: Classified as "cohesive-module"
+// Fragmentation score: 29% (reduced from 98%)
+// Recommendation: "Module has good cohesion despite its size"
+```
+
+**🎯 Benefit:** Focus on real issues while accepting legitimate patterns.
+
+**JSON Output includes classification:**
+
+```json
+{
+  "file": "src/index.ts",
+  "fileClassification": "barrel-export",
+  "fragmentationScore": 0,
+  "severity": "info"
+}
+```
+
+---
+
 ### ⚖️ The Tradeoff: Splitting vs. Consolidating
 
 **Important:** These metrics can pull in opposite directions!

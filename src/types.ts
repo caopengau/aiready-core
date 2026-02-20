@@ -32,12 +32,26 @@ export interface ContextAnalysisResult {
   fragmentationScore: number; // 0-1, how scattered is this domain (0 = well-grouped)
   relatedFiles: string[]; // Files that should be loaded together
 
+  // File classification (NEW)
+  fileClassification: FileClassification; // Type of file for analysis context
+
   // Recommendations
   severity: 'critical' | 'major' | 'minor' | 'info';
   issues: string[]; // List of specific problems
   recommendations: string[]; // Actionable suggestions
   potentialSavings: number; // Estimated token savings if fixed
 }
+
+/**
+ * Classification of file type for analysis context
+ * Helps distinguish real issues from false positives
+ */
+export type FileClassification = 
+  | 'barrel-export'    // Re-exports from other modules (index.ts files)
+  | 'type-definition'  // Primarily type/interface definitions
+  | 'cohesive-module'  // Single domain, high cohesion (acceptable large files)
+  | 'mixed-concerns'   // Multiple domains, potential refactoring candidate
+  | 'unknown';         // Unable to classify
 
 export interface ModuleCluster {
   domain: string; // e.g., "user-management", "auth"
