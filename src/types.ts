@@ -138,3 +138,63 @@ export interface Report {
     avgConsistency: number;
   };
 }
+
+// ============================================
+// Graph Visualization Types
+// ============================================
+
+/**
+ * Severity levels for issues
+ */
+export type GraphIssueSeverity = 'critical' | 'major' | 'minor' | 'info';
+
+/**
+ * Base graph node
+ */
+export interface GraphNode {
+  id: string;
+  label: string;
+  path?: string;
+  size?: number;
+  value?: number;
+  color?: string;
+  group?: string;
+  x?: number;
+  y?: number;
+}
+
+/**
+ * Graph edge between nodes
+ */
+export interface GraphEdge {
+  source: string | GraphNode;
+  target: string | GraphNode;
+  type?: string;
+  weight?: number;
+}
+
+/**
+ * Graph metadata
+ */
+export interface GraphMetadata {
+  projectName?: string;
+  timestamp: string;
+  totalFiles: number;
+  totalDependencies: number;
+  analysisTypes: string[];
+  criticalIssues: number;
+  majorIssues: number;
+  minorIssues: number;
+  infoIssues: number;
+}
+
+/**
+ * Complete graph data structure for visualization
+ */
+export interface GraphData {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  clusters?: { id: string; name: string; nodeIds: string[] }[];
+  issues?: { id: string; type: string; severity: GraphIssueSeverity; nodeIds: string[]; message: string }[];
+  metadata: GraphMetadata;
+}

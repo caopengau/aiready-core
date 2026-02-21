@@ -5,6 +5,7 @@ export * from './utils/ast-parser';
 export * from './utils/metrics';
 export * from './utils/config';
 export * from './utils/cli-helpers';
+export * from './utils/visualization';
 export * from './scoring';
 
 // Multi-language parser support
