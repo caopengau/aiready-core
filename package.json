@@ -10,11 +10,16 @@
       "types": "./dist/index.d.ts",
       "require": "./dist/index.js",
       "import": "./dist/index.mjs"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "require": "./dist/client.js",
+      "import": "./dist/client.mjs"
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts",
-    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "build": "tsup src/index.ts src/client.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts src/client.ts --format cjs,esm --dts --watch",
     "lint": "eslint src",
     "clean": "rm -rf dist",
     "prepublishOnly": "pnpm build",
