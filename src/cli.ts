@@ -83,12 +83,26 @@ program
   .option('--no-score', 'Disable calculating AI Readiness Score (enabled by default)')
   .option('--weights <weights>', 'Custom scoring weights (patterns:40,context:35,consistency:25)')
   .option('--threshold <score>', 'Fail CI/CD if score below threshold (0-100)')
+  .option('--ci', 'CI mode: GitHub Actions annotations, no colors, fail on threshold')
+  .option('--fail-on <level>', 'Fail on issues: critical, major, any', 'critical')
   .addHelpText('after', `
 EXAMPLES:
   $ aiready scan                                    # Analyze all tools
   $ aiready scan --tools patterns,context           # Skip consistency
   $ aiready scan --score --threshold 75             # CI/CD with threshold
+  $ aiready scan --ci --threshold 70                # GitHub Actions gatekeeper
+  $ aiready scan --ci --fail-on major               # Fail on major+ issues
   $ aiready scan --output json --output-file report.json
+
+CI/CD INTEGRATION (Gatekeeper Mode):
+  Use --ci for GitHub Actions integration:
+  - Outputs GitHub Actions annotations for PR checks
+  - Fails with exit code 1 if threshold not met
+  - Shows clear "blocked" message with remediation steps
+
+  Example GitHub Actions workflow:
+    - name: AI Readiness Check
+      run: aiready scan --ci --threshold 70
 `)
   .action(async (directory, options) => {
     console.log(chalk.blue('🚀 Starting AIReady unified analysis...\n'));
@@ -385,6 +399,109 @@ EXAMPLES:
         
         // Warn if graph caps may be exceeded
         warnIfGraphCapExceeded(outputData, resolvedDir);
+      }
+
+      // CI/CD Gatekeeper Mode
+      const isCI = options.ci || process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
+      if (isCI && scoringResult) {
+        const threshold = options.threshold ? parseInt(options.threshold) : undefined;
+        const failOnLevel = options.failOn || 'critical';
+        
+        // Output GitHub Actions annotations
+        if (process.env.GITHUB_ACTIONS === 'true') {
+          console.log(`\n::group::AI Readiness Score`);
+          console.log(`score=${scoringResult.overallScore}`);
+          if (scoringResult.breakdown) {
+            scoringResult.breakdown.forEach(tool => {
+              console.log(`${tool.toolName}=${tool.score}`);
+            });
+          }
+          console.log('::endgroup::');
+          
+          // Output annotation for score
+          if (threshold && scoringResult.overallScore < threshold) {
+            console.log(`::error::AI Readiness Score ${scoringResult.overallScore} is below threshold ${threshold}`);
+          } else if (threshold) {
+            console.log(`::notice::AI Readiness Score: ${scoringResult.overallScore}/100 (threshold: ${threshold})`);
+          }
+          
+          // Output annotations for critical issues
+          if (results.patterns) {
+            const criticalPatterns = results.patterns.flatMap((p: any) => 
+              p.issues.filter((i: any) => i.severity === 'critical')
+            );
+            criticalPatterns.slice(0, 10).forEach((issue: any) => {
+              console.log(`::warning file=${issue.location?.file || 'unknown'},line=${issue.location?.line || 1}::${issue.message}`);
+            });
+          }
+        }
+
+        // Determine if we should fail
+        let shouldFail = false;
+        let failReason = '';
+        
+        // Check threshold
+        if (threshold && scoringResult.overallScore < threshold) {
+          shouldFail = true;
+          failReason = `AI Readiness Score ${scoringResult.overallScore} is below threshold ${threshold}`;
+        }
+        
+        // Check fail-on severity
+        if (failOnLevel !== 'none') {
+          const severityLevels = { critical: 4, major: 3, minor: 2, any: 1 };
+          const minSeverity = severityLevels[failOnLevel as keyof typeof severityLevels] || 4;
+          
+          let criticalCount = 0;
+          let majorCount = 0;
+          
+          if (results.patterns) {
+            results.patterns.forEach((p: any) => {
+              p.issues.forEach((i: any) => {
+                if (i.severity === 'critical') criticalCount++;
+                if (i.severity === 'major') majorCount++;
+              });
+            });
+          }
+          if (results.context) {
+            results.context.forEach((c: any) => {
+              if (c.severity === 'critical') criticalCount++;
+              if (c.severity === 'major') majorCount++;
+            });
+          }
+          if (results.consistency?.results) {
+            results.consistency.results.forEach((r: any) => {
+              r.issues?.forEach((i: any) => {
+                if (i.severity === 'critical') criticalCount++;
+                if (i.severity === 'major') majorCount++;
+              });
+            });
+          }
+          
+          if (minSeverity >= 4 && criticalCount > 0) {
+            shouldFail = true;
+            failReason = `Found ${criticalCount} critical issues`;
+          } else if (minSeverity >= 3 && (criticalCount + majorCount) > 0) {
+            shouldFail = true;
+            failReason = `Found ${criticalCount} critical and ${majorCount} major issues`;
+          }
+        }
+        
+        // Output result
+        if (shouldFail) {
+          console.log(chalk.red('\n🚫 PR BLOCKED: AI Readiness Check Failed'));
+          console.log(chalk.red(`   Reason: ${failReason}`));
+          console.log(chalk.dim('\n   Remediation steps:'));
+          console.log(chalk.dim('   1. Run `aiready scan` locally to see detailed issues'));
+          console.log(chalk.dim('   2. Fix the critical issues before merging'));
+          console.log(chalk.dim('   3. Consider upgrading to Team plan for historical tracking: https://getaiready.dev/pricing'));
+          process.exit(1);
+        } else {
+          console.log(chalk.green('\n✅ PR PASSED: AI Readiness Check'));
+          if (threshold) {
+            console.log(chalk.green(`   Score: ${scoringResult.overallScore}/100 (threshold: ${threshold})`));
+          }
+          console.log(chalk.dim('\n   💡 Track historical trends: https://getaiready.dev — Team plan $99/mo'));
+        }
       }
     } catch (error) {
       handleCLIError(error, 'Analysis');
