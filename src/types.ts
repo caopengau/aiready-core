@@ -37,6 +37,98 @@ export interface Metrics {
   complexityScore?: number;
   consistencyScore?: number;
   docFreshnessScore?: number;
+  
+  // Business value metrics (v0.10+)
+  estimatedMonthlyCost?: number;
+  estimatedDeveloperHours?: number;
+  comprehensionDifficultyIndex?: number;
+}
+
+// ============================================
+// Business Value Metrics
+// ============================================
+
+/**
+ * Cost estimation configuration
+ */
+export interface CostConfig {
+  /** Price per 1K tokens (default: $0.01 for GPT-4) */
+  pricePer1KTokens: number;
+  /** Average AI queries per developer per day */
+  queriesPerDevPerDay: number;
+  /** Number of developers on the team */
+  developerCount: number;
+  /** Days per month (default: 30) */
+  daysPerMonth: number;
+}
+
+/**
+ * Productivity impact estimates
+ */
+export interface ProductivityImpact {
+  /** Estimated hours to fix all issues */
+  totalHours: number;
+  /** Average hourly rate for developers */
+  hourlyRate: number;
+  /** Estimated total fix cost */
+  totalCost: number;
+  /** Breakdown by severity */
+  bySeverity: {
+    critical: { hours: number; cost: number };
+    major: { hours: number; cost: number };
+    minor: { hours: number; cost: number };
+  };
+}
+
+/**
+ * AI acceptance rate prediction
+ * Based on research correlating code quality to AI suggestion acceptance
+ */
+export interface AcceptancePrediction {
+  /** Predicted acceptance rate (0-1) */
+  rate: number;
+  /** Confidence level (0-1) */
+  confidence: number;
+  /** Factors affecting acceptance */
+  factors: {
+    name: string;
+    impact: number; // +/- percentage points
+  }[];
+}
+
+/**
+ * Comprehension difficulty score (future-proof abstraction)
+ * Normalized 0-100 scale: lower = easier for AI to understand
+ */
+export interface ComprehensionDifficulty {
+  /** Overall difficulty score (0-100) */
+  score: number;
+  /** Factors contributing to difficulty */
+  factors: {
+    name: string;
+    contribution: number;
+    description: string;
+  }[];
+  /** Interpretation */
+  rating: 'trivial' | 'easy' | 'moderate' | 'difficult' | 'expert';
+}
+
+/**
+ * Extended report with business metrics
+ */
+export interface BusinessReport extends Report {
+  businessMetrics: {
+    /** Estimated monthly cost impact of AI context waste */
+    estimatedMonthlyCost: number;
+    /** Estimated developer hours to address issues */
+    estimatedDeveloperHours: number;
+    /** Predicted AI suggestion acceptance rate */
+    aiAcceptanceRate: number;
+    /** Comprehension difficulty assessment */
+    comprehensionDifficulty: ComprehensionDifficulty;
+    /** Timestamp for trend tracking */
+    period?: string;
+  };
 }
 
 export interface ScanOptions {
