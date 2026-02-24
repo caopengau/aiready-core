@@ -1,3 +1,9 @@
+import { 
+  calculateMonthlyCost, 
+  calculateProductivityImpact,
+  DEFAULT_COST_CONFIG,
+  type CostConfig 
+} from '@aiready/core';
 import type { ToolScoringOutput } from '@aiready/core';
 import type { ContextSummary } from './types';
 
@@ -9,9 +15,14 @@ import type { ContextSummary } from './types';
  * - Import depth (dependency chain length)
  * - Fragmentation score (code organization)
  * - Critical/major issues
+ * 
+ * Includes business value metrics:
+ * - Estimated monthly cost of context waste
+ * - Estimated developer hours to fix
  */
 export function calculateContextScore(
-  summary: ContextSummary
+  summary: ContextSummary,
+  costConfig?: Partial<CostConfig>
 ): ToolScoringOutput {
   const {
     avgContextBudget,
@@ -144,6 +155,19 @@ export function calculateContextScore(
     });
   }
   
+  // Calculate business value metrics
+  const cfg = { ...DEFAULT_COST_CONFIG, ...costConfig };
+  // Total context budget across all files
+  const totalContextBudget = avgContextBudget * summary.totalFiles;
+  const estimatedMonthlyCost = calculateMonthlyCost(totalContextBudget, cfg);
+  
+  // Convert issues to format for productivity calculation
+  const issues = [
+    ...Array(criticalIssues).fill({ severity: 'critical' as const }),
+    ...Array(majorIssues).fill({ severity: 'major' as const }),
+  ];
+  const productivityImpact = calculateProductivityImpact(issues);
+  
   return {
     toolName: 'context-analyzer',
     score,
@@ -155,6 +179,9 @@ export function calculateContextScore(
       avgFragmentation: Math.round(avgFragmentation * 100) / 100,
       criticalIssues,
       majorIssues,
+      // Business value metrics
+      estimatedMonthlyCost,
+      estimatedDeveloperHours: productivityImpact.totalHours,
     },
     factors,
     recommendations,
