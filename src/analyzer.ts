@@ -980,6 +980,14 @@ export function classifyFile(
   if (isUtilityFile(node)) {
     return 'utility-module';
   }
+
+  // Explicit path-based utility heuristic: files under /utils/ or /helpers/
+  // should be classified as utility-module regardless of domain count.
+  // This ensures common helper modules (e.g., src/utils/dynamodb-utils.ts)
+  // are treated as utility modules in tests and analysis.
+  if (file.toLowerCase().includes('/utils/') || file.toLowerCase().includes('/helpers/')) {
+    return 'utility-module';
+  }
   
   // 10. Check for cohesive module (single domain + reasonable cohesion)
   const uniqueDomains = domains.filter(d => d !== 'unknown');
@@ -1271,7 +1279,13 @@ function isDataAccessFile(node: DependencyNode): boolean {
     exports.length <= 10 &&
     allExportsShareEntityNoun(exports);
   
-  return isDalName || isDalPath || (isDalName && hasDalExportPattern);
+  // Exclude obvious utility paths from DAL detection (e.g., src/utils/)
+  const isUtilityPathLocal = file.toLowerCase().includes('/utils/') || file.toLowerCase().includes('/helpers/');
+
+  // Only treat as DAL when the file is in a DAL path, or when the name/pattern
+  // indicates a data access module AND exports follow a DAL-like pattern.
+  // Do not classify utility paths as DAL even if the name contains DAL keywords.
+  return isDalPath || (isDalName && hasDalExportPattern && !isUtilityPathLocal);
 }
 
 /**
