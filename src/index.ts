@@ -16,3 +16,9 @@ export * from './business-metrics';
 export * from './parsers/parser-factory';
 export * from './parsers/typescript-parser';
 export * from './parsers/python-parser';
+
+// Future-proof abstraction layer
+export * from './future-proof-metrics';
+
+// Temporal tracking utilities
+export * from './utils/history';
