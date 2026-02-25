@@ -71,13 +71,31 @@ export interface ScoringConfig {
 /**
  * Default weights for known tools.
  * New tools get weight of 10 if not specified.
+ *
+ * Weight philosophy:
+ * - pattern-detect (40): Semantic duplication directly wastes token budget and
+ *   confuses AI with contradictory in-context examples.
+ * - context-analyzer (35): Context limits are the primary hard constraint on
+ *   AI effectiveness regardless of model size.
+ * - consistency (25): Naming/pattern inconsistency degrades AI intent understanding
+ *   proportionally to codebase size.
+ * - hallucination-risk (20): Code patterns empirically causing AI to generate
+ *   confidently wrong outputs — critical for agentic use cases.
+ * - agent-grounding (18): How well an autonomous agent can navigate unaided —
+ *   increasingly important as agentic workflows grow.
+ * - testability (18): AI changes without verifiability create hidden risk.
+ * - doc-drift (15): Stale docs actively mislead AI; planned spoke.
+ * - deps (12): Dependency health affects AI suggestion accuracy; planned spoke.
  */
 export const DEFAULT_TOOL_WEIGHTS: Record<string, number> = {
   'pattern-detect': 40,
   'context-analyzer': 35,
   'consistency': 25,
-  'doc-drift': 20,
-  'deps': 15,
+  'hallucination-risk': 20,
+  'agent-grounding': 18,
+  'testability': 18,
+  'doc-drift': 15,
+  'deps': 12,
 };
 
 /**
@@ -87,9 +105,87 @@ export const TOOL_NAME_MAP: Record<string, string> = {
   'patterns': 'pattern-detect',
   'context': 'context-analyzer',
   'consistency': 'consistency',
+  'hallucination': 'hallucination-risk',
+  'hallucination-risk': 'hallucination-risk',
+  'grounding': 'agent-grounding',
+  'agent-grounding': 'agent-grounding',
+  'testability': 'testability',
+  'tests': 'testability',
   'doc-drift': 'doc-drift',
+  'docs': 'doc-drift',
   'deps': 'deps',
 };
+
+/**
+ * Model context tiers for context-aware threshold calibration.
+ *
+ * As AI models evolve from 32k → 128k → 1M+ context windows, absolute token
+ * thresholds become meaningless. Use these tiers to adjust context-analyzer
+ * thresholds relative to the model your team uses.
+ */
+export type ModelContextTier =
+  | 'compact'     // 4k-16k  tokens: GPT-3.5, older Codex
+  | 'standard'    // 16k-64k tokens: GPT-4, Claude 3 Haiku
+  | 'extended'    // 64k-200k: GPT-4o, Claude 3.5 Sonnet, Gemini 1.5 Pro
+  | 'frontier';   // 200k+: Claude 3.5/3.7/4, Gemini 2.0/2.5, GPT-4.5+
+
+/**
+ * Context budget thresholds per tier.
+ * Scores are interpolated between these boundaries.
+ */
+export const CONTEXT_TIER_THRESHOLDS: Record<ModelContextTier, {
+  /** Below this → full score for context budget */
+  idealTokens: number;
+  /** Above this → critical penalty for context budget */
+  criticalTokens: number;
+  /** Suggested max import depth before penalty */
+  idealDepth: number;
+}> = {
+  compact:  { idealTokens: 3_000,   criticalTokens: 10_000,  idealDepth: 4 },
+  standard: { idealTokens: 5_000,   criticalTokens: 15_000,  idealDepth: 5 },
+  extended: { idealTokens: 15_000,  criticalTokens: 50_000,  idealDepth: 7 },
+  frontier: { idealTokens: 50_000,  criticalTokens: 150_000, idealDepth: 10 },
+};
+
+/**
+ * Project-size-adjusted minimum thresholds.
+ *
+ * Large codebases structurally accrue more issues. A score of 65 in an
+ * enterprise codebase is roughly equivalent to 75 in a small project.
+ * These are recommended minimum passing thresholds by project size.
+ */
+export const SIZE_ADJUSTED_THRESHOLDS: Record<string, number> = {
+  'xs':         80,  // < 50 files
+  'small':      75,  // 50-200 files
+  'medium':     70,  // 200-500 files
+  'large':      65,  // 500-2000 files
+  'enterprise': 58,  // 2000+ files
+};
+
+/**
+ * Determine project size tier from file count
+ */
+export function getProjectSizeTier(fileCount: number): keyof typeof SIZE_ADJUSTED_THRESHOLDS {
+  if (fileCount < 50) return 'xs';
+  if (fileCount < 200) return 'small';
+  if (fileCount < 500) return 'medium';
+  if (fileCount < 2000) return 'large';
+  return 'enterprise';
+}
+
+/**
+ * Get the recommended minimum threshold for a project
+ */
+export function getRecommendedThreshold(
+  fileCount: number,
+  modelTier: ModelContextTier = 'standard'
+): number {
+  const sizeTier = getProjectSizeTier(fileCount);
+  const base = SIZE_ADJUSTED_THRESHOLDS[sizeTier];
+  // Frontier models are more forgiving (higher context = better comprehension)
+  const modelBonus = modelTier === 'frontier' ? -3 : modelTier === 'extended' ? -2 : 0;
+  return base + modelBonus;
+}
 
 /**
  * Normalize tool name from shorthand to full name
@@ -231,6 +327,21 @@ export function getRating(score: number): ScoringResult['rating'] {
   if (score >= 60) return 'Fair';
   if (score >= 40) return 'Needs Work';
   return 'Critical';
+}
+
+/**
+ * Convert score to rating with project-size awareness.
+ * Use this for display to give fairer assessment to large codebases.
+ */
+export function getRatingWithContext(
+  score: number,
+  fileCount: number,
+  modelTier: ModelContextTier = 'standard'
+): ScoringResult['rating'] {
+  const threshold = getRecommendedThreshold(fileCount, modelTier);
+  // Shift the rating bands based on size-adjusted threshold
+  const normalized = score - threshold + 70; // 70 = inflection point for 'Fair'
+  return getRating(normalized);
 }
 
 /**

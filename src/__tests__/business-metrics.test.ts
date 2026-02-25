@@ -123,10 +123,10 @@ describe('Business Metrics', () => {
       
       const prediction = predictAcceptanceRate(toolOutputs);
       
-      // Base 65% + context impact (20*0.4=+8) + pattern (30*0.3=+9) + consistency (40*0.3=+12)
-      // = 65 + 8 + 9 + 12 = 94%, capped at 95%
-      expect(prediction.rate).toBe(0.95);
-      expect(prediction.confidence).toBe(0.8);
+      // v0.12 calibration: base 30% + pattern (30*0.003=+9%) + context (20*0.004=+8%)
+      // + consistency (40*0.002=+8%) = 55%, confidence 0.65 for 3 tools
+      expect(prediction.rate).toBe(0.55);
+      expect(prediction.confidence).toBe(0.65);
       expect(prediction.factors.length).toBe(3);
     });
   });

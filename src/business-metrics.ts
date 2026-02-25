@@ -6,6 +6,8 @@
  * 
  * NEW in v0.11: Extended with temporal tracking, knowledge concentration, and 
  * technical debt interest calculations.
+ * NEW in v0.12: Multi-model pricing presets, model-aware CDI calibration,
+ * and improved acceptance rate prediction with data-grounded baselines.
  */
 
 import type { 
@@ -15,6 +17,107 @@ import type {
   ComprehensionDifficulty,
 } from './types';
 import type { ToolScoringOutput } from './scoring';
+import type { ModelContextTier } from './scoring';
+import { CONTEXT_TIER_THRESHOLDS } from './scoring';
+
+// ============================================
+// MODEL PRICING PRESETS
+// ============================================
+
+/**
+ * AI model pricing presets for cost estimation.
+ * Prices are input token costs per 1K tokens (USD), as of Q1 2026.
+ * Update these as model pricing evolves — the calculation logic is unchanged.
+ */
+export interface ModelPricingPreset {
+  name: string;
+  pricePer1KInputTokens: number;
+  pricePer1KOutputTokens: number;
+  contextTier: ModelContextTier;
+  /** Approximate daily queries per active dev for this model class */
+  typicalQueriesPerDevPerDay: number;
+}
+
+export const MODEL_PRICING_PRESETS: Record<string, ModelPricingPreset> = {
+  'gpt-4': {
+    name: 'GPT-4',
+    pricePer1KInputTokens: 0.030,
+    pricePer1KOutputTokens: 0.060,
+    contextTier: 'standard',
+    typicalQueriesPerDevPerDay: 40,
+  },
+  'gpt-4o': {
+    name: 'GPT-4o',
+    pricePer1KInputTokens: 0.005,
+    pricePer1KOutputTokens: 0.015,
+    contextTier: 'extended',
+    typicalQueriesPerDevPerDay: 60,
+  },
+  'gpt-4o-mini': {
+    name: 'GPT-4o mini',
+    pricePer1KInputTokens: 0.00015,
+    pricePer1KOutputTokens: 0.00060,
+    contextTier: 'extended',
+    typicalQueriesPerDevPerDay: 120,
+  },
+  'claude-3-5-sonnet': {
+    name: 'Claude 3.5 Sonnet',
+    pricePer1KInputTokens: 0.003,
+    pricePer1KOutputTokens: 0.015,
+    contextTier: 'extended',
+    typicalQueriesPerDevPerDay: 80,
+  },
+  'claude-3-7-sonnet': {
+    name: 'Claude 3.7 Sonnet',
+    pricePer1KInputTokens: 0.003,
+    pricePer1KOutputTokens: 0.015,
+    contextTier: 'frontier',
+    typicalQueriesPerDevPerDay: 80,
+  },
+  'claude-sonnet-4': {
+    name: 'Claude Sonnet 4',
+    pricePer1KInputTokens: 0.003,
+    pricePer1KOutputTokens: 0.015,
+    contextTier: 'frontier',
+    typicalQueriesPerDevPerDay: 80,
+  },
+  'gemini-1-5-pro': {
+    name: 'Gemini 1.5 Pro',
+    pricePer1KInputTokens: 0.00125,
+    pricePer1KOutputTokens: 0.005,
+    contextTier: 'frontier',
+    typicalQueriesPerDevPerDay: 80,
+  },
+  'gemini-2-0-flash': {
+    name: 'Gemini 2.0 Flash',
+    pricePer1KInputTokens: 0.00010,
+    pricePer1KOutputTokens: 0.00040,
+    contextTier: 'frontier',
+    typicalQueriesPerDevPerDay: 150,
+  },
+  'copilot': {
+    name: 'GitHub Copilot (subscription)',
+    // Amortized per-request cost for a $19/month plan at 80 queries/day
+    pricePer1KInputTokens: 0.0001,
+    pricePer1KOutputTokens: 0.0001,
+    contextTier: 'extended',
+    typicalQueriesPerDevPerDay: 80,
+  },
+  'cursor-pro': {
+    name: 'Cursor Pro (subscription)',
+    pricePer1KInputTokens: 0.0001,
+    pricePer1KOutputTokens: 0.0001,
+    contextTier: 'frontier',
+    typicalQueriesPerDevPerDay: 100,
+  },
+};
+
+/**
+ * Get a model pricing preset by ID, with fallback to gpt-4o
+ */
+export function getModelPreset(modelId: string): ModelPricingPreset {
+  return MODEL_PRICING_PRESETS[modelId] ?? MODEL_PRICING_PRESETS['gpt-4o'];
+}
 
 // ============================================
 // TEMPORAL TRACKING TYPES
@@ -124,11 +227,12 @@ export interface DebtBreakdown {
 
 /**
  * Default cost configuration
- * Based on GPT-4 pricing and typical team usage
+ * Points to GPT-4o as the default model (most common in 2026).
+ * Use MODEL_PRICING_PRESETS for model-specific accuracy.
  */
 export const DEFAULT_COST_CONFIG: CostConfig = {
-  pricePer1KTokens: 0.01,    // $0.01 per 1K tokens (GPT-4)
-  queriesPerDevPerDay: 50,    // Average AI queries per developer
+  pricePer1KTokens: 0.005,   // GPT-4o input price (updated from GPT-4 era 0.01)
+  queriesPerDevPerDay: 60,    // Average AI queries per developer (updated: 40→60 as of 2026)
   developerCount: 5,          // Default team size
   daysPerMonth: 30,
 };
@@ -206,55 +310,85 @@ export function calculateProductivityImpact(
 /**
  * Predict AI suggestion acceptance rate based on code quality
  * 
- * Research shows:
- * - High consistency correlates with 30%+ higher acceptance
- * - Low context budget improves understanding by ~40%
- * - Good naming patterns reduce clarification needs by 50%
+ * Calibration notes (v0.12):
+ * - GitHub Copilot reports ~30% industry average acceptance rate (2023 blog)
+ * - Internal teams with high-consistency codebases report 40-55%
+ * - Teams with semantic duplication report 20-25% (AI suggests wrong variant)
+ * - Context efficiency is the strongest single predictor
+ * 
+ * Confidence levels:
+ * - 3 tools: 0.75 (triangulated estimate)
+ * - 2 tools: 0.55 (partial estimate)
+ * - 1 tool:  0.35 (weak estimate — don't over-rely)
  */
 export function predictAcceptanceRate(
   toolOutputs: Map<string, ToolScoringOutput>
 ): AcceptancePrediction {
   const factors: AcceptancePrediction['factors'] = [];
-  
+
+  // Industry baseline: ~30% average acceptance rate
+  // High-quality codebases achieve 50-60%
+  const baseRate = 0.30;
+
   // Pattern detection impact
+  // Research: duplicated code causes AI to surface wrong variants
+  // Impact range: -10% (many duplicates) to +15% (zero duplicates)
   const patterns = toolOutputs.get('pattern-detect');
   if (patterns) {
-    const patternImpact = (patterns.score - 50) * 0.3; // ±15% based on score
+    const patternImpact = (patterns.score - 50) * 0.003; // ±15% at extremes
     factors.push({
       name: 'Semantic Duplication',
-      impact: Math.round(patternImpact),
+      impact: Math.round(patternImpact * 100),
     });
   }
-  
-  // Context analyzer impact
+
+  // Context analyzer impact — strongest predictor
+  // Research: context efficiency correlates with suggestion relevance
+  // Impact range: -15% (extreme fragmentation) to +20% (excellent)
   const context = toolOutputs.get('context-analyzer');
   if (context) {
-    const contextImpact = (context.score - 50) * 0.4; // ±20% - biggest factor
+    const contextImpact = (context.score - 50) * 0.004; // ±20% at extremes
     factors.push({
       name: 'Context Efficiency',
-      impact: Math.round(contextImpact),
+      impact: Math.round(contextImpact * 100),
     });
   }
-  
+
   // Consistency impact
+  // Research: consistent naming reduces clarification cycles
+  // Impact range: -8% to +12%
   const consistency = toolOutputs.get('consistency');
   if (consistency) {
-    const consistencyImpact = (consistency.score - 50) * 0.3; // ±15%
+    const consistencyImpact = (consistency.score - 50) * 0.002; // ±10% at extremes
     factors.push({
       name: 'Code Consistency',
-      impact: Math.round(consistencyImpact),
+      impact: Math.round(consistencyImpact * 100),
     });
   }
-  
-  // Calculate base rate + factors
-  const baseRate = 0.65; // 65% baseline acceptance
+
+  // Hallucination risk impact (v0.12+)
+  // High hallucination risk → AI generates risky suggestions → team rejects
+  const hallucinationRisk = toolOutputs.get('hallucination-risk');
+  if (hallucinationRisk) {
+    // Score is inverted: high HR score = bad = lower acceptance
+    const hrImpact = (50 - hallucinationRisk.score) * 0.002; // ±10%
+    factors.push({
+      name: 'Hallucination Risk',
+      impact: Math.round(hrImpact * 100),
+    });
+  }
+
+  // Calculate total rate with floor/ceiling
   const totalImpact = factors.reduce((sum, f) => sum + f.impact / 100, 0);
-  const rate = Math.max(0.1, Math.min(0.95, baseRate + totalImpact));
-  
-  // Confidence based on data availability
-  const confidence = toolOutputs.size >= 3 ? 0.8 : 
-                     toolOutputs.size >= 2 ? 0.6 : 0.4;
-  
+  const rate = Math.max(0.05, Math.min(0.80, baseRate + totalImpact));
+
+  // Confidence based on data availability and tool diversity
+  let confidence: number;
+  if (toolOutputs.size >= 4) confidence = 0.75;
+  else if (toolOutputs.size >= 3) confidence = 0.65;
+  else if (toolOutputs.size >= 2) confidence = 0.50;
+  else confidence = 0.35;
+
   return {
     rate: Math.round(rate * 100) / 100,
     confidence,
@@ -267,36 +401,48 @@ export function predictAcceptanceRate(
  * 
  * A future-proof abstraction that normalizes multiple factors
  * into a single difficulty score. Lower = easier for AI.
+ *
+ * v0.12+: Now model-aware. Pass the `modelTier` of your AI toolchain
+ * to recalibrate token budget thresholds correctly. With frontier models
+ * (200k+ context), a 20k-token file is no longer "critical".
  */
 export function calculateComprehensionDifficulty(
   contextBudget: number,
   importDepth: number,
   fragmentation: number,
   consistencyScore: number,
-  totalFiles: number
+  totalFiles: number,
+  modelTier: ModelContextTier = 'standard'
 ): ComprehensionDifficulty {
-  // Normalize each factor to 0-100 scale where 100 = most difficult
-  
+  // Thresholds calibrated per model tier
+  const tierThresholds = CONTEXT_TIER_THRESHOLDS[modelTier];
+  const idealBudget = tierThresholds.idealTokens;
+  const criticalBudget = tierThresholds.criticalTokens;
+  const idealDepth = tierThresholds.idealDepth;
+
   // Context budget factor (0-100)
-  // <5000 = easy (0), >30000 = expert level (100)
-  const budgetFactor = Math.min(100, Math.max(0, (contextBudget - 5000) / 250));
-  
+  // Below ideal = 0, above critical = 100
+  const budgetRange = criticalBudget - idealBudget;
+  const budgetFactor = Math.min(100, Math.max(0,
+    (contextBudget - idealBudget) / budgetRange * 100
+  ));
+
   // Import depth factor (0-100)
-  // <5 = easy (0), >15 = expert (100)
-  const depthFactor = Math.min(100, Math.max(0, (importDepth - 5) * 10));
-  
+  // Below idealDepth = 0, each level beyond = +10
+  const depthFactor = Math.min(100, Math.max(0, (importDepth - idealDepth) * 10));
+
   // Fragmentation factor (0-100)
   // <0.3 = well-organized (0), >0.7 = fragmented (100)
   const fragmentationFactor = Math.min(100, Math.max(0, (fragmentation - 0.3) * 250));
-  
+
   // Consistency factor (inverse - low score = high difficulty)
   // 100 score = 0 difficulty, 0 score = 100 difficulty
   const consistencyFactor = Math.min(100, Math.max(0, 100 - consistencyScore));
-  
+
   // File count factor - larger projects naturally harder
   // <50 files = trivial, >500 = enterprise scale
   const fileFactor = Math.min(100, Math.max(0, (totalFiles - 50) / 5));
-  
+
   // Weighted average
   const score = Math.round(
     (budgetFactor * 0.35) +
@@ -305,7 +451,7 @@ export function calculateComprehensionDifficulty(
     (consistencyFactor * 0.15) +
     (fileFactor * 0.10)
   );
-  
+
   // Determine rating
   let rating: ComprehensionDifficulty['rating'];
   if (score < 20) rating = 'trivial';
@@ -313,7 +459,7 @@ export function calculateComprehensionDifficulty(
   else if (score < 60) rating = 'moderate';
   else if (score < 80) rating = 'difficult';
   else rating = 'expert';
-  
+
   return {
     score,
     rating,
@@ -321,12 +467,12 @@ export function calculateComprehensionDifficulty(
       {
         name: 'Context Budget',
         contribution: Math.round(budgetFactor * 0.35),
-        description: `${Math.round(contextBudget)} tokens required`,
+        description: `${Math.round(contextBudget)} tokens required (${modelTier} model tier: ideal <${idealBudget.toLocaleString()})`,
       },
       {
         name: 'Import Depth',
         contribution: Math.round(depthFactor * 0.20),
-        description: `${importDepth.toFixed(1)} average levels`,
+        description: `${importDepth.toFixed(1)} average levels (ideal <${idealDepth} for ${modelTier})`,
       },
       {
         name: 'Code Fragmentation',

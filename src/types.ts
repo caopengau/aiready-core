@@ -22,7 +22,14 @@ export type IssueType =
     | 'architecture-inconsistency'
   | 'dead-code'
   | 'circular-dependency'
-  | 'missing-types';
+  | 'missing-types'
+  // v0.12+ dimensions
+  | 'hallucination-risk'        // Code pattern known to cause AI hallucination
+  | 'low-testability'           // AI changes cannot be safely verified
+  | 'agent-navigation-failure'  // Agent cannot determine where code belongs
+  | 'ambiguous-api'             // Public API surface is unclear or untyped
+  | 'magic-literal'             // Unnamed constant confuses AI intent inference
+  | 'boolean-trap';             // Boolean param pattern that inverts AI intent
 
 export interface Location {
   file: string;
@@ -42,6 +49,16 @@ export interface Metrics {
   estimatedMonthlyCost?: number;
   estimatedDeveloperHours?: number;
   comprehensionDifficultyIndex?: number;
+
+  // AI agent readiness metrics (v0.12+)
+  /** Probability (0-100) that AI will hallucinate in this file/module */
+  hallucinationRiskScore?: number;
+  /** How well an agent can navigate to/from this file unaided (0-100) */
+  agentGroundingScore?: number;
+  /** Whether AI-generated changes to this file can be safely verified (0-100) */
+  testabilityScore?: number;
+  /** Model context tier this analysis was calibrated for */
+  modelContextTier?: 'compact' | 'standard' | 'extended' | 'frontier';
 }
 
 // ============================================
