@@ -10,6 +10,7 @@
 
 import { getParser, estimateTokens } from '@aiready/core';
 import { resolve, relative, dirname, join } from 'path';
+import fs from 'fs';
 
 export interface PythonContextMetrics {
   file: string;
@@ -54,13 +55,12 @@ export async function analyzePythonContext(
   }
 
   const pythonFiles = files.filter(f => f.toLowerCase().endsWith('.py'));
-  
+
   // Build dependency graph first
   const dependencyGraph = await buildPythonDependencyGraph(pythonFiles, rootDir);
 
   for (const file of pythonFiles) {
     try {
-      const fs = await import('fs');
       const code = await fs.promises.readFile(file, 'utf-8');
       const result = parser.parse(code, file);
 
@@ -119,7 +119,6 @@ async function buildPythonDependencyGraph(
 
   for (const file of files) {
     try {
-      const fs = await import('fs');
       const code = await fs.promises.readFile(file, 'utf-8');
       const result = parser.parse(code, file);
 
@@ -167,7 +166,6 @@ function resolvePythonImport(fromFile: string, importPath: string, rootDir: stri
       resolve(targetDir, modulePath, '__init__.py'),
     ];
 
-    const fs = require('fs');
     for (const path of possiblePaths) {
       if (fs.existsSync(path)) {
         return path;
@@ -181,7 +179,6 @@ function resolvePythonImport(fromFile: string, importPath: string, rootDir: stri
       resolve(rootDir, modulePath, '__init__.py'),
     ];
 
-    const fs = require('fs');
     for (const path of possiblePaths) {
       if (fs.existsSync(path)) {
         return path;
