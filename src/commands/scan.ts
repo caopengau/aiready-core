@@ -319,35 +319,35 @@ export async function scanAction(directory: string, options: ScanOptions) {
       }
 
       // Hallucination risk score
-      if (finalOptions.tools.includes('hallucination') || finalOptions.tools.includes('hallucination-risk')) {
+      if (results.hallucination) {
+        const { calculateHallucinationScore } = await import('@aiready/hallucination-risk');
         try {
-          const { hallucinationRiskAction } = await import('./hallucination-risk');
-          const hrScore = await hallucinationRiskAction(resolvedDir, { ...finalOptions, output: 'json' });
-          if (hrScore) toolScores.set('hallucination-risk', hrScore);
+          const hrScore = calculateHallucinationScore(results.hallucination);
+          toolScores.set('hallucination-risk', hrScore);
         } catch (err) {
-          // ignore if spoke not installed yet
+          // ignore
         }
       }
 
       // Agent grounding score
-      if (finalOptions.tools.includes('grounding') || finalOptions.tools.includes('agent-grounding')) {
+      if (results.grounding) {
+        const { calculateGroundingScore } = await import('@aiready/agent-grounding');
         try {
-          const { agentGroundingAction } = await import('./agent-grounding');
-          const agScore = await agentGroundingAction(resolvedDir, { ...finalOptions, output: 'json' });
-          if (agScore) toolScores.set('agent-grounding', agScore);
+          const agScore = calculateGroundingScore(results.grounding);
+          toolScores.set('agent-grounding', agScore);
         } catch (err) {
-          // ignore if spoke not installed yet
+          // ignore
         }
       }
 
       // Testability score
-      if (finalOptions.tools.includes('testability')) {
+      if (results.testability) {
+        const { calculateTestabilityScore } = await import('@aiready/testability');
         try {
-          const { testabilityAction } = await import('./testability');
-          const tbScore = await testabilityAction(resolvedDir, { ...finalOptions, output: 'json' });
-          if (tbScore) toolScores.set('testability', tbScore);
+          const tbScore = calculateTestabilityScore(results.testability);
+          toolScores.set('testability', tbScore);
         } catch (err) {
-          // ignore if spoke not installed yet
+          // ignore
         }
       }
 

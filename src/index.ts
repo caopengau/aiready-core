@@ -9,7 +9,7 @@ import type { ConsistencyReport } from '@aiready/consistency';
 import type { ConsistencyOptions } from '@aiready/consistency';
 
 export interface UnifiedAnalysisOptions extends ScanOptions {
-  tools?: ('patterns' | 'context' | 'consistency' | 'doc-drift' | 'deps-health')[];
+  tools?: ('patterns' | 'context' | 'consistency' | 'doc-drift' | 'deps-health' | 'hallucination' | 'grounding' | 'testability')[];
   minSimilarity?: number;
   minLines?: number;
   maxCandidatesPerBlock?: number;
@@ -26,6 +26,9 @@ export interface UnifiedAnalysisResult {
   consistency?: ConsistencyReport;
   docDrift?: any;
   deps?: any;
+  hallucination?: any;
+  grounding?: any;
+  testability?: any;
   summary: {
     totalIssues: number;
     toolsRun: string[];
@@ -170,6 +173,51 @@ export async function analyzeUnified(
     result.summary.totalIssues += report.issues?.length || 0;
   }
 
+  // Run Hallucination Risk analysis
+  if (tools.includes('hallucination')) {
+    const { analyzeHallucinationRisk } = await import('@aiready/hallucination-risk');
+    const report = await analyzeHallucinationRisk({
+      rootDir: options.rootDir,
+      include: options.include,
+      exclude: options.exclude,
+    });
+    if (options.progressCallback) {
+      options.progressCallback({ tool: 'hallucination', data: report });
+    }
+    result.hallucination = report;
+    result.summary.totalIssues += report.results?.reduce((sum: number, r: any) => sum + (r.issues?.length || 0), 0) || 0;
+  }
+
+  // Run Agent Grounding analysis
+  if (tools.includes('grounding')) {
+    const { analyzeAgentGrounding } = await import('@aiready/agent-grounding');
+    const report = await analyzeAgentGrounding({
+      rootDir: options.rootDir,
+      include: options.include,
+      exclude: options.exclude,
+    });
+    if (options.progressCallback) {
+      options.progressCallback({ tool: 'grounding', data: report });
+    }
+    result.grounding = report;
+    result.summary.totalIssues += report.issues?.length || 0;
+  }
+
+  // Run Testability analysis
+  if (tools.includes('testability')) {
+    const { analyzeTestability } = await import('@aiready/testability');
+    const report = await analyzeTestability({
+      rootDir: options.rootDir,
+      include: options.include,
+      exclude: options.exclude,
+    });
+    if (options.progressCallback) {
+      options.progressCallback({ tool: 'testability', data: report });
+    }
+    result.testability = report;
+    result.summary.totalIssues += report.issues?.length || 0;
+  }
+
   result.summary.executionTime = Date.now() - startTime;
   return result;
 }
@@ -200,6 +248,18 @@ export function generateUnifiedSummary(result: UnifiedAnalysisResult): string {
 
   if (result.deps) {
     output += `📦 Dependency Health: ${result.deps.issues?.length || 0} issues\n`;
+  }
+
+  if (result.hallucination) {
+    output += `🧠 Hallucination Risk: ${result.hallucination.summary?.totalSignals || 0} signals\n`;
+  }
+
+  if (result.grounding) {
+    output += `🧭 Agent Grounding: ${result.grounding.issues?.length || 0} issues\n`;
+  }
+
+  if (result.testability) {
+    output += `🧪 Testability Index: ${result.testability.issues?.length || 0} issues\n`;
   }
 
   return output;
