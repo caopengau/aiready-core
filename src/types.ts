@@ -16,10 +16,11 @@ export type IssueType =
   | 'duplicate-pattern'
   | 'context-fragmentation'
   | 'doc-drift'
+  | 'dependency-health'
   | 'naming-inconsistency'
-    | 'naming-quality'
-    | 'pattern-inconsistency'
-    | 'architecture-inconsistency'
+  | 'naming-quality'
+  | 'pattern-inconsistency'
+  | 'architecture-inconsistency'
   | 'dead-code'
   | 'circular-dependency'
   | 'missing-types'
@@ -44,7 +45,7 @@ export interface Metrics {
   complexityScore?: number;
   consistencyScore?: number;
   docFreshnessScore?: number;
-  
+
   // Business value metrics (v0.10+)
   estimatedMonthlyCost?: number;
   estimatedDeveloperHours?: number;
@@ -57,6 +58,10 @@ export interface Metrics {
   agentGroundingScore?: number;
   /** Whether AI-generated changes to this file can be safely verified (0-100) */
   testabilityScore?: number;
+  /** Level of documentation drift vs code reality (0-100, higher = more drift) */
+  docDriftScore?: number;
+  /** Health of dependencies in relation to AI training knowledge (0-100) */
+  dependencyHealthScore?: number;
   /** Model context tier this analysis was calibrated for */
   modelContextTier?: 'compact' | 'standard' | 'extended' | 'frontier';
 }
