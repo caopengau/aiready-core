@@ -10,9 +10,9 @@
  * and improved acceptance rate prediction with data-grounded baselines.
  */
 
-import type { 
-  CostConfig, 
-  ProductivityImpact, 
+import type {
+  CostConfig,
+  ProductivityImpact,
   AcceptancePrediction,
   ComprehensionDifficulty,
 } from './types';
@@ -165,23 +165,23 @@ export interface RemediationVelocity {
 export interface KnowledgeConcentrationRisk {
   /** Overall risk score 0-100: higher = more risk */
   score: number;
-  
+
   rating: 'low' | 'moderate' | 'high' | 'critical';
-  
+
   /** Analysis details */
   analysis: {
     /** Files with unique concepts (only source) */
     uniqueConceptFiles: number;
     totalFiles: number;
     concentrationRatio: number;
-    
+
     /** Key person dependencies (files only one person understands) */
     singleAuthorFiles: number;
-    
+
     /** Orphan files (no dependencies) */
     orphanFiles: number;
   };
-  
+
   /** Recommendations for reducing risk */
   recommendations: string[];
 }
@@ -196,20 +196,20 @@ export interface KnowledgeConcentrationRisk {
 export interface TechnicalDebtInterest {
   /** Monthly interest rate (% of principal adding up) */
   monthlyRate: number;
-  
+
   /** Annual effective rate */
   annualRate: number;
-  
+
   /** Principal (current technical debt cost) */
   principal: number;
-  
+
   /** Projected debt in 6/12/24 months */
   projections: {
     months6: number;
     months12: number;
     months24: number;
   };
-  
+
   /** Monthly cost of delay */
   monthlyCost: number;
 }
@@ -263,11 +263,11 @@ export function calculateMonthlyCost(
   config: Partial<CostConfig> = {}
 ): number {
   const cfg = { ...DEFAULT_COST_CONFIG, ...config };
-  
+
   const tokensPerDay = tokenWaste * cfg.queriesPerDevPerDay;
   const tokensPerMonth = tokensPerDay * cfg.daysPerMonth;
   const cost = (tokensPerMonth / 1000) * cfg.pricePer1KTokens;
-  
+
   return Math.round(cost * 100) / 100; // Round to 2 decimal places
 }
 
@@ -284,17 +284,17 @@ export function calculateProductivityImpact(
     minor: issues.filter(i => i.severity === 'minor').length,
     info: issues.filter(i => i.severity === 'info').length,
   };
-  
+
   const hours = {
     critical: counts.critical * SEVERITY_TIME_ESTIMATES.critical,
     major: counts.major * SEVERITY_TIME_ESTIMATES.major,
     minor: counts.minor * SEVERITY_TIME_ESTIMATES.minor,
     info: counts.info * SEVERITY_TIME_ESTIMATES.info,
   };
-  
+
   const totalHours = hours.critical + hours.major + hours.minor + hours.info;
   const totalCost = totalHours * hourlyRate;
-  
+
   return {
     totalHours: Math.round(totalHours * 10) / 10,
     hourlyRate,
@@ -366,14 +366,14 @@ export function predictAcceptanceRate(
     });
   }
 
-  // Hallucination risk impact (v0.12+)
-  // High hallucination risk → AI generates risky suggestions → team rejects
-  const hallucinationRisk = toolOutputs.get('hallucination-risk');
-  if (hallucinationRisk) {
+  // AI signal clarity impact (v0.12+)
+  // High AI signal clarity → AI generates risky suggestions → team rejects
+  const aiSignalClarity = toolOutputs.get('ai-signal-clarity');
+  if (aiSignalClarity) {
     // Score is inverted: high HR score = bad = lower acceptance
-    const hrImpact = (50 - hallucinationRisk.score) * 0.002; // ±10%
+    const hrImpact = (50 - aiSignalClarity.score) * 0.002; // ±10%
     factors.push({
-      name: 'Hallucination Risk',
+      name: 'AI Signal Clarity',
       impact: Math.round(hrImpact * 100),
     });
   }
@@ -607,12 +607,12 @@ export function calculateRemediationVelocity(
 
   // Issues fixed this week
   const thisWeek = history.filter(e => new Date(e.timestamp) >= oneWeekAgo);
-  const lastWeek = history.filter(e => 
+  const lastWeek = history.filter(e =>
     new Date(e.timestamp) >= twoWeeksAgo && new Date(e.timestamp) < oneWeekAgo
   );
-  
-  const issuesFixedThisWeek = thisWeek.length > 1 
-    ? thisWeek[0].totalIssues - thisWeek[thisWeek.length - 1].totalIssues 
+
+  const issuesFixedThisWeek = thisWeek.length > 1
+    ? thisWeek[0].totalIssues - thisWeek[thisWeek.length - 1].totalIssues
     : 0;
 
   // Average issues per week over history
@@ -632,8 +632,8 @@ export function calculateRemediationVelocity(
   }
 
   // Estimated completion
-  const estimatedCompletionWeeks = avgIssuesPerWeek > 0 
-    ? Math.ceil(currentIssues / avgIssuesPerWeek) 
+  const estimatedCompletionWeeks = avgIssuesPerWeek > 0
+    ? Math.ceil(currentIssues / avgIssuesPerWeek)
     : Infinity;
 
   return {
@@ -679,15 +679,15 @@ export function calculateKnowledgeConcentration(
 
   // Identify orphan files (few imports, few exports - isolated)
   const orphanFiles = files.filter(f => f.exports < 2 && f.imports < 2).length;
-  
+
   // Identify unique concept files (high export count)
   const avgExports = files.reduce((sum, f) => sum + f.exports, 0) / files.length;
   const uniqueConceptFiles = files.filter(f => f.exports > avgExports * 2).length;
-  
+
   // Calculate concentration ratio
   const totalExports = files.reduce((sum, f) => sum + f.exports, 0);
-  const concentrationRatio = totalExports > 0 
-    ? uniqueConceptFiles / files.length 
+  const concentrationRatio = totalExports > 0
+    ? uniqueConceptFiles / files.length
     : 0;
 
   // Single author files (if author data available)
@@ -703,7 +703,7 @@ export function calculateKnowledgeConcentration(
   const orphanRisk = (orphanFiles / files.length) * 30;
   const uniqueRisk = concentrationRatio * 40;
   const singleAuthorRisk = authorData ? (singleAuthorFiles / files.length) * 30 : 0;
-  
+
   const score = Math.min(100, Math.round(orphanRisk + uniqueRisk + singleAuthorRisk));
 
   // Determine rating
@@ -758,20 +758,20 @@ export function calculateTechnicalDebtInterest(params: {
   monthsOpen: number;
 }): TechnicalDebtInterest {
   const { currentMonthlyCost, issues, monthsOpen } = params;
-  
+
   // Base interest rate varies by severity mix
   const criticalCount = issues.filter(i => i.severity === 'critical').length;
   const majorCount = issues.filter(i => i.severity === 'major').length;
   const minorCount = issues.filter(i => i.severity === 'minor').length;
-  
+
   // Higher severity concentration = higher interest rate
   const severityWeight = (criticalCount * 3 + majorCount * 2 + minorCount * 1) / Math.max(1, issues.length);
   const baseRate = 0.02 + (severityWeight * 0.01); // 2-5% monthly base
-  
+
   // Monthly rate increases with time open (accelerating debt)
   const timeMultiplier = Math.max(1, 1 + (monthsOpen * 0.1));
   const monthlyRate = baseRate * timeMultiplier;
-  
+
   // Projected growth
   const projectDebt = (principal: number, months: number) => {
     let debt = principal;

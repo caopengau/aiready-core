@@ -10,11 +10,11 @@
  * - Semantic Distance: How far apart related concepts are
  * - Concept Cohesion: How well grouped related ideas are
  * - Pattern Entropy: How ordered vs chaotic the structure is
- * - Hallucination Risk: How likely AI is to generate incorrect code
+ * - AI Signal Clarity: How likely AI is to generate incorrect code
  * - Agent Grounding Score: How well an agent can navigate unaided
  * - Testability Index: How verifiable AI-generated changes are
  * 
- * v0.12+: Added hallucination risk, agent grounding, and testability dimensions.
+ * v0.12+: Added AI signal clarity, agent grounding, and testability dimensions.
  */
 
 import type { ToolScoringOutput } from './scoring';
@@ -404,14 +404,14 @@ export function calculateFutureProofScore(params: {
 }
 
 // ============================================
-// HALLUCINATION RISK METRICS
+// AI SIGNAL CLARITY METRICS
 // ============================================
 
 /**
  * Signals that increase the likelihood of AI generating incorrect code.
  * Technology-agnostic: these patterns confuse both current and future AI.
  */
-export interface HallucinationRiskSignal {
+export interface AiSignalClaritySignal {
   name: string;
   count: number;          // How many instances detected
   riskContribution: number; // 0-100 contribution to overall risk
@@ -420,7 +420,7 @@ export interface HallucinationRiskSignal {
 }
 
 /**
- * Hallucination Risk Score (0-100, higher = more risk)
+ * AI Signal Clarity Score (0-100, higher = more risk)
  * 
  * Measures code patterns that empirically cause AI models to:
  * - Confidently generate incorrect function signatures
@@ -428,22 +428,22 @@ export interface HallucinationRiskSignal {
  * - Miss implicit contracts / side effects
  * - Misunderstand overloaded symbols
  */
-export interface HallucinationRisk {
+export interface AiSignalClarity {
   /** Overall risk score (0-100). Higher = more likely AI will hallucinate. */
   score: number;
   rating: 'minimal' | 'low' | 'moderate' | 'high' | 'severe';
-  signals: HallucinationRiskSignal[];
+  signals: AiSignalClaritySignal[];
   /** Most impactful signal to fix first */
   topRisk: string;
   recommendations: string[];
 }
 
 /**
- * Calculate hallucination risk from code analysis results
+ * Calculate AI signal clarity from code analysis results
  * 
  * Input data can come from any parser; all inputs are normalized 0-N counts.
  */
-export function calculateHallucinationRisk(params: {
+export function calculateAiSignalClarity(params: {
   /** Overloaded function names (same name, different signatures) */
   overloadedSymbols: number;
   /** Magic numbers and string literals without named constants */
@@ -462,7 +462,7 @@ export function calculateHallucinationRisk(params: {
   totalSymbols: number;
   /** Total exports in codebase */
   totalExports: number;
-}): HallucinationRisk {
+}): AiSignalClarity {
   const {
     overloadedSymbols, magicLiterals, booleanTraps, implicitSideEffects,
     deepCallbacks, ambiguousNames, undocumentedExports, totalSymbols, totalExports,
@@ -482,7 +482,7 @@ export function calculateHallucinationRisk(params: {
   // Weights reflect empirical impact on AI accuracy
 
   const overloadRatio = Math.min(1, overloadedSymbols / Math.max(1, totalSymbols));
-  const overloadSignal: HallucinationRiskSignal = {
+  const overloadSignal: AiSignalClaritySignal = {
     name: 'Symbol Overloading',
     count: overloadedSymbols,
     riskContribution: Math.round(overloadRatio * 100 * 0.25), // 25% weight
@@ -490,7 +490,7 @@ export function calculateHallucinationRisk(params: {
   };
 
   const magicRatio = Math.min(1, magicLiterals / Math.max(1, totalSymbols * 2));
-  const magicSignal: HallucinationRiskSignal = {
+  const magicSignal: AiSignalClaritySignal = {
     name: 'Magic Literals',
     count: magicLiterals,
     riskContribution: Math.round(magicRatio * 100 * 0.20), // 20% weight
@@ -498,7 +498,7 @@ export function calculateHallucinationRisk(params: {
   };
 
   const trapRatio = Math.min(1, booleanTraps / Math.max(1, totalSymbols));
-  const trapSignal: HallucinationRiskSignal = {
+  const trapSignal: AiSignalClaritySignal = {
     name: 'Boolean Traps',
     count: booleanTraps,
     riskContribution: Math.round(trapRatio * 100 * 0.20), // 20% weight
@@ -506,7 +506,7 @@ export function calculateHallucinationRisk(params: {
   };
 
   const sideEffectRatio = Math.min(1, implicitSideEffects / Math.max(1, totalExports));
-  const sideEffectSignal: HallucinationRiskSignal = {
+  const sideEffectSignal: AiSignalClaritySignal = {
     name: 'Implicit Side Effects',
     count: implicitSideEffects,
     riskContribution: Math.round(sideEffectRatio * 100 * 0.15), // 15% weight
@@ -514,7 +514,7 @@ export function calculateHallucinationRisk(params: {
   };
 
   const callbackRatio = Math.min(1, deepCallbacks / Math.max(1, totalSymbols * 0.1));
-  const callbackSignal: HallucinationRiskSignal = {
+  const callbackSignal: AiSignalClaritySignal = {
     name: 'Callback Nesting',
     count: deepCallbacks,
     riskContribution: Math.round(callbackRatio * 100 * 0.10), // 10% weight
@@ -522,7 +522,7 @@ export function calculateHallucinationRisk(params: {
   };
 
   const ambiguousRatio = Math.min(1, ambiguousNames / Math.max(1, totalSymbols));
-  const ambiguousSignal: HallucinationRiskSignal = {
+  const ambiguousSignal: AiSignalClaritySignal = {
     name: 'Ambiguous Names',
     count: ambiguousNames,
     riskContribution: Math.round(ambiguousRatio * 100 * 0.10), // 10% weight
@@ -530,7 +530,7 @@ export function calculateHallucinationRisk(params: {
   };
 
   const undocRatio = Math.min(1, undocumentedExports / Math.max(1, totalExports));
-  const undocSignal: HallucinationRiskSignal = {
+  const undocSignal: AiSignalClaritySignal = {
     name: 'Undocumented Exports',
     count: undocumentedExports,
     riskContribution: Math.round(undocRatio * 100 * 0.10), // 10% weight
@@ -544,7 +544,7 @@ export function calculateHallucinationRisk(params: {
 
   const score = Math.min(100, signals.reduce((sum, s) => sum + s.riskContribution, 0));
 
-  let rating: HallucinationRisk['rating'];
+  let rating: AiSignalClarity['rating'];
   if (score < 10) rating = 'minimal';
   else if (score < 25) rating = 'low';
   else if (score < 50) rating = 'moderate';
@@ -555,7 +555,7 @@ export function calculateHallucinationRisk(params: {
   const topSignal = signals.reduce((a, b) => a.riskContribution > b.riskContribution ? a : b);
   const topRisk = topSignal.riskContribution > 0
     ? topSignal.description
-    : 'No significant hallucination risks detected';
+    : 'No significant AI signal claritys detected';
 
   const recommendations: string[] = [];
   if (overloadSignal.riskContribution > 5) {
@@ -1017,6 +1017,70 @@ export function calculateDependencyHealth(params: {
 }
 
 // ============================================
+// CHANGE AMPLIFICATION METRICS
+// ============================================
+
+export interface ChangeAmplificationScore {
+  score: number;
+  rating: 'isolated' | 'contained' | 'amplified' | 'explosive';
+  avgAmplification: number;
+  maxAmplification: number;
+  hotspots: Array<{ file: string; fanOut: number; fanIn: number; amplificationFactor: number }>;
+  recommendations: string[];
+}
+
+export function calculateChangeAmplification(params: {
+  files: Array<{ file: string; fanOut: number; fanIn: number }>;
+}): ChangeAmplificationScore {
+  const { files } = params;
+  if (files.length === 0) {
+    return {
+      score: 100,
+      rating: 'isolated',
+      avgAmplification: 1,
+      maxAmplification: 1,
+      hotspots: [],
+      recommendations: [],
+    };
+  }
+
+  const hotspots = files.map(f => {
+    // Amplification factor means how many things break if this changes, plus how many things it touches if they change
+    const amplificationFactor = f.fanOut + (f.fanIn * 0.5);
+    return { ...f, amplificationFactor };
+  }).sort((a, b) => b.amplificationFactor - a.amplificationFactor);
+
+  const maxAmplification = hotspots[0].amplificationFactor;
+  const avgAmplification = hotspots.reduce((sum, h) => sum + h.amplificationFactor, 0) / hotspots.length;
+
+  let score = 100 - (avgAmplification * 5);
+  if (maxAmplification > 20) score -= (maxAmplification - 20);
+  score = Math.max(0, Math.min(100, score));
+
+  let rating: ChangeAmplificationScore['rating'] = 'isolated';
+  if (score < 40) rating = 'explosive';
+  else if (score < 70) rating = 'amplified';
+  else if (score < 90) rating = 'contained';
+
+  const recommendations: string[] = [];
+  if (score < 70 && hotspots.length > 0) {
+    recommendations.push(`Refactor top hotspot '${hotspots[0].file}' to reduce coupling (fan-out: ${hotspots[0].fanOut}, fan-in: ${hotspots[0].fanIn}).`);
+  }
+  if (maxAmplification > 30) {
+    recommendations.push(`Break down key bottlenecks with amplification factor > 30.`);
+  }
+
+  return {
+    score: Math.round(score),
+    rating,
+    avgAmplification,
+    maxAmplification,
+    hotspots: hotspots.slice(0, 10),
+    recommendations,
+  };
+}
+
+// ============================================
 // AGGREGATE EXTENDED FUTURE-PROOF SCORE
 // ============================================
 
@@ -1028,7 +1092,7 @@ export function calculateExtendedFutureProofScore(params: {
   cognitiveLoad: CognitiveLoad;
   patternEntropy: PatternEntropy;
   conceptCohesion: ConceptCohesion;
-  hallucinationRisk: HallucinationRisk;
+  aiSignalClarity: AiSignalClarity;
   agentGrounding: AgentGroundingScore;
   testability: TestabilityIndex;
   docDrift?: DocDriftRisk;
@@ -1038,7 +1102,7 @@ export function calculateExtendedFutureProofScore(params: {
   const loadScore = 100 - params.cognitiveLoad.score;
   const entropyScore = 100 - (params.patternEntropy.entropy * 100);
   const cohesionScore = params.conceptCohesion.score * 100;
-  const hallucinationScore = 100 - params.hallucinationRisk.score;
+  const aiSignalClarityScore = 100 - params.aiSignalClarity.score;
   const groundingScore = params.agentGrounding.score;
   const testabilityScore = params.testability.score;
   const docDriftScore = params.docDrift ? (100 - params.docDrift.score) : 100;
@@ -1050,7 +1114,7 @@ export function calculateExtendedFutureProofScore(params: {
     (loadScore * 0.15) +
     (entropyScore * 0.10) +
     (cohesionScore * 0.10) +
-    (hallucinationScore * 0.15) +
+    (aiSignalClarityScore * 0.15) +
     (groundingScore * 0.15) +
     (testabilityScore * 0.15);
 
@@ -1082,9 +1146,9 @@ export function calculateExtendedFutureProofScore(params: {
       description: params.conceptCohesion.rating,
     },
     {
-      name: 'Hallucination Risk',
-      impact: Math.round(hallucinationScore - 50),
-      description: `${params.hallucinationRisk.rating} risk (${params.hallucinationRisk.score}/100 raw)`,
+      name: 'AI Signal Clarity',
+      impact: Math.round(aiSignalClarityScore - 50),
+      description: `${params.aiSignalClarity.rating} risk (${params.aiSignalClarity.score}/100 raw)`,
     },
     {
       name: 'Agent Grounding',
@@ -1102,7 +1166,7 @@ export function calculateExtendedFutureProofScore(params: {
     factors.push({
       name: 'Documentation Drift',
       impact: Math.round(docDriftScore - 50),
-      description: `${params.docDrift.rating} risk of hallucination from drift`,
+      description: `${params.docDrift.rating} risk of AI signal clarity from drift`,
     });
   }
   if (params.dependencyHealth) {
@@ -1116,7 +1180,7 @@ export function calculateExtendedFutureProofScore(params: {
   const recommendations: ToolScoringOutput['recommendations'] = [];
 
   // Collect and prioritize all recommendations
-  for (const rec of params.hallucinationRisk.recommendations) {
+  for (const rec of params.aiSignalClarity.recommendations) {
     recommendations.push({ action: rec, estimatedImpact: 8, priority: 'high' });
   }
   for (const rec of params.agentGrounding.recommendations) {
@@ -1151,7 +1215,7 @@ export function calculateExtendedFutureProofScore(params: {
       cognitiveLoadScore: params.cognitiveLoad.score,
       entropyScore: params.patternEntropy.entropy,
       cohesionScore: params.conceptCohesion.score,
-      hallucinationRiskScore: params.hallucinationRisk.score,
+      aiSignalClarityScore: params.aiSignalClarity.score,
       agentGroundingScore: params.agentGrounding.score,
       testabilityScore: params.testability.score,
       docDriftScore: params.docDrift?.score,

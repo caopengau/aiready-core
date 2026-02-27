@@ -25,12 +25,13 @@ export type IssueType =
   | 'circular-dependency'
   | 'missing-types'
   // v0.12+ dimensions
-  | 'hallucination-risk'        // Code pattern known to cause AI hallucination
+  | 'ai-signal-clarity'        // Code pattern known to cause AI AI signal clarity
   | 'low-testability'           // AI changes cannot be safely verified
   | 'agent-navigation-failure'  // Agent cannot determine where code belongs
   | 'ambiguous-api'             // Public API surface is unclear or untyped
   | 'magic-literal'             // Unnamed constant confuses AI intent inference
-  | 'boolean-trap';             // Boolean param pattern that inverts AI intent
+  | 'boolean-trap'              // Boolean param pattern that inverts AI intent
+  | 'change-amplification';     // A small change here causes massive downstream breakages
 
 export interface Location {
   file: string;
@@ -53,7 +54,7 @@ export interface Metrics {
 
   // AI agent readiness metrics (v0.12+)
   /** Probability (0-100) that AI will hallucinate in this file/module */
-  hallucinationRiskScore?: number;
+  aiSignalClarityScore?: number;
   /** How well an agent can navigate to/from this file unaided (0-100) */
   agentGroundingScore?: number;
   /** Whether AI-generated changes to this file can be safely verified (0-100) */

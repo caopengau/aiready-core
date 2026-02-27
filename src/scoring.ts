@@ -79,7 +79,7 @@ export interface ScoringConfig {
  *   AI effectiveness regardless of model size.
  * - consistency (25): Naming/pattern inconsistency degrades AI intent understanding
  *   proportionally to codebase size.
- * - hallucination-risk (20): Code patterns empirically causing AI to generate
+ * - ai-signal-clarity (20): Code patterns empirically causing AI to generate
  *   confidently wrong outputs — critical for agentic use cases.
  * - agent-grounding (18): How well an autonomous agent can navigate unaided —
  *   increasingly important as agentic workflows grow.
@@ -91,7 +91,7 @@ export const DEFAULT_TOOL_WEIGHTS: Record<string, number> = {
   'pattern-detect': 40,
   'context-analyzer': 35,
   'consistency': 25,
-  'hallucination-risk': 20,
+  'ai-signal-clarity': 20,
   'agent-grounding': 18,
   'testability': 18,
   'doc-drift': 15,
@@ -105,8 +105,8 @@ export const TOOL_NAME_MAP: Record<string, string> = {
   'patterns': 'pattern-detect',
   'context': 'context-analyzer',
   'consistency': 'consistency',
-  'hallucination': 'hallucination-risk',
-  'hallucination-risk': 'hallucination-risk',
+  'AI signal clarity': 'ai-signal-clarity',
+  'ai-signal-clarity': 'ai-signal-clarity',
   'grounding': 'agent-grounding',
   'agent-grounding': 'agent-grounding',
   'testability': 'testability',
