@@ -64,10 +64,16 @@ describe('ParserFactory', () => {
 describe('Language Detection', () => {
   it('should detect language from file path', () => {
     const factory = ParserFactory.getInstance();
-    
-    expect(factory.getLanguageForFile('src/index.ts')).toBe(Language.TypeScript);
-    expect(factory.getLanguageForFile('src/component.tsx')).toBe(Language.TypeScript);
-    expect(factory.getLanguageForFile('src/script.js')).toBe(Language.JavaScript);
+
+    expect(factory.getLanguageForFile('src/index.ts')).toBe(
+      Language.TypeScript
+    );
+    expect(factory.getLanguageForFile('src/component.tsx')).toBe(
+      Language.TypeScript
+    );
+    expect(factory.getLanguageForFile('src/script.js')).toBe(
+      Language.JavaScript
+    );
     expect(factory.getLanguageForFile('src/main.py')).toBe(Language.Python);
     expect(factory.getLanguageForFile('README.md')).toBeNull();
   });

@@ -1,6 +1,6 @@
 /**
  * Python Parser using tree-sitter
- * 
+ *
  * Parses Python files using tree-sitter-python for accurate AST parsing
  */
 
@@ -16,7 +16,7 @@ import {
 
 /**
  * Python Parser implementation
- * 
+ *
  * Note: This implementation will use tree-sitter-python for parsing.
  * For now, it provides a skeleton that can be filled in once web-tree-sitter
  * is properly configured.
@@ -41,17 +41,19 @@ export class PythonParser implements LanguageParser {
       // this.parser = new Parser();
       // const Python = await Parser.Language.load('tree-sitter-python.wasm');
       // this.parser.setLanguage(Python);
-      
+
       this.initialized = true;
     } catch (error) {
-      throw new Error(`Failed to initialize Python parser: ${(error as Error).message}`);
+      throw new Error(
+        `Failed to initialize Python parser: ${(error as Error).message}`
+      );
     }
   }
 
   parse(code: string, filePath: string): ParseResult {
     // TODO: Implement when tree-sitter is configured
     // For now, return a basic parse with regex-based extraction
-    
+
     try {
       const imports = this.extractImportsRegex(code, filePath);
       const exports = this.extractExportsRegex(code, filePath);
@@ -60,7 +62,9 @@ export class PythonParser implements LanguageParser {
         exports,
         imports,
         language: Language.Python,
-        warnings: ['Python parsing is currently using regex-based extraction. Tree-sitter support coming soon.'],
+        warnings: [
+          'Python parsing is currently using regex-based extraction. Tree-sitter support coming soon.',
+        ],
       };
     } catch (error) {
       throw new ParseError(
@@ -127,8 +131,10 @@ export class PythonParser implements LanguageParser {
       // Handle "import module"
       const importMatch = line.match(importRegex);
       if (importMatch) {
-        const modules = importMatch[1].split(',').map(m => m.trim().split(' as ')[0]);
-        modules.forEach(module => {
+        const modules = importMatch[1]
+          .split(',')
+          .map((m) => m.trim().split(' as ')[0]);
+        modules.forEach((module) => {
           imports.push({
             source: module,
             specifiers: [module],
@@ -146,7 +152,7 @@ export class PythonParser implements LanguageParser {
       if (fromMatch) {
         const module = fromMatch[1];
         const imports_str = fromMatch[2];
-        
+
         // Handle "from module import *"
         if (imports_str.trim() === '*') {
           imports.push({
@@ -163,7 +169,7 @@ export class PythonParser implements LanguageParser {
         // Handle "from module import name1, name2"
         const specifiers = imports_str
           .split(',')
-          .map(s => s.trim().split(' as ')[0]);
+          .map((s) => s.trim().split(' as ')[0]);
 
         imports.push({
           source: module,
@@ -181,7 +187,7 @@ export class PythonParser implements LanguageParser {
 
   /**
    * Regex-based export extraction (temporary implementation)
-   * 
+   *
    * Python doesn't have explicit exports like JavaScript.
    * We extract:
    * - Functions defined at module level (def)
@@ -194,10 +200,10 @@ export class PythonParser implements LanguageParser {
 
     // Extract functions: def function_name(
     const functionRegex = /^def\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/;
-    
+
     // Extract classes: class ClassName
     const classRegex = /^class\s+([a-zA-Z_][a-zA-Z0-9_]*)/;
-    
+
     // Extract from __all__
     const allRegex = /__all__\s*=\s*\[([^\]]+)\]/;
 
@@ -206,7 +212,7 @@ export class PythonParser implements LanguageParser {
 
     lines.forEach((line, idx) => {
       const indent = line.search(/\S/);
-      
+
       // Track if we're inside a class (for filtering out methods)
       if (line.match(classRegex)) {
         inClass = true;
@@ -254,10 +260,10 @@ export class PythonParser implements LanguageParser {
       if (allMatch) {
         const names = allMatch[1]
           .split(',')
-          .map(n => n.trim().replace(/['"]/g, ''));
-        
-        names.forEach(name => {
-          if (name && !exports.find(e => e.name === name)) {
+          .map((n) => n.trim().replace(/['"]/g, ''));
+
+        names.forEach((name) => {
+          if (name && !exports.find((e) => e.name === name)) {
             exports.push({
               name,
               type: 'variable',

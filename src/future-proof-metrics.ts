@@ -1,9 +1,9 @@
 /**
  * Future-Proof AI Metrics Abstraction Layer
- * 
+ *
  * This module provides technology-agnostic metric primitives that will
  * remain valid across changes in AI models, tokenization, and paradigms.
- * 
+ *
  * The key insight: rather than measuring "tokens" or "import depth",
  * we measure cognitive concepts that translate to any AI architecture:
  * - Cognitive Load: How much mental effort for AI to understand
@@ -13,7 +13,7 @@
  * - AI Signal Clarity: How likely AI is to generate incorrect code
  * - Agent Grounding Score: How well an agent can navigate unaided
  * - Testability Index: How verifiable AI-generated changes are
- * 
+ *
  * v0.12+: Added AI signal clarity, agent grounding, and testability dimensions.
  */
 
@@ -29,8 +29,8 @@ import type { ToolScoringOutput } from './scoring';
  */
 export interface LoadFactor {
   name: string;
-  score: number;       // 0-100, higher = more load
-  weight: number;       // How much this factor contributes (0-1)
+  score: number; // 0-100, higher = more load
+  weight: number; // How much this factor contributes (0-1)
   description: string;
 }
 
@@ -60,12 +60,18 @@ export function calculateCognitiveLoad(params: {
   uniqueConcepts: number;
   cyclomaticComplexity?: number;
 }): CognitiveLoad {
-  const { linesOfCode, exportCount, importCount, uniqueConcepts, cyclomaticComplexity = 1 } = params;
+  const {
+    linesOfCode,
+    exportCount,
+    importCount,
+    uniqueConcepts,
+    cyclomaticComplexity = 1,
+  } = params;
 
   const sizeFactor: LoadFactor = {
     name: 'Size Complexity',
     score: Math.min(100, Math.max(0, (linesOfCode - 50) / 10)),
-    weight: 0.30,
+    weight: 0.3,
     description: `${linesOfCode} lines of code`,
   };
 
@@ -87,11 +93,16 @@ export function calculateCognitiveLoad(params: {
   const conceptFactor: LoadFactor = {
     name: 'Conceptual Density',
     score: Math.min(100, conceptDensity * 500),
-    weight: 0.20,
+    weight: 0.2,
     description: `${uniqueConcepts} unique concepts`,
   };
 
-  const factors = [sizeFactor, interfaceFactor, dependencyFactor, conceptFactor];
+  const factors = [
+    sizeFactor,
+    interfaceFactor,
+    dependencyFactor,
+    conceptFactor,
+  ];
   const score = factors.reduce((sum, f) => sum + f.score * f.weight, 0);
 
   let rating: CognitiveLoad['rating'];
@@ -115,7 +126,7 @@ export function calculateCognitiveLoad(params: {
 }
 
 // ============================================
-// SEMANTIC DISTANCE METRICS  
+// SEMANTIC DISTANCE METRICS
 // ============================================
 
 export interface SemanticDistance {
@@ -137,13 +148,20 @@ export function calculateSemanticDistance(params: {
 }): SemanticDistance {
   const { file1, file2, file1Domain, file2Domain, sharedDependencies } = params;
 
-  const domainDistance = file1Domain === file2Domain ? 0 :
-    file1Domain && file2Domain ? 0.5 : 0.8;
+  const domainDistance =
+    file1Domain === file2Domain ? 0 : file1Domain && file2Domain ? 0.5 : 0.8;
 
-  const importOverlap = sharedDependencies.length / Math.max(1, Math.min(params.file1Imports.length, params.file2Imports.length));
+  const importOverlap =
+    sharedDependencies.length /
+    Math.max(
+      1,
+      Math.min(params.file1Imports.length, params.file2Imports.length)
+    );
   const importDistance = 1 - importOverlap;
 
-  const distance = (domainDistance * 0.4) + (importDistance * 0.3) +
+  const distance =
+    domainDistance * 0.4 +
+    importDistance * 0.3 +
     (sharedDependencies.length > 0 ? 0 : 0.3);
 
   let relationship: SemanticDistance['relationship'];
@@ -152,18 +170,21 @@ export function calculateSemanticDistance(params: {
   else if (sharedDependencies.length > 0) relationship = 'cross-domain';
   else relationship = 'unrelated';
 
-  const pathItems = [file1Domain, ...sharedDependencies, file2Domain].filter((s): s is string => typeof s === 'string' && s.length > 0);
+  const pathItems = [file1Domain, ...sharedDependencies, file2Domain].filter(
+    (s): s is string => typeof s === 'string' && s.length > 0
+  );
 
   return {
     between: [file1, file2],
     distance: Math.round(distance * 100) / 100,
     relationship,
     path: pathItems,
-    reason: relationship === 'same-domain'
-      ? `Both in "${file1Domain}" domain`
-      : relationship === 'cross-domain'
-        ? `Share ${sharedDependencies.length} dependency(ies)`
-        : 'No strong semantic relationship detected',
+    reason:
+      relationship === 'same-domain'
+        ? `Both in "${file1Domain}" domain`
+        : relationship === 'cross-domain'
+          ? `Share ${sharedDependencies.length} dependency(ies)`
+          : 'No strong semantic relationship detected',
   };
 }
 
@@ -174,7 +195,12 @@ export function calculateSemanticDistance(params: {
 export interface PatternEntropy {
   domain: string;
   entropy: number;
-  rating: 'crystalline' | 'well-structured' | 'moderate' | 'fragmented' | 'chaotic';
+  rating:
+    | 'crystalline'
+    | 'well-structured'
+    | 'moderate'
+    | 'fragmented'
+    | 'chaotic';
   distribution: {
     locationCount: number;
     dominantLocation: string;
@@ -188,13 +214,19 @@ export interface FileWithDomain {
   domain: string;
 }
 
-export function calculatePatternEntropy(files: FileWithDomain[]): PatternEntropy {
+export function calculatePatternEntropy(
+  files: FileWithDomain[]
+): PatternEntropy {
   if (files.length === 0) {
     return {
       domain: 'unknown',
       entropy: 0,
       rating: 'crystalline',
-      distribution: { locationCount: 0, dominantLocation: '', giniCoefficient: 0 },
+      distribution: {
+        locationCount: 0,
+        dominantLocation: '',
+        giniCoefficient: 0,
+      },
       recommendations: ['No files to analyze'],
     };
   }
@@ -241,10 +273,14 @@ export function calculatePatternEntropy(files: FileWithDomain[]): PatternEntropy
 
   const recommendations: string[] = [];
   if (normalizedEntropy > 0.5) {
-    recommendations.push(`Consolidate ${files.length} files into fewer directories by domain`);
+    recommendations.push(
+      `Consolidate ${files.length} files into fewer directories by domain`
+    );
   }
   if (dirGroups.size > 5) {
-    recommendations.push('Consider barrel exports to reduce directory navigation');
+    recommendations.push(
+      'Consider barrel exports to reduce directory navigation'
+    );
   }
   if (gini > 0.5) {
     recommendations.push('Redistribute files more evenly across directories');
@@ -289,7 +325,11 @@ export function calculateConceptCohesion(params: {
     return {
       score: 1,
       rating: 'excellent',
-      analysis: { uniqueDomains: 0, domainConcentration: 0, exportPurposeClarity: 1 },
+      analysis: {
+        uniqueDomains: 0,
+        domainConcentration: 0,
+        exportPurposeClarity: 1,
+      },
     };
   }
 
@@ -308,9 +348,10 @@ export function calculateConceptCohesion(params: {
   const maxCount = Math.max(...Array.from(domainCounts.values()), 1);
   const domainConcentration = maxCount / allDomains.length;
 
-  const exportPurposeClarity = 1 - (uniqueDomains.size - 1) / Math.max(1, exports.length);
+  const exportPurposeClarity =
+    1 - (uniqueDomains.size - 1) / Math.max(1, exports.length);
 
-  const score = (domainConcentration * 0.5) + (exportPurposeClarity * 0.5);
+  const score = domainConcentration * 0.5 + exportPurposeClarity * 0.5;
 
   let rating: ConceptCohesion['rating'];
   if (score > 0.8) rating = 'excellent';
@@ -340,13 +381,11 @@ export function calculateFutureProofScore(params: {
   semanticDistances?: SemanticDistance[];
 }): ToolScoringOutput {
   const loadScore = 100 - params.cognitiveLoad.score;
-  const entropyScore = 100 - (params.patternEntropy.entropy * 100);
+  const entropyScore = 100 - params.patternEntropy.entropy * 100;
   const cohesionScore = params.conceptCohesion.score * 100;
 
   const overall = Math.round(
-    (loadScore * 0.40) +
-    (entropyScore * 0.30) +
-    (cohesionScore * 0.30)
+    loadScore * 0.4 + entropyScore * 0.3 + cohesionScore * 0.3
   );
 
   const factors: ToolScoringOutput['factors'] = [
@@ -385,9 +424,11 @@ export function calculateFutureProofScore(params: {
     });
   }
 
-  const semanticDistanceAvg = params.semanticDistances && params.semanticDistances.length > 0
-    ? params.semanticDistances.reduce((s, d) => s + d.distance, 0) / params.semanticDistances.length
-    : 0;
+  const semanticDistanceAvg =
+    params.semanticDistances && params.semanticDistances.length > 0
+      ? params.semanticDistances.reduce((s, d) => s + d.distance, 0) /
+        params.semanticDistances.length
+      : 0;
 
   return {
     toolName: 'future-proof',
@@ -413,15 +454,15 @@ export function calculateFutureProofScore(params: {
  */
 export interface AiSignalClaritySignal {
   name: string;
-  count: number;          // How many instances detected
+  count: number; // How many instances detected
   riskContribution: number; // 0-100 contribution to overall risk
   description: string;
-  examples?: string[];    // First few examples found
+  examples?: string[]; // First few examples found
 }
 
 /**
  * AI Signal Clarity Score (0-100, higher = more risk)
- * 
+ *
  * Measures code patterns that empirically cause AI models to:
  * - Confidently generate incorrect function signatures
  * - Create plausible-but-wrong implementations
@@ -440,7 +481,7 @@ export interface AiSignalClarity {
 
 /**
  * Calculate AI signal clarity from code analysis results
- * 
+ *
  * Input data can come from any parser; all inputs are normalized 0-N counts.
  */
 export function calculateAiSignalClarity(params: {
@@ -464,8 +505,15 @@ export function calculateAiSignalClarity(params: {
   totalExports: number;
 }): AiSignalClarity {
   const {
-    overloadedSymbols, magicLiterals, booleanTraps, implicitSideEffects,
-    deepCallbacks, ambiguousNames, undocumentedExports, totalSymbols, totalExports,
+    overloadedSymbols,
+    magicLiterals,
+    booleanTraps,
+    implicitSideEffects,
+    deepCallbacks,
+    ambiguousNames,
+    undocumentedExports,
+    totalSymbols,
+    totalExports,
   } = params;
 
   if (totalSymbols === 0) {
@@ -481,7 +529,10 @@ export function calculateAiSignalClarity(params: {
   // Each signal is normalized to 0-100 contribution
   // Weights reflect empirical impact on AI accuracy
 
-  const overloadRatio = Math.min(1, overloadedSymbols / Math.max(1, totalSymbols));
+  const overloadRatio = Math.min(
+    1,
+    overloadedSymbols / Math.max(1, totalSymbols)
+  );
   const overloadSignal: AiSignalClaritySignal = {
     name: 'Symbol Overloading',
     count: overloadedSymbols,
@@ -493,7 +544,7 @@ export function calculateAiSignalClarity(params: {
   const magicSignal: AiSignalClaritySignal = {
     name: 'Magic Literals',
     count: magicLiterals,
-    riskContribution: Math.round(magicRatio * 100 * 0.20), // 20% weight
+    riskContribution: Math.round(magicRatio * 100 * 0.2), // 20% weight
     description: `${magicLiterals} unnamed constants — AI invents wrong values`,
   };
 
@@ -501,11 +552,14 @@ export function calculateAiSignalClarity(params: {
   const trapSignal: AiSignalClaritySignal = {
     name: 'Boolean Traps',
     count: booleanTraps,
-    riskContribution: Math.round(trapRatio * 100 * 0.20), // 20% weight
+    riskContribution: Math.round(trapRatio * 100 * 0.2), // 20% weight
     description: `${booleanTraps} boolean trap parameters — AI inverts intent`,
   };
 
-  const sideEffectRatio = Math.min(1, implicitSideEffects / Math.max(1, totalExports));
+  const sideEffectRatio = Math.min(
+    1,
+    implicitSideEffects / Math.max(1, totalExports)
+  );
   const sideEffectSignal: AiSignalClaritySignal = {
     name: 'Implicit Side Effects',
     count: implicitSideEffects,
@@ -513,36 +567,53 @@ export function calculateAiSignalClarity(params: {
     description: `${implicitSideEffects} functions with implicit side effects — AI misses contracts`,
   };
 
-  const callbackRatio = Math.min(1, deepCallbacks / Math.max(1, totalSymbols * 0.1));
+  const callbackRatio = Math.min(
+    1,
+    deepCallbacks / Math.max(1, totalSymbols * 0.1)
+  );
   const callbackSignal: AiSignalClaritySignal = {
     name: 'Callback Nesting',
     count: deepCallbacks,
-    riskContribution: Math.round(callbackRatio * 100 * 0.10), // 10% weight
+    riskContribution: Math.round(callbackRatio * 100 * 0.1), // 10% weight
     description: `${deepCallbacks} deep callback chains — AI loses control flow context`,
   };
 
-  const ambiguousRatio = Math.min(1, ambiguousNames / Math.max(1, totalSymbols));
+  const ambiguousRatio = Math.min(
+    1,
+    ambiguousNames / Math.max(1, totalSymbols)
+  );
   const ambiguousSignal: AiSignalClaritySignal = {
     name: 'Ambiguous Names',
     count: ambiguousNames,
-    riskContribution: Math.round(ambiguousRatio * 100 * 0.10), // 10% weight
+    riskContribution: Math.round(ambiguousRatio * 100 * 0.1), // 10% weight
     description: `${ambiguousNames} non-descriptive identifiers — AI guesses wrong intent`,
   };
 
-  const undocRatio = Math.min(1, undocumentedExports / Math.max(1, totalExports));
+  const undocRatio = Math.min(
+    1,
+    undocumentedExports / Math.max(1, totalExports)
+  );
   const undocSignal: AiSignalClaritySignal = {
     name: 'Undocumented Exports',
     count: undocumentedExports,
-    riskContribution: Math.round(undocRatio * 100 * 0.10), // 10% weight
+    riskContribution: Math.round(undocRatio * 100 * 0.1), // 10% weight
     description: `${undocumentedExports} public functions without docs — AI fabricates behavior`,
   };
 
   const signals = [
-    overloadSignal, magicSignal, trapSignal,
-    sideEffectSignal, callbackSignal, ambiguousSignal, undocSignal,
+    overloadSignal,
+    magicSignal,
+    trapSignal,
+    sideEffectSignal,
+    callbackSignal,
+    ambiguousSignal,
+    undocSignal,
   ];
 
-  const score = Math.min(100, signals.reduce((sum, s) => sum + s.riskContribution, 0));
+  const score = Math.min(
+    100,
+    signals.reduce((sum, s) => sum + s.riskContribution, 0)
+  );
 
   let rating: AiSignalClarity['rating'];
   if (score < 10) rating = 'minimal';
@@ -552,32 +623,45 @@ export function calculateAiSignalClarity(params: {
   else rating = 'severe';
 
   // Find top risk signal
-  const topSignal = signals.reduce((a, b) => a.riskContribution > b.riskContribution ? a : b);
-  const topRisk = topSignal.riskContribution > 0
-    ? topSignal.description
-    : 'No significant AI signal claritys detected';
+  const topSignal = signals.reduce((a, b) =>
+    a.riskContribution > b.riskContribution ? a : b
+  );
+  const topRisk =
+    topSignal.riskContribution > 0
+      ? topSignal.description
+      : 'No significant AI signal claritys detected';
 
   const recommendations: string[] = [];
   if (overloadSignal.riskContribution > 5) {
-    recommendations.push(`Rename ${overloadedSymbols} overloaded symbols to unique, intent-revealing names`);
+    recommendations.push(
+      `Rename ${overloadedSymbols} overloaded symbols to unique, intent-revealing names`
+    );
   }
   if (magicSignal.riskContribution > 5) {
-    recommendations.push(`Extract ${magicLiterals} magic literals into named constants`);
+    recommendations.push(
+      `Extract ${magicLiterals} magic literals into named constants`
+    );
   }
   if (trapSignal.riskContribution > 5) {
-    recommendations.push(`Replace ${booleanTraps} boolean traps with named options objects`);
+    recommendations.push(
+      `Replace ${booleanTraps} boolean traps with named options objects`
+    );
   }
   if (undocSignal.riskContribution > 5) {
-    recommendations.push(`Add JSDoc/docstrings to ${undocumentedExports} undocumented public functions`);
+    recommendations.push(
+      `Add JSDoc/docstrings to ${undocumentedExports} undocumented public functions`
+    );
   }
   if (sideEffectSignal.riskContribution > 5) {
-    recommendations.push('Mark functions with side effects explicitly in their names or docs');
+    recommendations.push(
+      'Mark functions with side effects explicitly in their names or docs'
+    );
   }
 
   return {
     score: Math.round(score),
     rating,
-    signals: signals.filter(s => s.count > 0),
+    signals: signals.filter((s) => s.count > 0),
     topRisk,
     recommendations,
   };
@@ -589,13 +673,13 @@ export function calculateAiSignalClarity(params: {
 
 /**
  * Agent Grounding Score
- * 
+ *
  * Measures how well an AI agent can navigate a codebase *independently*,
  * without human assistance or extensive prompting.
- * 
+ *
  * High grounding = agent can find files, understand project structure,
  * locate relevant code, and correctly infer ownership without being told.
- * 
+ *
  * This is technology-agnostic: any agentic system (current or future)
  * needs these structural guarantees to work effectively.
  */
@@ -646,18 +730,30 @@ export function calculateAgentGrounding(params: {
   domainVocabularySize: number;
 }): AgentGroundingScore {
   const {
-    deepDirectories, totalDirectories, vagueFileNames, totalFiles,
-    hasRootReadme, readmeIsFresh, barrelExports, untypedExports, totalExports,
-    inconsistentDomainTerms, domainVocabularySize,
+    deepDirectories,
+    totalDirectories,
+    vagueFileNames,
+    totalFiles,
+    hasRootReadme,
+    readmeIsFresh,
+    barrelExports,
+    untypedExports,
+    totalExports,
+    inconsistentDomainTerms,
+    domainVocabularySize,
   } = params;
 
   // Structure clarity: penalize deep directories
-  const deepDirRatio = totalDirectories > 0 ? deepDirectories / totalDirectories : 0;
-  const structureClarityScore = Math.max(0, Math.round(100 - (deepDirRatio * 80)));
+  const deepDirRatio =
+    totalDirectories > 0 ? deepDirectories / totalDirectories : 0;
+  const structureClarityScore = Math.max(
+    0,
+    Math.round(100 - deepDirRatio * 80)
+  );
 
   // Self-documentation: file names that reveal purpose
   const vagueRatio = totalFiles > 0 ? vagueFileNames / totalFiles : 0;
-  const selfDocumentationScore = Math.max(0, Math.round(100 - (vagueRatio * 90)));
+  const selfDocumentationScore = Math.max(0, Math.round(100 - vagueRatio * 90));
 
   // Entry point score: README presence, freshness, barrel exports
   let entryPointScore = 60; // Base
@@ -669,21 +765,25 @@ export function calculateAgentGrounding(params: {
 
   // API clarity: typed exports are navigable
   const untypedRatio = totalExports > 0 ? untypedExports / totalExports : 0;
-  const apiClarityScore = Math.max(0, Math.round(100 - (untypedRatio * 70)));
+  const apiClarityScore = Math.max(0, Math.round(100 - untypedRatio * 70));
 
   // Domain consistency: same term for same concept
-  const inconsistencyRatio = domainVocabularySize > 0
-    ? inconsistentDomainTerms / domainVocabularySize
-    : 0;
-  const domainConsistencyScore = Math.max(0, Math.round(100 - (inconsistencyRatio * 80)));
+  const inconsistencyRatio =
+    domainVocabularySize > 0
+      ? inconsistentDomainTerms / domainVocabularySize
+      : 0;
+  const domainConsistencyScore = Math.max(
+    0,
+    Math.round(100 - inconsistencyRatio * 80)
+  );
 
   // Weighted overall
   const score = Math.round(
-    (structureClarityScore * 0.20) +
-    (selfDocumentationScore * 0.25) +
-    (entryPointScore * 0.20) +
-    (apiClarityScore * 0.15) +
-    (domainConsistencyScore * 0.20)
+    structureClarityScore * 0.2 +
+      selfDocumentationScore * 0.25 +
+      entryPointScore * 0.2 +
+      apiClarityScore * 0.15 +
+      domainConsistencyScore * 0.2
   );
 
   let rating: AgentGroundingScore['rating'];
@@ -695,21 +795,33 @@ export function calculateAgentGrounding(params: {
 
   const recommendations: string[] = [];
   if (structureClarityScore < 70) {
-    recommendations.push(`Flatten ${deepDirectories} overly-deep directories to improve agent navigation`);
+    recommendations.push(
+      `Flatten ${deepDirectories} overly-deep directories to improve agent navigation`
+    );
   }
   if (selfDocumentationScore < 70) {
-    recommendations.push(`Rename ${vagueFileNames} vague files (utils, helpers, misc) to domain-specific names`);
+    recommendations.push(
+      `Rename ${vagueFileNames} vague files (utils, helpers, misc) to domain-specific names`
+    );
   }
   if (!hasRootReadme) {
-    recommendations.push('Add a root README.md so agents understand the project context immediately');
+    recommendations.push(
+      'Add a root README.md so agents understand the project context immediately'
+    );
   } else if (!readmeIsFresh) {
-    recommendations.push('Update README.md — stale entry-point documentation disorients agents');
+    recommendations.push(
+      'Update README.md — stale entry-point documentation disorients agents'
+    );
   }
   if (apiClarityScore < 70) {
-    recommendations.push(`Add TypeScript types to ${untypedExports} untyped exports to improve API discoverability`);
+    recommendations.push(
+      `Add TypeScript types to ${untypedExports} untyped exports to improve API discoverability`
+    );
   }
   if (domainConsistencyScore < 70) {
-    recommendations.push(`Unify ${inconsistentDomainTerms} inconsistent domain terms — agents need one word per concept`);
+    recommendations.push(
+      `Unify ${inconsistentDomainTerms} inconsistent domain terms — agents need one word per concept`
+    );
   }
 
   return {
@@ -732,13 +844,13 @@ export function calculateAgentGrounding(params: {
 
 /**
  * Testability Index
- * 
+ *
  * Measures how verifiable AI-generated changes are.
  * AI assistants are only as useful as your ability to validate their output.
- * 
+ *
  * Core insight: A codebase where generated code CAN'T be verified
  * is one where AI assistance actively introduces hidden risk.
- * 
+ *
  * Technology-agnostic: test frameworks change; testability principles don't.
  */
 export interface TestabilityIndex {
@@ -788,9 +900,16 @@ export function calculateTestabilityIndex(params: {
   hasTestFramework: boolean;
 }): TestabilityIndex {
   const {
-    testFiles, sourceFiles, pureFunctions, totalFunctions,
-    injectionPatterns, totalClasses, bloatedInterfaces, totalInterfaces,
-    externalStateMutations, hasTestFramework,
+    testFiles,
+    sourceFiles,
+    pureFunctions,
+    totalFunctions,
+    injectionPatterns,
+    totalClasses,
+    bloatedInterfaces,
+    totalInterfaces,
+    externalStateMutations,
+    hasTestFramework,
   } = params;
 
   // Test coverage ratio (0-100): presence and density of tests
@@ -802,28 +921,33 @@ export function calculateTestabilityIndex(params: {
   const purityScore = Math.round(purityRatio * 100);
 
   // Dependency injection: DI means you can substitute mocks
-  const injectionRatio = totalClasses > 0 ? injectionPatterns / totalClasses : 0.5;
-  const dependencyInjectionScore = Math.round(Math.min(100, injectionRatio * 100));
+  const injectionRatio =
+    totalClasses > 0 ? injectionPatterns / totalClasses : 0.5;
+  const dependencyInjectionScore = Math.round(
+    Math.min(100, injectionRatio * 100)
+  );
 
   // Interface focus: small interfaces = easier to mock and verify
-  const bloatedRatio = totalInterfaces > 0 ? bloatedInterfaces / totalInterfaces : 0;
-  const interfaceFocusScore = Math.max(0, Math.round(100 - (bloatedRatio * 80)));
+  const bloatedRatio =
+    totalInterfaces > 0 ? bloatedInterfaces / totalInterfaces : 0;
+  const interfaceFocusScore = Math.max(0, Math.round(100 - bloatedRatio * 80));
 
   // Observability: functions returning values > mutating state
-  const mutationRatio = totalFunctions > 0 ? externalStateMutations / totalFunctions : 0;
-  const observabilityScore = Math.max(0, Math.round(100 - (mutationRatio * 100)));
+  const mutationRatio =
+    totalFunctions > 0 ? externalStateMutations / totalFunctions : 0;
+  const observabilityScore = Math.max(0, Math.round(100 - mutationRatio * 100));
 
   // Framework bonus/penalty
   const frameworkWeight = hasTestFramework ? 1.0 : 0.8;
 
   // Weighted overall
-  const rawScore = (
-    (testCoverageRatio * 0.30) +
-    (purityScore * 0.25) +
-    (dependencyInjectionScore * 0.20) +
-    (interfaceFocusScore * 0.10) +
-    (observabilityScore * 0.15)
-  ) * frameworkWeight;
+  const rawScore =
+    (testCoverageRatio * 0.3 +
+      purityScore * 0.25 +
+      dependencyInjectionScore * 0.2 +
+      interfaceFocusScore * 0.1 +
+      observabilityScore * 0.15) *
+    frameworkWeight;
 
   const score = Math.max(0, Math.min(100, Math.round(rawScore)));
 
@@ -837,26 +961,37 @@ export function calculateTestabilityIndex(params: {
   // AI change safety is driven primarily by test presence
   let aiChangeSafetyRating: TestabilityIndex['aiChangeSafetyRating'];
   if (rawCoverageRatio >= 0.5 && score >= 70) aiChangeSafetyRating = 'safe';
-  else if (rawCoverageRatio >= 0.2 && score >= 50) aiChangeSafetyRating = 'moderate-risk';
+  else if (rawCoverageRatio >= 0.2 && score >= 50)
+    aiChangeSafetyRating = 'moderate-risk';
   else if (rawCoverageRatio > 0) aiChangeSafetyRating = 'high-risk';
   else aiChangeSafetyRating = 'blind-risk';
 
   const recommendations: string[] = [];
   if (!hasTestFramework) {
-    recommendations.push('Add a testing framework (Jest, Vitest, pytest) — AI changes cannot be verified without tests');
+    recommendations.push(
+      'Add a testing framework (Jest, Vitest, pytest) — AI changes cannot be verified without tests'
+    );
   }
   if (rawCoverageRatio < 0.3) {
     const neededTests = Math.round(sourceFiles * 0.3 - testFiles);
-    recommendations.push(`Add ~${neededTests} test files to reach 30% coverage ratio — minimum for safe AI assistance`);
+    recommendations.push(
+      `Add ~${neededTests} test files to reach 30% coverage ratio — minimum for safe AI assistance`
+    );
   }
   if (purityScore < 50) {
-    recommendations.push('Extract pure functions from side-effectful code — pure functions are trivially AI-testable');
+    recommendations.push(
+      'Extract pure functions from side-effectful code — pure functions are trivially AI-testable'
+    );
   }
   if (dependencyInjectionScore < 50 && totalClasses > 0) {
-    recommendations.push('Adopt dependency injection — makes classes mockable and AI-generated code verifiable');
+    recommendations.push(
+      'Adopt dependency injection — makes classes mockable and AI-generated code verifiable'
+    );
   }
   if (externalStateMutations > totalFunctions * 0.3) {
-    recommendations.push('Reduce direct state mutations — return values instead to improve observability');
+    recommendations.push(
+      'Reduce direct state mutations — return values instead to improve observability'
+    );
   }
 
   return {
@@ -895,17 +1030,21 @@ export function calculateDocDrift(params: {
   outdatedComments: number;
   undocumentedComplexity: number;
 }): DocDriftRisk {
-  const { uncommentedExports, totalExports, outdatedComments, undocumentedComplexity } = params;
+  const {
+    uncommentedExports,
+    totalExports,
+    outdatedComments,
+    undocumentedComplexity,
+  } = params;
 
-  const uncommentedRatio = totalExports > 0 ? uncommentedExports / totalExports : 0;
+  const uncommentedRatio =
+    totalExports > 0 ? uncommentedExports / totalExports : 0;
   const outdatedScore = Math.min(100, outdatedComments * 15);
   const uncommentedScore = Math.min(100, uncommentedRatio * 100);
   const complexityScore = Math.min(100, undocumentedComplexity * 10);
 
   const score = Math.round(
-    (outdatedScore * 0.60) +
-    (uncommentedScore * 0.20) +
-    (complexityScore * 0.20)
+    outdatedScore * 0.6 + uncommentedScore * 0.2 + complexityScore * 0.2
   );
 
   const finalScore = Math.min(100, Math.max(0, score));
@@ -919,13 +1058,19 @@ export function calculateDocDrift(params: {
 
   const recommendations: string[] = [];
   if (outdatedComments > 0) {
-    recommendations.push(`Update or remove ${outdatedComments} outdated comments that contradict the code.`);
+    recommendations.push(
+      `Update or remove ${outdatedComments} outdated comments that contradict the code.`
+    );
   }
   if (uncommentedRatio > 0.3) {
-    recommendations.push(`Add JSDoc to ${uncommentedExports} uncommented exports.`);
+    recommendations.push(
+      `Add JSDoc to ${uncommentedExports} uncommented exports.`
+    );
   }
   if (undocumentedComplexity > 0) {
-    recommendations.push(`Explain the business logic for ${undocumentedComplexity} highly complex functions.`);
+    recommendations.push(
+      `Explain the business logic for ${undocumentedComplexity} highly complex functions.`
+    );
   }
 
   return {
@@ -962,20 +1107,24 @@ export function calculateDependencyHealth(params: {
   deprecatedPackages: number;
   trainingCutoffSkew: number;
 }): DependencyHealthScore {
-  const { totalPackages, outdatedPackages, deprecatedPackages, trainingCutoffSkew } = params;
+  const {
+    totalPackages,
+    outdatedPackages,
+    deprecatedPackages,
+    trainingCutoffSkew,
+  } = params;
 
-  const outdatedRatio = totalPackages > 0 ? outdatedPackages / totalPackages : 0;
-  const deprecatedRatio = totalPackages > 0 ? deprecatedPackages / totalPackages : 0;
+  const outdatedRatio =
+    totalPackages > 0 ? outdatedPackages / totalPackages : 0;
+  const deprecatedRatio =
+    totalPackages > 0 ? deprecatedPackages / totalPackages : 0;
 
-  const outdatedScore = Math.max(0, 100 - (outdatedRatio * 200));
-  const deprecatedScore = Math.max(0, 100 - (deprecatedRatio * 500));
-  const skewScore = Math.max(0, 100 - (trainingCutoffSkew * 100));
+  const outdatedScore = Math.max(0, 100 - outdatedRatio * 200);
+  const deprecatedScore = Math.max(0, 100 - deprecatedRatio * 500);
+  const skewScore = Math.max(0, 100 - trainingCutoffSkew * 100);
 
-  const rawScore = (
-    (outdatedScore * 0.3) +
-    (deprecatedScore * 0.4) +
-    (skewScore * 0.3)
-  );
+  const rawScore =
+    outdatedScore * 0.3 + deprecatedScore * 0.4 + skewScore * 0.3;
 
   const score = Math.round(Math.min(100, Math.max(0, rawScore)));
 
@@ -987,20 +1136,28 @@ export function calculateDependencyHealth(params: {
   else rating = 'hazardous';
 
   let aiKnowledgeConfidence: DependencyHealthScore['aiKnowledgeConfidence'];
-  if (trainingCutoffSkew < 0.2 && deprecatedPackages === 0) aiKnowledgeConfidence = 'high';
-  else if (trainingCutoffSkew < 0.5 && deprecatedPackages <= 2) aiKnowledgeConfidence = 'moderate';
+  if (trainingCutoffSkew < 0.2 && deprecatedPackages === 0)
+    aiKnowledgeConfidence = 'high';
+  else if (trainingCutoffSkew < 0.5 && deprecatedPackages <= 2)
+    aiKnowledgeConfidence = 'moderate';
   else if (trainingCutoffSkew < 0.8) aiKnowledgeConfidence = 'low';
   else aiKnowledgeConfidence = 'blind';
 
   const recommendations: string[] = [];
   if (deprecatedPackages > 0) {
-    recommendations.push(`Replace ${deprecatedPackages} deprecated packages, as AI will struggle to find modern solutions.`);
+    recommendations.push(
+      `Replace ${deprecatedPackages} deprecated packages, as AI will struggle to find modern solutions.`
+    );
   }
   if (outdatedRatio > 0.2) {
-    recommendations.push(`Update ${outdatedPackages} outdated packages to keep APIs aligned with AI training data.`);
+    recommendations.push(
+      `Update ${outdatedPackages} outdated packages to keep APIs aligned with AI training data.`
+    );
   }
   if (trainingCutoffSkew > 0.5) {
-    recommendations.push('High training cutoff skew detected. AI may hallucinate APIs that were introduced recently.');
+    recommendations.push(
+      'High training cutoff skew detected. AI may hallucinate APIs that were introduced recently.'
+    );
   }
 
   return {
@@ -1025,7 +1182,12 @@ export interface ChangeAmplificationScore {
   rating: 'isolated' | 'contained' | 'amplified' | 'explosive';
   avgAmplification: number;
   maxAmplification: number;
-  hotspots: Array<{ file: string; fanOut: number; fanIn: number; amplificationFactor: number }>;
+  hotspots: Array<{
+    file: string;
+    fanOut: number;
+    fanIn: number;
+    amplificationFactor: number;
+  }>;
   recommendations: string[];
 }
 
@@ -1044,17 +1206,21 @@ export function calculateChangeAmplification(params: {
     };
   }
 
-  const hotspots = files.map(f => {
-    // Amplification factor means how many things break if this changes, plus how many things it touches if they change
-    const amplificationFactor = f.fanOut + (f.fanIn * 0.5);
-    return { ...f, amplificationFactor };
-  }).sort((a, b) => b.amplificationFactor - a.amplificationFactor);
+  const hotspots = files
+    .map((f) => {
+      // Amplification factor means how many things break if this changes, plus how many things it touches if they change
+      const amplificationFactor = f.fanOut + f.fanIn * 0.5;
+      return { ...f, amplificationFactor };
+    })
+    .sort((a, b) => b.amplificationFactor - a.amplificationFactor);
 
   const maxAmplification = hotspots[0].amplificationFactor;
-  const avgAmplification = hotspots.reduce((sum, h) => sum + h.amplificationFactor, 0) / hotspots.length;
+  const avgAmplification =
+    hotspots.reduce((sum, h) => sum + h.amplificationFactor, 0) /
+    hotspots.length;
 
-  let score = 100 - (avgAmplification * 5);
-  if (maxAmplification > 20) score -= (maxAmplification - 20);
+  let score = 100 - avgAmplification * 5;
+  if (maxAmplification > 20) score -= maxAmplification - 20;
   score = Math.max(0, Math.min(100, score));
 
   let rating: ChangeAmplificationScore['rating'] = 'isolated';
@@ -1064,10 +1230,14 @@ export function calculateChangeAmplification(params: {
 
   const recommendations: string[] = [];
   if (score < 70 && hotspots.length > 0) {
-    recommendations.push(`Refactor top hotspot '${hotspots[0].file}' to reduce coupling (fan-out: ${hotspots[0].fanOut}, fan-in: ${hotspots[0].fanIn}).`);
+    recommendations.push(
+      `Refactor top hotspot '${hotspots[0].file}' to reduce coupling (fan-out: ${hotspots[0].fanOut}, fan-in: ${hotspots[0].fanIn}).`
+    );
   }
   if (maxAmplification > 30) {
-    recommendations.push(`Break down key bottlenecks with amplification factor > 30.`);
+    recommendations.push(
+      `Break down key bottlenecks with amplification factor > 30.`
+    );
   }
 
   return {
@@ -1100,31 +1270,33 @@ export function calculateExtendedFutureProofScore(params: {
   semanticDistances?: SemanticDistance[];
 }): ToolScoringOutput {
   const loadScore = 100 - params.cognitiveLoad.score;
-  const entropyScore = 100 - (params.patternEntropy.entropy * 100);
+  const entropyScore = 100 - params.patternEntropy.entropy * 100;
   const cohesionScore = params.conceptCohesion.score * 100;
   const aiSignalClarityScore = 100 - params.aiSignalClarity.score;
   const groundingScore = params.agentGrounding.score;
   const testabilityScore = params.testability.score;
-  const docDriftScore = params.docDrift ? (100 - params.docDrift.score) : 100;
-  const depsHealthScore = params.dependencyHealth ? params.dependencyHealth.score : 100;
+  const docDriftScore = params.docDrift ? 100 - params.docDrift.score : 100;
+  const depsHealthScore = params.dependencyHealth
+    ? params.dependencyHealth.score
+    : 100;
 
   // Weights: cognitive clarity + code structure + AI safety
   let totalWeight = 0.8;
   let overall =
-    (loadScore * 0.15) +
-    (entropyScore * 0.10) +
-    (cohesionScore * 0.10) +
-    (aiSignalClarityScore * 0.15) +
-    (groundingScore * 0.15) +
-    (testabilityScore * 0.15);
+    loadScore * 0.15 +
+    entropyScore * 0.1 +
+    cohesionScore * 0.1 +
+    aiSignalClarityScore * 0.15 +
+    groundingScore * 0.15 +
+    testabilityScore * 0.15;
 
   if (params.docDrift) {
-    overall += docDriftScore * 0.10;
-    totalWeight += 0.10;
+    overall += docDriftScore * 0.1;
+    totalWeight += 0.1;
   }
   if (params.dependencyHealth) {
-    overall += depsHealthScore * 0.10;
-    totalWeight += 0.10;
+    overall += depsHealthScore * 0.1;
+    totalWeight += 0.1;
   }
 
   overall = Math.round(overall / totalWeight);
@@ -1184,10 +1356,17 @@ export function calculateExtendedFutureProofScore(params: {
     recommendations.push({ action: rec, estimatedImpact: 8, priority: 'high' });
   }
   for (const rec of params.agentGrounding.recommendations) {
-    recommendations.push({ action: rec, estimatedImpact: 6, priority: 'medium' });
+    recommendations.push({
+      action: rec,
+      estimatedImpact: 6,
+      priority: 'medium',
+    });
   }
   for (const rec of params.testability.recommendations) {
-    const priority = params.testability.aiChangeSafetyRating === 'blind-risk' ? 'high' : 'medium';
+    const priority =
+      params.testability.aiChangeSafetyRating === 'blind-risk'
+        ? 'high'
+        : 'medium';
     recommendations.push({ action: rec, estimatedImpact: 10, priority });
   }
   for (const rec of params.patternEntropy.recommendations) {
@@ -1195,18 +1374,28 @@ export function calculateExtendedFutureProofScore(params: {
   }
   if (params.docDrift) {
     for (const rec of params.docDrift.recommendations) {
-      recommendations.push({ action: rec, estimatedImpact: 8, priority: 'high' });
+      recommendations.push({
+        action: rec,
+        estimatedImpact: 8,
+        priority: 'high',
+      });
     }
   }
   if (params.dependencyHealth) {
     for (const rec of params.dependencyHealth.recommendations) {
-      recommendations.push({ action: rec, estimatedImpact: 7, priority: 'medium' });
+      recommendations.push({
+        action: rec,
+        estimatedImpact: 7,
+        priority: 'medium',
+      });
     }
   }
 
-  const semanticDistanceAvg = params.semanticDistances && params.semanticDistances.length > 0
-    ? params.semanticDistances.reduce((s, d) => s + d.distance, 0) / params.semanticDistances.length
-    : 0;
+  const semanticDistanceAvg =
+    params.semanticDistances && params.semanticDistances.length > 0
+      ? params.semanticDistances.reduce((s, d) => s + d.distance, 0) /
+        params.semanticDistances.length
+      : 0;
 
   return {
     toolName: 'future-proof',

@@ -26,7 +26,7 @@ export function resolveOutputPath(
   workingDir: string = process.cwd()
 ): string {
   let outputPath: string;
-  
+
   if (userPath) {
     // User provided a path, use it as-is
     outputPath = userPath;
@@ -35,7 +35,7 @@ export function resolveOutputPath(
     const aireadyDir = join(workingDir, '.aiready');
     outputPath = join(aireadyDir, defaultFilename);
   }
-  
+
   // Ensure parent directory exists (works for both default and custom paths)
   const parentDir = dirname(outputPath);
   if (!existsSync(parentDir)) {

@@ -22,7 +22,10 @@ export interface FileImport {
 /**
  * Parse TypeScript/JavaScript file and extract exports with their import dependencies
  */
-export function parseFileExports(code: string, filePath: string): {
+export function parseFileExports(
+  code: string,
+  filePath: string
+): {
   exports: ExportWithImports[];
   imports: FileImport[];
 } {
@@ -59,7 +62,8 @@ function extractFileImports(ast: TSESTree.Program): FileImport[] {
       for (const spec of node.specifiers) {
         if (spec.type === 'ImportSpecifier') {
           const imported = spec.imported;
-          const importName = imported.type === 'Identifier' ? imported.name : imported.value;
+          const importName =
+            imported.type === 'Identifier' ? imported.name : imported.value;
           specifiers.push(importName);
         } else if (spec.type === 'ImportDefaultSpecifier') {
           specifiers.push('default');
@@ -83,7 +87,7 @@ function extractExportsWithDependencies(
   fileImports: FileImport[]
 ): ExportWithImports[] {
   const exports: ExportWithImports[] = [];
-  const importedNames = new Set(fileImports.flatMap(imp => imp.specifiers));
+  const importedNames = new Set(fileImports.flatMap((imp) => imp.specifiers));
 
   for (const node of ast.body) {
     if (node.type === 'ExportNamedDeclaration') {
@@ -126,9 +130,17 @@ function extractFromDeclaration(
 ): Array<{ name: string; type: ExportWithImports['type'] }> {
   const results: Array<{ name: string; type: ExportWithImports['type'] }> = [];
 
-  if (declaration.type === 'FunctionDeclaration' && 'id' in declaration && declaration.id) {
+  if (
+    declaration.type === 'FunctionDeclaration' &&
+    'id' in declaration &&
+    declaration.id
+  ) {
     results.push({ name: declaration.id.name, type: 'function' });
-  } else if (declaration.type === 'ClassDeclaration' && 'id' in declaration && declaration.id) {
+  } else if (
+    declaration.type === 'ClassDeclaration' &&
+    'id' in declaration &&
+    declaration.id
+  ) {
     results.push({ name: declaration.id.name, type: 'class' });
   } else if (declaration.type === 'VariableDeclaration') {
     for (const declarator of declaration.declarations) {
@@ -164,7 +176,7 @@ function findUsedImports(
       const value = (n as any)[key];
       if (value && typeof value === 'object') {
         if (Array.isArray(value)) {
-          value.forEach(child => {
+          value.forEach((child) => {
             if (child && typeof child === 'object' && 'type' in child) {
               visit(child);
             }
@@ -194,7 +206,7 @@ export function calculateImportSimilarity(
   const set1 = new Set(export1.imports);
   const set2 = new Set(export2.imports);
 
-  const intersection = new Set([...set1].filter(x => set2.has(x)));
+  const intersection = new Set([...set1].filter((x) => set2.has(x)));
   const union = new Set([...set1, ...set2]);
 
   return intersection.size / union.size;

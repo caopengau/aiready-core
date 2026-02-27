@@ -1,10 +1,10 @@
 /**
  * Business Value Metrics Module
- * 
+ *
  * Provides business-aligned metrics that quantify ROI and survive technology changes.
  * These metrics connect technical measurements to developer productivity and cost impact.
- * 
- * NEW in v0.11: Extended with temporal tracking, knowledge concentration, and 
+ *
+ * NEW in v0.11: Extended with temporal tracking, knowledge concentration, and
  * technical debt interest calculations.
  * NEW in v0.12: Multi-model pricing presets, model-aware CDI calibration,
  * and improved acceptance rate prediction with data-grounded baselines.
@@ -41,8 +41,8 @@ export interface ModelPricingPreset {
 export const MODEL_PRICING_PRESETS: Record<string, ModelPricingPreset> = {
   'gpt-4': {
     name: 'GPT-4',
-    pricePer1KInputTokens: 0.030,
-    pricePer1KOutputTokens: 0.060,
+    pricePer1KInputTokens: 0.03,
+    pricePer1KOutputTokens: 0.06,
     contextTier: 'standard',
     typicalQueriesPerDevPerDay: 40,
   },
@@ -56,7 +56,7 @@ export const MODEL_PRICING_PRESETS: Record<string, ModelPricingPreset> = {
   'gpt-4o-mini': {
     name: 'GPT-4o mini',
     pricePer1KInputTokens: 0.00015,
-    pricePer1KOutputTokens: 0.00060,
+    pricePer1KOutputTokens: 0.0006,
     contextTier: 'extended',
     typicalQueriesPerDevPerDay: 120,
   },
@@ -90,12 +90,12 @@ export const MODEL_PRICING_PRESETS: Record<string, ModelPricingPreset> = {
   },
   'gemini-2-0-flash': {
     name: 'Gemini 2.0 Flash',
-    pricePer1KInputTokens: 0.00010,
-    pricePer1KOutputTokens: 0.00040,
+    pricePer1KInputTokens: 0.0001,
+    pricePer1KOutputTokens: 0.0004,
     contextTier: 'frontier',
     typicalQueriesPerDevPerDay: 150,
   },
-  'copilot': {
+  copilot: {
     name: 'GitHub Copilot (subscription)',
     // Amortized per-request cost for a $19/month plan at 80 queries/day
     pricePer1KInputTokens: 0.0001,
@@ -231,9 +231,9 @@ export interface DebtBreakdown {
  * Use MODEL_PRICING_PRESETS for model-specific accuracy.
  */
 export const DEFAULT_COST_CONFIG: CostConfig = {
-  pricePer1KTokens: 0.005,   // GPT-4o input price (updated from GPT-4 era 0.01)
-  queriesPerDevPerDay: 60,    // Average AI queries per developer (updated: 40→60 as of 2026)
-  developerCount: 5,          // Default team size
+  pricePer1KTokens: 0.005, // GPT-4o input price (updated from GPT-4 era 0.01)
+  queriesPerDevPerDay: 60, // Average AI queries per developer (updated: 40→60 as of 2026)
+  developerCount: 5, // Default team size
   daysPerMonth: 30,
 };
 
@@ -242,10 +242,10 @@ export const DEFAULT_COST_CONFIG: CostConfig = {
  * Based on industry research on bug fixing times
  */
 const SEVERITY_TIME_ESTIMATES = {
-  critical: 4,   // Complex architectural issues
-  major: 2,      // Significant refactoring needed
-  minor: 0.5,    // Simple naming/style fixes
-  info: 0.25,    // Documentation improvements
+  critical: 4, // Complex architectural issues
+  major: 2, // Significant refactoring needed
+  minor: 0.5, // Simple naming/style fixes
+  info: 0.25, // Documentation improvements
 };
 
 /**
@@ -255,7 +255,7 @@ const DEFAULT_HOURLY_RATE = 75;
 
 /**
  * Calculate estimated monthly cost of AI context waste
- * 
+ *
  * Formula: (tokenWaste / 1000) × pricePer1K × queriesPerDev × devCount × days
  */
 export function calculateMonthlyCost(
@@ -279,10 +279,10 @@ export function calculateProductivityImpact(
   hourlyRate: number = DEFAULT_HOURLY_RATE
 ): ProductivityImpact {
   const counts = {
-    critical: issues.filter(i => i.severity === 'critical').length,
-    major: issues.filter(i => i.severity === 'major').length,
-    minor: issues.filter(i => i.severity === 'minor').length,
-    info: issues.filter(i => i.severity === 'info').length,
+    critical: issues.filter((i) => i.severity === 'critical').length,
+    major: issues.filter((i) => i.severity === 'major').length,
+    minor: issues.filter((i) => i.severity === 'minor').length,
+    info: issues.filter((i) => i.severity === 'info').length,
   };
 
   const hours = {
@@ -300,22 +300,31 @@ export function calculateProductivityImpact(
     hourlyRate,
     totalCost: Math.round(totalCost),
     bySeverity: {
-      critical: { hours: Math.round(hours.critical * 10) / 10, cost: Math.round(hours.critical * hourlyRate) },
-      major: { hours: Math.round(hours.major * 10) / 10, cost: Math.round(hours.major * hourlyRate) },
-      minor: { hours: Math.round(hours.minor * 10) / 10, cost: Math.round(hours.minor * hourlyRate) },
+      critical: {
+        hours: Math.round(hours.critical * 10) / 10,
+        cost: Math.round(hours.critical * hourlyRate),
+      },
+      major: {
+        hours: Math.round(hours.major * 10) / 10,
+        cost: Math.round(hours.major * hourlyRate),
+      },
+      minor: {
+        hours: Math.round(hours.minor * 10) / 10,
+        cost: Math.round(hours.minor * hourlyRate),
+      },
     },
   };
 }
 
 /**
  * Predict AI suggestion acceptance rate based on code quality
- * 
+ *
  * Calibration notes (v0.12):
  * - GitHub Copilot reports ~30% industry average acceptance rate (2023 blog)
  * - Internal teams with high-consistency codebases report 40-55%
  * - Teams with semantic duplication report 20-25% (AI suggests wrong variant)
  * - Context efficiency is the strongest single predictor
- * 
+ *
  * Confidence levels:
  * - 3 tools: 0.75 (triangulated estimate)
  * - 2 tools: 0.55 (partial estimate)
@@ -328,7 +337,7 @@ export function predictAcceptanceRate(
 
   // Industry baseline: ~30% average acceptance rate
   // High-quality codebases achieve 50-60%
-  const baseRate = 0.30;
+  const baseRate = 0.3;
 
   // Pattern detection impact
   // Research: duplicated code causes AI to surface wrong variants
@@ -380,13 +389,13 @@ export function predictAcceptanceRate(
 
   // Calculate total rate with floor/ceiling
   const totalImpact = factors.reduce((sum, f) => sum + f.impact / 100, 0);
-  const rate = Math.max(0.05, Math.min(0.80, baseRate + totalImpact));
+  const rate = Math.max(0.05, Math.min(0.8, baseRate + totalImpact));
 
   // Confidence based on data availability and tool diversity
   let confidence: number;
   if (toolOutputs.size >= 4) confidence = 0.75;
   else if (toolOutputs.size >= 3) confidence = 0.65;
-  else if (toolOutputs.size >= 2) confidence = 0.50;
+  else if (toolOutputs.size >= 2) confidence = 0.5;
   else confidence = 0.35;
 
   return {
@@ -398,7 +407,7 @@ export function predictAcceptanceRate(
 
 /**
  * Calculate Comprehension Difficulty Index
- * 
+ *
  * A future-proof abstraction that normalizes multiple factors
  * into a single difficulty score. Lower = easier for AI.
  *
@@ -423,17 +432,24 @@ export function calculateComprehensionDifficulty(
   // Context budget factor (0-100)
   // Below ideal = 0, above critical = 100
   const budgetRange = criticalBudget - idealBudget;
-  const budgetFactor = Math.min(100, Math.max(0,
-    (contextBudget - idealBudget) / budgetRange * 100
-  ));
+  const budgetFactor = Math.min(
+    100,
+    Math.max(0, ((contextBudget - idealBudget) / budgetRange) * 100)
+  );
 
   // Import depth factor (0-100)
   // Below idealDepth = 0, each level beyond = +10
-  const depthFactor = Math.min(100, Math.max(0, (importDepth - idealDepth) * 10));
+  const depthFactor = Math.min(
+    100,
+    Math.max(0, (importDepth - idealDepth) * 10)
+  );
 
   // Fragmentation factor (0-100)
   // <0.3 = well-organized (0), >0.7 = fragmented (100)
-  const fragmentationFactor = Math.min(100, Math.max(0, (fragmentation - 0.3) * 250));
+  const fragmentationFactor = Math.min(
+    100,
+    Math.max(0, (fragmentation - 0.3) * 250)
+  );
 
   // Consistency factor (inverse - low score = high difficulty)
   // 100 score = 0 difficulty, 0 score = 100 difficulty
@@ -445,11 +461,11 @@ export function calculateComprehensionDifficulty(
 
   // Weighted average
   const score = Math.round(
-    (budgetFactor * 0.35) +
-    (depthFactor * 0.20) +
-    (fragmentationFactor * 0.20) +
-    (consistencyFactor * 0.15) +
-    (fileFactor * 0.10)
+    budgetFactor * 0.35 +
+      depthFactor * 0.2 +
+      fragmentationFactor * 0.2 +
+      consistencyFactor * 0.15 +
+      fileFactor * 0.1
   );
 
   // Determine rating
@@ -471,12 +487,12 @@ export function calculateComprehensionDifficulty(
       },
       {
         name: 'Import Depth',
-        contribution: Math.round(depthFactor * 0.20),
+        contribution: Math.round(depthFactor * 0.2),
         description: `${importDepth.toFixed(1)} average levels (ideal <${idealDepth} for ${modelTier})`,
       },
       {
         name: 'Code Fragmentation',
-        contribution: Math.round(fragmentationFactor * 0.20),
+        contribution: Math.round(fragmentationFactor * 0.2),
         description: `${(fragmentation * 100).toFixed(0)}% fragmentation`,
       },
       {
@@ -486,7 +502,7 @@ export function calculateComprehensionDifficulty(
       },
       {
         name: 'Project Scale',
-        contribution: Math.round(fileFactor * 0.10),
+        contribution: Math.round(fileFactor * 0.1),
         description: `${totalFiles} files analyzed`,
       },
     ],
@@ -551,8 +567,12 @@ export function calculateScoreTrend(history: ScoreHistoryEntry[]): ScoreTrend {
   const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
 
   // Get entries within time ranges
-  const last30Days = history.filter(e => new Date(e.timestamp) >= thirtyDaysAgo);
-  const last90Days = history.filter(e => new Date(e.timestamp) >= ninetyDaysAgo);
+  const last30Days = history.filter(
+    (e) => new Date(e.timestamp) >= thirtyDaysAgo
+  );
+  const last90Days = history.filter(
+    (e) => new Date(e.timestamp) >= ninetyDaysAgo
+  );
 
   // Calculate changes
   const currentScore = history[history.length - 1].overallScore;
@@ -574,7 +594,10 @@ export function calculateScoreTrend(history: ScoreHistoryEntry[]): ScoreTrend {
   else direction = 'stable';
 
   // Project score 30 days out
-  const projectedScore = Math.max(0, Math.min(100, currentScore + (velocity * 4)));
+  const projectedScore = Math.max(
+    0,
+    Math.min(100, currentScore + velocity * 4)
+  );
 
   return {
     direction,
@@ -606,24 +629,28 @@ export function calculateRemediationVelocity(
   const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
   // Issues fixed this week
-  const thisWeek = history.filter(e => new Date(e.timestamp) >= oneWeekAgo);
-  const lastWeek = history.filter(e =>
-    new Date(e.timestamp) >= twoWeeksAgo && new Date(e.timestamp) < oneWeekAgo
+  const thisWeek = history.filter((e) => new Date(e.timestamp) >= oneWeekAgo);
+  const lastWeek = history.filter(
+    (e) =>
+      new Date(e.timestamp) >= twoWeeksAgo && new Date(e.timestamp) < oneWeekAgo
   );
 
-  const issuesFixedThisWeek = thisWeek.length > 1
-    ? thisWeek[0].totalIssues - thisWeek[thisWeek.length - 1].totalIssues
-    : 0;
+  const issuesFixedThisWeek =
+    thisWeek.length > 1
+      ? thisWeek[0].totalIssues - thisWeek[thisWeek.length - 1].totalIssues
+      : 0;
 
   // Average issues per week over history
-  const totalIssuesFixed = history[0].totalIssues - history[history.length - 1].totalIssues;
+  const totalIssuesFixed =
+    history[0].totalIssues - history[history.length - 1].totalIssues;
   const weeksOfData = Math.max(1, history.length / 7);
   const avgIssuesPerWeek = totalIssuesFixed / weeksOfData;
 
   // Determine trend
   let trend: RemediationVelocity['trend'];
   if (lastWeek.length > 1) {
-    const lastWeekFixed = lastWeek[0].totalIssues - lastWeek[lastWeek.length - 1].totalIssues;
+    const lastWeekFixed =
+      lastWeek[0].totalIssues - lastWeek[lastWeek.length - 1].totalIssues;
     if (issuesFixedThisWeek > lastWeekFixed * 1.2) trend = 'accelerating';
     else if (issuesFixedThisWeek < lastWeekFixed * 0.8) trend = 'decelerating';
     else trend = 'stable';
@@ -632,9 +659,10 @@ export function calculateRemediationVelocity(
   }
 
   // Estimated completion
-  const estimatedCompletionWeeks = avgIssuesPerWeek > 0
-    ? Math.ceil(currentIssues / avgIssuesPerWeek)
-    : Infinity;
+  const estimatedCompletionWeeks =
+    avgIssuesPerWeek > 0
+      ? Math.ceil(currentIssues / avgIssuesPerWeek)
+      : Infinity;
 
   return {
     issuesFixedThisWeek: Math.max(0, issuesFixedThisWeek),
@@ -650,7 +678,7 @@ export function calculateRemediationVelocity(
 
 /**
  * Calculate knowledge concentration risk
- * 
+ *
  * This measures how "centralized" knowledge is in the codebase,
  * similar to bus factor but for AI/ML training purposes.
  */
@@ -678,17 +706,21 @@ export function calculateKnowledgeConcentration(
   }
 
   // Identify orphan files (few imports, few exports - isolated)
-  const orphanFiles = files.filter(f => f.exports < 2 && f.imports < 2).length;
+  const orphanFiles = files.filter(
+    (f) => f.exports < 2 && f.imports < 2
+  ).length;
 
   // Identify unique concept files (high export count)
-  const avgExports = files.reduce((sum, f) => sum + f.exports, 0) / files.length;
-  const uniqueConceptFiles = files.filter(f => f.exports > avgExports * 2).length;
+  const avgExports =
+    files.reduce((sum, f) => sum + f.exports, 0) / files.length;
+  const uniqueConceptFiles = files.filter(
+    (f) => f.exports > avgExports * 2
+  ).length;
 
   // Calculate concentration ratio
   const totalExports = files.reduce((sum, f) => sum + f.exports, 0);
-  const concentrationRatio = totalExports > 0
-    ? uniqueConceptFiles / files.length
-    : 0;
+  const concentrationRatio =
+    totalExports > 0 ? uniqueConceptFiles / files.length : 0;
 
   // Single author files (if author data available)
   let singleAuthorFiles = 0;
@@ -702,9 +734,14 @@ export function calculateKnowledgeConcentration(
   // Higher score = more risk
   const orphanRisk = (orphanFiles / files.length) * 30;
   const uniqueRisk = concentrationRatio * 40;
-  const singleAuthorRisk = authorData ? (singleAuthorFiles / files.length) * 30 : 0;
+  const singleAuthorRisk = authorData
+    ? (singleAuthorFiles / files.length) * 30
+    : 0;
 
-  const score = Math.min(100, Math.round(orphanRisk + uniqueRisk + singleAuthorRisk));
+  const score = Math.min(
+    100,
+    Math.round(orphanRisk + uniqueRisk + singleAuthorRisk)
+  );
 
   // Determine rating
   let rating: KnowledgeConcentrationRisk['rating'];
@@ -716,13 +753,19 @@ export function calculateKnowledgeConcentration(
   // Generate recommendations
   const recommendations: string[] = [];
   if (orphanFiles > files.length * 0.2) {
-    recommendations.push(`Reduce ${orphanFiles} orphan files by connecting them to main modules`);
+    recommendations.push(
+      `Reduce ${orphanFiles} orphan files by connecting them to main modules`
+    );
   }
   if (uniqueConceptFiles > files.length * 0.1) {
-    recommendations.push('Distribute high-export files into more focused modules');
+    recommendations.push(
+      'Distribute high-export files into more focused modules'
+    );
   }
   if (authorData && singleAuthorFiles > files.length * 0.3) {
-    recommendations.push('Increase knowledge sharing to reduce single-author dependencies');
+    recommendations.push(
+      'Increase knowledge sharing to reduce single-author dependencies'
+    );
   }
 
   return {
@@ -745,7 +788,7 @@ export function calculateKnowledgeConcentration(
 
 /**
  * Calculate technical debt interest rate
- * 
+ *
  * The key insight: technical debt compounds over time.
  * Each month, issues grow by a certain rate due to:
  * - New code inheriting patterns
@@ -760,16 +803,18 @@ export function calculateTechnicalDebtInterest(params: {
   const { currentMonthlyCost, issues, monthsOpen } = params;
 
   // Base interest rate varies by severity mix
-  const criticalCount = issues.filter(i => i.severity === 'critical').length;
-  const majorCount = issues.filter(i => i.severity === 'major').length;
-  const minorCount = issues.filter(i => i.severity === 'minor').length;
+  const criticalCount = issues.filter((i) => i.severity === 'critical').length;
+  const majorCount = issues.filter((i) => i.severity === 'major').length;
+  const minorCount = issues.filter((i) => i.severity === 'minor').length;
 
   // Higher severity concentration = higher interest rate
-  const severityWeight = (criticalCount * 3 + majorCount * 2 + minorCount * 1) / Math.max(1, issues.length);
-  const baseRate = 0.02 + (severityWeight * 0.01); // 2-5% monthly base
+  const severityWeight =
+    (criticalCount * 3 + majorCount * 2 + minorCount * 1) /
+    Math.max(1, issues.length);
+  const baseRate = 0.02 + severityWeight * 0.01; // 2-5% monthly base
 
   // Monthly rate increases with time open (accelerating debt)
-  const timeMultiplier = Math.max(1, 1 + (monthsOpen * 0.1));
+  const timeMultiplier = Math.max(1, 1 + monthsOpen * 0.1);
   const monthlyRate = baseRate * timeMultiplier;
 
   // Projected growth
@@ -790,7 +835,7 @@ export function calculateTechnicalDebtInterest(params: {
 
   return {
     monthlyRate: Math.round(monthlyRate * 10000) / 100,
-    annualRate: Math.round(((Math.pow(1 + monthlyRate, 12) - 1) * 10000)) / 100,
+    annualRate: Math.round((Math.pow(1 + monthlyRate, 12) - 1) * 10000) / 100,
     principal,
     projections,
     monthlyCost: Math.round(currentMonthlyCost * (1 + monthlyRate) * 100) / 100,

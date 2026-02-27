@@ -25,13 +25,13 @@ export type IssueType =
   | 'circular-dependency'
   | 'missing-types'
   // v0.12+ dimensions
-  | 'ai-signal-clarity'        // Code pattern known to cause AI AI signal clarity
-  | 'low-testability'           // AI changes cannot be safely verified
-  | 'agent-navigation-failure'  // Agent cannot determine where code belongs
-  | 'ambiguous-api'             // Public API surface is unclear or untyped
-  | 'magic-literal'             // Unnamed constant confuses AI intent inference
-  | 'boolean-trap'              // Boolean param pattern that inverts AI intent
-  | 'change-amplification';     // A small change here causes massive downstream breakages
+  | 'ai-signal-clarity' // Code pattern known to cause AI AI signal clarity
+  | 'low-testability' // AI changes cannot be safely verified
+  | 'agent-navigation-failure' // Agent cannot determine where code belongs
+  | 'ambiguous-api' // Public API surface is unclear or untyped
+  | 'magic-literal' // Unnamed constant confuses AI intent inference
+  | 'boolean-trap' // Boolean param pattern that inverts AI intent
+  | 'change-amplification'; // A small change here causes massive downstream breakages
 
 export interface Location {
   file: string;
@@ -166,7 +166,7 @@ export interface AIReadyConfig {
   scan?: {
     include?: string[];
     exclude?: string[];
-    tools?: string[];  // Which tools to run: ["patterns", "context", "consistency"]
+    tools?: string[]; // Which tools to run: ["patterns", "context", "consistency"]
   };
 
   // Tool-specific configurations
@@ -198,7 +198,7 @@ export interface AIReadyConfig {
       domainPatterns?: string[]; // regex strings to match domains (e.g., ['^ord(er)?$', '^(inv|invoice)$'])
       pathDomainMap?: Record<string, string>; // map of path segment -> domain (e.g., {'orders': 'order'})
     };
-    'consistency'?: {
+    consistency?: {
       enabled?: boolean;
       scoreWeight?: number;
       // Custom abbreviations to accept (domain-specific terms)
@@ -206,21 +206,29 @@ export interface AIReadyConfig {
       // Custom short words that are full English words, not abbreviations
       shortWords?: string[]; // e.g., ['oak', 'elm', 'ash'] for tree species
       // Disable specific checks
-      disableChecks?: ('single-letter' | 'abbreviation' | 'convention-mix' | 'unclear' | 'poor-naming')[];
+      disableChecks?: (
+        | 'single-letter'
+        | 'abbreviation'
+        | 'convention-mix'
+        | 'unclear'
+        | 'poor-naming'
+      )[];
     };
-    [toolName: string]: {
-      enabled?: boolean;
-      scoreWeight?: number;
-      [key: string]: any;
-    } | undefined;
+    [toolName: string]:
+      | {
+          enabled?: boolean;
+          scoreWeight?: number;
+          [key: string]: any;
+        }
+      | undefined;
   };
 
   // Scoring configuration
   scoring?: {
-    threshold?: number;       // Minimum passing score
-    showBreakdown?: boolean;  // Show detailed breakdown
+    threshold?: number; // Minimum passing score
+    showBreakdown?: boolean; // Show detailed breakdown
     compareBaseline?: string; // Path to baseline JSON
-    saveTo?: string;          // Auto-save score to path
+    saveTo?: string; // Auto-save score to path
   };
 
   // Output preferences
@@ -310,6 +318,12 @@ export interface GraphData {
   nodes: GraphNode[];
   edges: GraphEdge[];
   clusters?: { id: string; name: string; nodeIds: string[] }[];
-  issues?: { id: string; type: string; severity: GraphIssueSeverity; nodeIds: string[]; message: string }[];
+  issues?: {
+    id: string;
+    type: string;
+    severity: GraphIssueSeverity;
+    nodeIds: string[];
+    message: string;
+  }[];
   metadata: GraphMetadata;
 }

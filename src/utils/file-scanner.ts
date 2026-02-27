@@ -59,10 +59,10 @@ export const DEFAULT_EXCLUDE = [
 
 /**
  * Scan files in a directory using glob patterns
- * 
+ *
  * Note: This scanner supports multiple languages (.ts, .tsx, .js, .jsx, .py, .java, etc.)
  * Individual tools can filter to their supported languages if needed.
- * 
+ *
  * @param options - Scan configuration
  * @returns Array of absolute file paths matching the patterns
  */
@@ -83,17 +83,19 @@ export async function scanFiles(options: ScanOptions): Promise<string[]> {
       const txt = await readFile(ignoreFilePath, 'utf-8');
       ignoreFromFile = txt
         .split(/\r?\n/)
-        .map(s => s.trim())
+        .map((s) => s.trim())
         .filter(Boolean)
-        .filter(l => !l.startsWith('#'))
-        .filter(l => !l.startsWith('!')); // ignore negations for now
+        .filter((l) => !l.startsWith('#'))
+        .filter((l) => !l.startsWith('!')); // ignore negations for now
     } catch (e) {
       // noop - fall back to defaults if file can't be read
       ignoreFromFile = [];
     }
   }
 
-  const finalExclude = [...new Set([...(exclude || []), ...ignoreFromFile, ...DEFAULT_EXCLUDE])];
+  const finalExclude = [
+    ...new Set([...(exclude || []), ...ignoreFromFile, ...DEFAULT_EXCLUDE]),
+  ];
 
   // First pass glob using aireadyignore + defaults + CLI excludes
   const files = await glob(include, {

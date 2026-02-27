@@ -7,7 +7,7 @@ import type { GraphData } from '../types';
 /**
  * Generate HTML visualization from graph data
  * Creates an interactive HTML page with a canvas-based graph visualization
- * 
+ *
  * @param graph - The graph data to visualize
  * @returns HTML string representing the interactive visualization
  */

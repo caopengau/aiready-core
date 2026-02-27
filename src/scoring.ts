@@ -1,6 +1,6 @@
 /**
  * AI Readiness Scoring System
- * 
+ *
  * Provides dynamic, composable scoring across multiple analysis tools.
  * Each tool contributes a 0-100 score with configurable weights.
  */
@@ -18,14 +18,14 @@ export interface ToolScoringOutput {
   /** Factors that influenced the score */
   factors: Array<{
     name: string;
-    impact: number;           // +/- points contribution
+    impact: number; // +/- points contribution
     description: string;
   }>;
 
   /** Actionable recommendations with estimated impact */
   recommendations: Array<{
     action: string;
-    estimatedImpact: number;  // +points if fixed
+    estimatedImpact: number; // +points if fixed
     priority: 'high' | 'medium' | 'low';
   }>;
 }
@@ -91,31 +91,30 @@ export interface ScoringConfig {
 export const DEFAULT_TOOL_WEIGHTS: Record<string, number> = {
   'pattern-detect': 22,
   'context-analyzer': 19,
-  'consistency': 14,
+  consistency: 14,
   'ai-signal-clarity': 11,
   'agent-grounding': 10,
-  'testability': 10,
+  testability: 10,
   'doc-drift': 8,
-  'deps': 6,
+  deps: 6,
 };
-
 
 /**
  * Tool name normalization map (shorthand -> full name)
  */
 export const TOOL_NAME_MAP: Record<string, string> = {
-  'patterns': 'pattern-detect',
-  'context': 'context-analyzer',
-  'consistency': 'consistency',
+  patterns: 'pattern-detect',
+  context: 'context-analyzer',
+  consistency: 'consistency',
   'AI signal clarity': 'ai-signal-clarity',
   'ai-signal-clarity': 'ai-signal-clarity',
-  'grounding': 'agent-grounding',
+  grounding: 'agent-grounding',
   'agent-grounding': 'agent-grounding',
-  'testability': 'testability',
-  'tests': 'testability',
+  testability: 'testability',
+  tests: 'testability',
   'doc-drift': 'doc-drift',
-  'docs': 'doc-drift',
-  'deps': 'deps',
+  docs: 'doc-drift',
+  deps: 'deps',
 };
 
 /**
@@ -126,23 +125,26 @@ export const TOOL_NAME_MAP: Record<string, string> = {
  * thresholds relative to the model your team uses.
  */
 export type ModelContextTier =
-  | 'compact'     // 4k-16k  tokens: GPT-3.5, older Codex
-  | 'standard'    // 16k-64k tokens: GPT-4, Claude 3 Haiku
-  | 'extended'    // 64k-200k: GPT-4o, Claude 3.5 Sonnet, Gemini 1.5 Pro
-  | 'frontier';   // 200k+: Claude 3.5/3.7/4, Gemini 2.0/2.5, GPT-4.5+
+  | 'compact' // 4k-16k  tokens: GPT-3.5, older Codex
+  | 'standard' // 16k-64k tokens: GPT-4, Claude 3 Haiku
+  | 'extended' // 64k-200k: GPT-4o, Claude 3.5 Sonnet, Gemini 1.5 Pro
+  | 'frontier'; // 200k+: Claude 3.5/3.7/4, Gemini 2.0/2.5, GPT-4.5+
 
 /**
  * Context budget thresholds per tier.
  * Scores are interpolated between these boundaries.
  */
-export const CONTEXT_TIER_THRESHOLDS: Record<ModelContextTier, {
-  /** Below this → full score for context budget */
-  idealTokens: number;
-  /** Above this → critical penalty for context budget */
-  criticalTokens: number;
-  /** Suggested max import depth before penalty */
-  idealDepth: number;
-}> = {
+export const CONTEXT_TIER_THRESHOLDS: Record<
+  ModelContextTier,
+  {
+    /** Below this → full score for context budget */
+    idealTokens: number;
+    /** Above this → critical penalty for context budget */
+    criticalTokens: number;
+    /** Suggested max import depth before penalty */
+    idealDepth: number;
+  }
+> = {
   compact: { idealTokens: 3_000, criticalTokens: 10_000, idealDepth: 4 },
   standard: { idealTokens: 5_000, criticalTokens: 15_000, idealDepth: 5 },
   extended: { idealTokens: 15_000, criticalTokens: 50_000, idealDepth: 7 },
@@ -157,17 +159,19 @@ export const CONTEXT_TIER_THRESHOLDS: Record<ModelContextTier, {
  * These are recommended minimum passing thresholds by project size.
  */
 export const SIZE_ADJUSTED_THRESHOLDS: Record<string, number> = {
-  'xs': 80,  // < 50 files
-  'small': 75,  // 50-200 files
-  'medium': 70,  // 200-500 files
-  'large': 65,  // 500-2000 files
-  'enterprise': 58,  // 2000+ files
+  xs: 80, // < 50 files
+  small: 75, // 50-200 files
+  medium: 70, // 200-500 files
+  large: 65, // 500-2000 files
+  enterprise: 58, // 2000+ files
 };
 
 /**
  * Determine project size tier from file count
  */
-export function getProjectSizeTier(fileCount: number): keyof typeof SIZE_ADJUSTED_THRESHOLDS {
+export function getProjectSizeTier(
+  fileCount: number
+): keyof typeof SIZE_ADJUSTED_THRESHOLDS {
   if (fileCount < 50) return 'xs';
   if (fileCount < 200) return 'small';
   if (fileCount < 500) return 'medium';
@@ -185,7 +189,8 @@ export function getRecommendedThreshold(
   const sizeTier = getProjectSizeTier(fileCount);
   const base = SIZE_ADJUSTED_THRESHOLDS[sizeTier];
   // Frontier models are more forgiving (higher context = better comprehension)
-  const modelBonus = modelTier === 'frontier' ? -3 : modelTier === 'extended' ? -2 : 0;
+  const modelBonus =
+    modelTier === 'frontier' ? -3 : modelTier === 'extended' ? -2 : 0;
   return base + modelBonus;
 }
 
@@ -249,9 +254,9 @@ export function parseWeightString(weightStr?: string): Map<string, number> {
 
 /**
  * Calculate overall AI Readiness Score from multiple tool scores.
- * 
+ *
  * Formula: Σ(tool_score × tool_weight) / Σ(active_tool_weights)
- * 
+ *
  * This allows dynamic composition - score adjusts automatically
  * based on which tools actually ran.
  */
@@ -269,7 +274,8 @@ export function calculateOverallScore(
   for (const [toolName] of toolOutputs.entries()) {
     const cliWeight = cliWeights?.get(toolName);
     const configWeight = config?.tools?.[toolName]?.scoreWeight;
-    const weight = cliWeight ?? configWeight ?? DEFAULT_TOOL_WEIGHTS[toolName] ?? 10;
+    const weight =
+      cliWeight ?? configWeight ?? DEFAULT_TOOL_WEIGHTS[toolName] ?? 10;
     weights.set(toolName, weight);
   }
 
@@ -299,11 +305,12 @@ export function calculateOverallScore(
   const rating = getRating(overall);
 
   // Build formula string
-  const formulaParts = Array.from(toolOutputs.entries())
-    .map(([name, output]) => {
+  const formulaParts = Array.from(toolOutputs.entries()).map(
+    ([name, output]) => {
       const w = weights.get(name) || 10;
       return `(${output.score} × ${w})`;
-    });
+    }
+  );
   const formulaStr = `[${formulaParts.join(' + ')}] / ${totalWeight} = ${overall}`;
 
   return {
@@ -349,7 +356,10 @@ export function getRatingWithContext(
 /**
  * Get rating emoji and color for display
  */
-export function getRatingDisplay(rating: ScoringResult['rating']): { emoji: string; color: string } {
+export function getRatingDisplay(rating: ScoringResult['rating']): {
+  emoji: string;
+  color: string;
+} {
   switch (rating) {
     case 'Excellent':
       return { emoji: '✅', color: 'green' };
@@ -380,7 +390,7 @@ export function formatToolScore(output: ToolScoringOutput): string {
 
   if (output.factors && output.factors.length > 0) {
     result += `  Factors:\n`;
-    output.factors.forEach(factor => {
+    output.factors.forEach((factor) => {
       const impactSign = factor.impact > 0 ? '+' : '';
       result += `    • ${factor.name}: ${impactSign}${factor.impact} - ${factor.description}\n`;
     });
@@ -390,8 +400,12 @@ export function formatToolScore(output: ToolScoringOutput): string {
   if (output.recommendations && output.recommendations.length > 0) {
     result += `  Recommendations:\n`;
     output.recommendations.forEach((rec, i) => {
-      const priorityIcon = rec.priority === 'high' ? '🔴' :
-        rec.priority === 'medium' ? '🟡' : '🔵';
+      const priorityIcon =
+        rec.priority === 'high'
+          ? '🔴'
+          : rec.priority === 'medium'
+            ? '🟡'
+            : '🔵';
       result += `    ${i + 1}. ${priorityIcon} ${rec.action}\n`;
       result += `       Impact: +${rec.estimatedImpact} points\n\n`;
     });

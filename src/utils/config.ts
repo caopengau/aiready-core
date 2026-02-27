@@ -9,10 +9,12 @@ const CONFIG_FILES = [
   '.aiready.json',
   '.aireadyrc.json',
   'aiready.config.js',
-  '.aireadyrc.js'
+  '.aireadyrc.js',
 ];
 
-export async function loadConfig(rootDir: string): Promise<AIReadyConfig | null> {
+export async function loadConfig(
+  rootDir: string
+): Promise<AIReadyConfig | null> {
   // Search upwards from the provided directory to find the nearest config
   let currentDir = resolve(rootDir);
 
@@ -42,8 +44,11 @@ export async function loadConfig(rootDir: string): Promise<AIReadyConfig | null>
 
           return config;
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          throw new Error(`Failed to load config from ${configPath}: ${errorMessage}`);
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          throw new Error(
+            `Failed to load config from ${configPath}: ${errorMessage}`
+          );
         }
       }
     }

@@ -22,20 +22,20 @@ describe('PythonParser', () => {
 
   it('should return PEP 8 naming conventions', () => {
     const conventions = parser.getNamingConventions();
-    
+
     // Variables and functions should be snake_case
     expect(conventions.variablePattern.test('my_variable')).toBe(true);
     expect(conventions.variablePattern.test('myVariable')).toBe(false);
     expect(conventions.functionPattern.test('my_function')).toBe(true);
-    
+
     // Classes should be PascalCase
     expect(conventions.classPattern.test('MyClass')).toBe(true);
     expect(conventions.classPattern.test('my_class')).toBe(false);
-    
+
     // Constants should be UPPER_CASE
     expect(conventions.constantPattern.test('MY_CONSTANT')).toBe(true);
     expect(conventions.constantPattern.test('myConstant')).toBe(false);
-    
+
     // Should have Python special method exceptions
     expect(conventions.exceptions).toContain('__init__');
     expect(conventions.exceptions).toContain('__str__');
@@ -49,7 +49,7 @@ import sys
 import json
 `;
       const result = parser.parse(code, 'test.py');
-      
+
       expect(result.imports).toHaveLength(3);
       expect(result.imports[0].source).toBe('os');
       expect(result.imports[1].source).toBe('sys');
@@ -62,23 +62,23 @@ from typing import List, Dict, Optional
 from pathlib import Path
 `;
       const result = parser.parse(code, 'test.py');
-      
+
       expect(result.imports).toHaveLength(2);
-      
-      const typingImport = result.imports.find(i => i.source === 'typing');
+
+      const typingImport = result.imports.find((i) => i.source === 'typing');
       expect(typingImport).toBeDefined();
       expect(typingImport?.specifiers).toContain('List');
       expect(typingImport?.specifiers).toContain('Dict');
       expect(typingImport?.specifiers).toContain('Optional');
-      
-      const pathlibImport = result.imports.find(i => i.source === 'pathlib');
+
+      const pathlibImport = result.imports.find((i) => i.source === 'pathlib');
       expect(pathlibImport?.specifiers).toContain('Path');
     });
 
     it('should handle wildcard imports', () => {
       const code = `from os import *`;
       const result = parser.parse(code, 'test.py');
-      
+
       expect(result.imports[0].source).toBe('os');
       expect(result.imports[0].specifiers).toContain('*');
     });
@@ -94,8 +94,8 @@ def another_function(arg1, arg2):
     return arg1 + arg2
 `;
       const result = parser.parse(code, 'test.py');
-      
-      const funcNames = result.exports.map(e => e.name);
+
+      const funcNames = result.exports.map((e) => e.name);
       expect(funcNames).toContain('public_function');
       expect(funcNames).toContain('another_function');
     });
@@ -113,13 +113,15 @@ class AnotherClass:
     pass
 `;
       const result = parser.parse(code, 'test.py');
-      
-      const classNames = result.exports.filter(e => e.type === 'class').map(e => e.name);
+
+      const classNames = result.exports
+        .filter((e) => e.type === 'class')
+        .map((e) => e.name);
       expect(classNames).toContain('MyClass');
       expect(classNames).toContain('AnotherClass');
-      
+
       // Methods should not be exported as separate entities
-      const methodNames = result.exports.map(e => e.name);
+      const methodNames = result.exports.map((e) => e.name);
       expect(methodNames).not.toContain('method');
     });
 
@@ -135,8 +137,8 @@ def __dunder_function__():
     pass
 `;
       const result = parser.parse(code, 'test.py');
-      
-      const funcNames = result.exports.map(e => e.name);
+
+      const funcNames = result.exports.map((e) => e.name);
       expect(funcNames).toContain('public_function');
       expect(funcNames).toContain('__dunder_function__'); // Dunder methods are included
       expect(funcNames).not.toContain('_private_function'); // Single underscore excluded
@@ -156,8 +158,8 @@ class MyClass:
     pass
 `;
       const result = parser.parse(code, 'test.py');
-      
-      const names = result.exports.map(e => e.name);
+
+      const names = result.exports.map((e) => e.name);
       expect(names).toContain('foo');
       expect(names).toContain('bar');
       expect(names).toContain('MyClass');
@@ -167,7 +169,7 @@ class MyClass:
   it('should include warning about regex-based parsing', () => {
     const code = 'import os';
     const result = parser.parse(code, 'test.py');
-    
+
     expect(result.warnings).toBeDefined();
     expect(result.warnings!.length).toBeGreaterThan(0);
     expect(result.warnings![0]).toContain('regex-based');
@@ -206,14 +208,14 @@ def _helper_function():
 MY_CONSTANT = 42
 `;
     const result = parser.parse(code, 'example.py');
-    
+
     // Check imports
     expect(result.imports.length).toBeGreaterThan(0);
-    const typingImport = result.imports.find(i => i.source === 'typing');
+    const typingImport = result.imports.find((i) => i.source === 'typing');
     expect(typingImport).toBeDefined();
-    
+
     // Check exports
-    const exportNames = result.exports.map(e => e.name);
+    const exportNames = result.exports.map((e) => e.name);
     expect(exportNames).toContain('DataProcessor');
     expect(exportNames).toContain('process_data');
     expect(exportNames).not.toContain('_helper_function');

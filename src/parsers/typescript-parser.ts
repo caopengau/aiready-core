@@ -1,6 +1,6 @@
 /**
  * TypeScript/JavaScript Parser
- * 
+ *
  * Parses TypeScript and JavaScript files using @typescript-eslint/typescript-estree
  */
 
@@ -64,7 +64,7 @@ export class TypeScriptParser implements LanguageParser {
   }
 
   canHandle(filePath: string): boolean {
-    return this.extensions.some(ext => filePath.toLowerCase().endsWith(ext));
+    return this.extensions.some((ext) => filePath.toLowerCase().endsWith(ext));
   }
 
   private extractImports(ast: TSESTree.Program): ImportInfo[] {
@@ -83,7 +83,8 @@ export class TypeScriptParser implements LanguageParser {
         for (const spec of node.specifiers) {
           if (spec.type === 'ImportSpecifier') {
             const imported = spec.imported;
-            const name = imported.type === 'Identifier' ? imported.name : imported.value;
+            const name =
+              imported.type === 'Identifier' ? imported.name : imported.value;
             specifiers.push(name);
           } else if (spec.type === 'ImportDefaultSpecifier') {
             specifiers.push('default');
@@ -98,7 +99,10 @@ export class TypeScriptParser implements LanguageParser {
           isTypeOnly,
           loc: node.loc
             ? {
-                start: { line: node.loc.start.line, column: node.loc.start.column },
+                start: {
+                  line: node.loc.start.line,
+                  column: node.loc.start.column,
+                },
                 end: { line: node.loc.end.line, column: node.loc.end.column },
               }
             : undefined,
@@ -109,15 +113,23 @@ export class TypeScriptParser implements LanguageParser {
     return imports;
   }
 
-  private extractExports(ast: TSESTree.Program, imports: ImportInfo[]): ExportInfo[] {
+  private extractExports(
+    ast: TSESTree.Program,
+    imports: ImportInfo[]
+  ): ExportInfo[] {
     const exports: ExportInfo[] = [];
     const importedNames = new Set(
-      imports.flatMap(imp => imp.specifiers.filter(s => s !== '*' && s !== 'default'))
+      imports.flatMap((imp) =>
+        imp.specifiers.filter((s) => s !== '*' && s !== 'default')
+      )
     );
 
     for (const node of ast.body) {
       if (node.type === 'ExportNamedDeclaration' && node.declaration) {
-        const extracted = this.extractFromDeclaration(node.declaration, importedNames);
+        const extracted = this.extractFromDeclaration(
+          node.declaration,
+          importedNames
+        );
         exports.push(...extracted);
       } else if (node.type === 'ExportDefaultDeclaration') {
         // Default export
@@ -143,7 +155,10 @@ export class TypeScriptParser implements LanguageParser {
           type,
           loc: node.loc
             ? {
-                start: { line: node.loc.start.line, column: node.loc.start.column },
+                start: {
+                  line: node.loc.start.line,
+                  column: node.loc.start.column,
+                },
                 end: { line: node.loc.end.line, column: node.loc.end.column },
               }
             : undefined,
@@ -173,7 +188,10 @@ export class TypeScriptParser implements LanguageParser {
                 line: declaration.loc.start.line,
                 column: declaration.loc.start.column,
               },
-              end: { line: declaration.loc.end.line, column: declaration.loc.end.column },
+              end: {
+                line: declaration.loc.end.line,
+                column: declaration.loc.end.column,
+              },
             }
           : undefined,
       });
@@ -187,7 +205,10 @@ export class TypeScriptParser implements LanguageParser {
                 line: declaration.loc.start.line,
                 column: declaration.loc.start.column,
               },
-              end: { line: declaration.loc.end.line, column: declaration.loc.end.column },
+              end: {
+                line: declaration.loc.end.line,
+                column: declaration.loc.end.column,
+              },
             }
           : undefined,
       });
@@ -222,7 +243,10 @@ export class TypeScriptParser implements LanguageParser {
                 line: declaration.loc.start.line,
                 column: declaration.loc.start.column,
               },
-              end: { line: declaration.loc.end.line, column: declaration.loc.end.column },
+              end: {
+                line: declaration.loc.end.line,
+                column: declaration.loc.end.column,
+              },
             }
           : undefined,
       });
@@ -236,7 +260,10 @@ export class TypeScriptParser implements LanguageParser {
                 line: declaration.loc.start.line,
                 column: declaration.loc.start.column,
               },
-              end: { line: declaration.loc.end.line, column: declaration.loc.end.column },
+              end: {
+                line: declaration.loc.end.line,
+                column: declaration.loc.end.column,
+              },
             }
           : undefined,
       });

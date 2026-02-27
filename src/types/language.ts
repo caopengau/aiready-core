@@ -1,6 +1,6 @@
 /**
  * Language-agnostic AST and parser interfaces for multi-language support
- * 
+ *
  * This module provides abstractions for parsing different programming languages
  * while maintaining a consistent interface for analysis tools.
  */
@@ -61,7 +61,14 @@ export interface CommonASTNode {
  */
 export interface ExportInfo {
   name: string;
-  type: 'function' | 'class' | 'const' | 'type' | 'interface' | 'default' | 'variable';
+  type:
+    | 'function'
+    | 'class'
+    | 'const'
+    | 'type'
+    | 'interface'
+    | 'default'
+    | 'variable';
   loc?: SourceRange;
   /** Imports used within this export */
   imports?: string[];
@@ -141,10 +148,10 @@ export interface LanguageConfig {
 export interface LanguageParser {
   /** Language this parser handles */
   readonly language: Language;
-  
+
   /** File extensions this parser supports */
   readonly extensions: string[];
-  
+
   /**
    * Parse source code and extract structure
    * @param code - Source code to parse
@@ -153,12 +160,12 @@ export interface LanguageParser {
    * @throws ParseError if code has syntax errors
    */
   parse(code: string, filePath: string): ParseResult;
-  
+
   /**
    * Get naming conventions for this language
    */
   getNamingConventions(): NamingConvention;
-  
+
   /**
    * Check if this parser can handle a file
    * @param filePath - File path to check

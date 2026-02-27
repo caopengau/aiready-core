@@ -1,6 +1,6 @@
 /**
  * Example: Using Multi-Language Parser
- * 
+ *
  * This example demonstrates how to use the new multi-language parser
  * infrastructure to analyze TypeScript, JavaScript, and Python files.
  */
@@ -25,9 +25,12 @@ export class Calculator {
   }
 }
 `;
-  
+
   const tsResult = tsParser.parse(tsCode, 'src/index.ts');
-  console.log('TypeScript exports:', tsResult.exports.map(e => e.name));
+  console.log(
+    'TypeScript exports:',
+    tsResult.exports.map((e) => e.name)
+  );
   // Output: ['greet', 'Calculator']
 }
 
@@ -47,13 +50,19 @@ class Calculator:
 def _private_helper():
     pass
 `;
-  
+
   const pyResult = pyParser.parse(pyCode, 'src/main.py');
-  console.log('Python exports:', pyResult.exports.map(e => e.name));
+  console.log(
+    'Python exports:',
+    pyResult.exports.map((e) => e.name)
+  );
   // Output: ['greet', 'Calculator']
   // Note: _private_helper is not exported
-  
-  console.log('Python imports:', pyResult.imports.map(i => `${i.source}: ${i.specifiers.join(', ')}`));
+
+  console.log(
+    'Python imports:',
+    pyResult.imports.map((i) => `${i.source}: ${i.specifiers.join(', ')}`)
+  );
   // Output: ['typing: List']
 }
 
@@ -62,14 +71,14 @@ const tsNaming = tsParser?.getNamingConventions();
 if (tsNaming) {
   console.log('TypeScript naming conventions:');
   console.log('- Variables:', tsNaming.variablePattern); // camelCase
-  console.log('- Classes:', tsNaming.classPattern);     // PascalCase
+  console.log('- Classes:', tsNaming.classPattern); // PascalCase
 }
 
 const pyNaming = pyParser?.getNamingConventions();
 if (pyNaming) {
   console.log('Python naming conventions (PEP 8):');
   console.log('- Variables:', pyNaming.variablePattern); // snake_case
-  console.log('- Classes:', pyNaming.classPattern);     // PascalCase
+  console.log('- Classes:', pyNaming.classPattern); // PascalCase
 }
 
 // Example 5: Analyze a mixed codebase
@@ -85,10 +94,7 @@ const results = new Map<Language, number>();
 for (const file of filesToAnalyze) {
   const parser = getParser(file);
   if (parser) {
-    results.set(
-      parser.language,
-      (results.get(parser.language) || 0) + 1
-    );
+    results.set(parser.language, (results.get(parser.language) || 0) + 1);
   }
 }
 

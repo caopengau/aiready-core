@@ -1,6 +1,6 @@
 /**
  * Parser Factory - Manages language-specific parsers
- * 
+ *
  * This factory provides a centralized way to access the appropriate parser
  * for a given file based on its extension.
  */
@@ -26,7 +26,7 @@ export class ParserFactory {
     this.extensionMap = new Map(
       Object.entries(LANGUAGE_EXTENSIONS).map(([ext, lang]) => [ext, lang])
     );
-    
+
     // Register default parsers
     this.registerParser(new TypeScriptParser());
     this.registerParser(new PythonParser());
@@ -47,9 +47,9 @@ export class ParserFactory {
    */
   public registerParser(parser: LanguageParser): void {
     this.parsers.set(parser.language, parser);
-    
+
     // Map extensions to this parser
-    parser.extensions.forEach(ext => {
+    parser.extensions.forEach((ext) => {
       this.extensionMap.set(ext, parser.language);
     });
   }
@@ -67,11 +67,11 @@ export class ParserFactory {
   public getParserForFile(filePath: string): LanguageParser | null {
     const ext = this.getFileExtension(filePath);
     const language = this.extensionMap.get(ext);
-    
+
     if (!language) {
       return null;
     }
-    
+
     return this.parsers.get(language) || null;
   }
 

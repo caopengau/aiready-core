@@ -156,7 +156,9 @@ describe('Core Scoring Infrastructure', () => {
 
   describe('parseWeightString', () => {
     it('should parse valid weight string', () => {
-      const weights = parseWeightString('patterns:50,context:30,consistency:20');
+      const weights = parseWeightString(
+        'patterns:50,context:30,consistency:20'
+      );
 
       expect(weights.get('pattern-detect')).toBe(50);
       expect(weights.get('context-analyzer')).toBe(30);
@@ -170,7 +172,9 @@ describe('Core Scoring Infrastructure', () => {
     });
 
     it('should skip invalid pairs', () => {
-      const weights = parseWeightString('patterns:50,invalid,context:abc,consistency:30');
+      const weights = parseWeightString(
+        'patterns:50,invalid,context:abc,consistency:30'
+      );
 
       expect(weights.get('pattern-detect')).toBe(50);
       expect(weights.get('context-analyzer')).toBeUndefined();
@@ -197,11 +201,7 @@ describe('Core Scoring Infrastructure', () => {
 
   describe('getToolWeight', () => {
     it('should prioritize CLI override', () => {
-      const weight = getToolWeight(
-        'pattern-detect',
-        { scoreWeight: 30 },
-        50
-      );
+      const weight = getToolWeight('pattern-detect', { scoreWeight: 30 }, 50);
 
       expect(weight).toBe(50);
     });
