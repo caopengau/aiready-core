@@ -8,44 +8,22 @@
                     🎯 USER
                       │
                       ▼
-            🎛️  CLI (orchestrator)
-                      │
-    ┌─────────────────┴─────────────────┐
-    │                                   │
-    ▼                                   ▼
-┌────────┐                        ┌────────┐
-│🎨 VIS- │                        │ ANALY- │
-│UALIZER │                        │  SIS   │
-│✅ Ready│                        │ SPOKES │
-└────────┘                        └───┬────┘
-    │                                 │
-    │   ┌───────────────┬─────────────┴─────────────┬───────────────┐
-    ▼   ▼               ▼                           ▼               ▼
-┌────────┐        ┌────────┐                  ┌────────┐        ┌────────┐
-│📊 PAT- │        │📦 CON- │                  │🔧 CON- │        │💥 CHN- │
-│TERN    │        │TEXT    │                  │SISTENCY│        │ AMP    │
-│DETECT  │        │ANALYZER│                  │        │        │        │
-│✅ Ready│        │✅ Ready│                  │✅ Ready│        │✅ Ready│
-└────────┘        └────────┘                  └────────┘        └────────┘
-    │   ┌───────────────┘       ┌───────────┐       └──────────────┐   │
-    │   ▼                       ▼           ▼                      ▼   │
-┌────────┐                 ┌────────┐   ┌────────┐            ┌────────┐
-│📡 SIG- │                 │🤖 AGT- │   │🧪 TEST-│            │📅 DEPS-│
-│ CLARITY│                 │ GROUND │   │ ABILITY│            │ HEALTH │
-│✅ Ready│                 │✅ Ready│   │✅ Ready│            │✅ Ready│
-└────────┘                 └────────┘   └────────┘            └────────┘
-    │              ┌────────────┴───────────┴────────────┐             │
-    │              ▼                                     ▼             │
-    │        ┌───────────┐                         ┌───────────┐       │
-    │        │📝 DOC-    │                         │🛠️  SKILLS  │       │
-    │        │ DRIFT     │                         │           │       │
-    │        │✅ Ready   │                         │✅ Ready   │       │
-    │        └───────────┘                         └───────────┘       │
-    │              │                                     │             │
-    └──────────────┴────────────┬────────────────────────┴─────────────┘
-                                │
-                                ▼
-                      🏢 HUB (@aiready/core)  ← YOU ARE HERE
+         🎛️  @aiready/cli (orchestrator)
+           │   │   │   │   │   │   │   │   │   │   │   │
+           ▼   ▼   ▼   ▼   ▼   ▼   ▼   ▼   ▼   ▼   ▼   ▼
+         ┌─┐ ┌─┐ ┌─┐ ┌─┐ ┌─┐ ┌─┐ ┌─┐ ┌─┐ ┌─┐ ┌─┐ ┌─┐ ┌─┐
+         │A│ │B│ │C│ │D│ │E│ │F│ │G│ │H│ │I│ │J│ │K│ │L│
+         └─┘ └─┘ └─┘ └─┘ └─┘ └─┘ └─┘ └─┘ └─┘ └─┘ └─┘ └─┘
+         ALL SPOKES — flat peers, each depends on core:
+         A=pattern-detect    B=context-analyzer  C=consistency
+         D=change-amp        E=deps-health        F=doc-drift
+         G=ai-signal-clarity H=agent-grounding    I=testability
+         J=visualizer        K=skills             L=components
+           │   │   │   │   │   │   │   │   │   │   │   │
+           └───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┘
+                               │
+                               ▼
+                  🏢 @aiready/core  ← YOU ARE HERE
 ```
 
 ## Overview
