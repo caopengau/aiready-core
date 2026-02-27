@@ -43,12 +43,19 @@ export async function loadConfig(
           }
 
           return config;
-        } catch (error) {
+          } catch (error) {
           const errorMessage =
             error instanceof Error ? error.message : String(error);
-          throw new Error(
+          const e = new Error(
             `Failed to load config from ${configPath}: ${errorMessage}`
           );
+          try {
+            // Attach original error as cause when supported
+            (e as any).cause = error instanceof Error ? error : undefined;
+          } catch {
+            /* ignore */
+          }
+          throw e;
         }
       }
     }

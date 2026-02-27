@@ -75,8 +75,7 @@ export class TypeScriptParser implements LanguageParser {
         const specifiers: string[] = [];
         let isTypeOnly = false;
 
-        // @ts-ignore - importKind exists but not in types
-        if (node.importKind === 'type') {
+        if ((node as any).importKind === 'type') {
           isTypeOnly = true;
         }
 
