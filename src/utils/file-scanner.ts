@@ -1,7 +1,7 @@
 import { glob } from 'glob';
 import { readFile } from 'fs/promises';
 import { existsSync } from 'fs';
-import { join, relative } from 'path';
+import { join, relative, dirname } from 'path';
 import ignorePkg from 'ignore';
 import { ScanOptions } from '../types';
 
@@ -21,6 +21,8 @@ export const DEFAULT_EXCLUDE = [
 
   // Framework-specific build dirs
   '**/.next/**',
+  '**/.sst/**',
+  '**/.open-next/**',
   '**/.nuxt/**',
   '**/.vuepress/**',
   '**/.cache/**',
@@ -56,6 +58,29 @@ export const DEFAULT_EXCLUDE = [
   '**/*.log',
   '**/.DS_Store',
 ];
+
+export const VAGUE_FILE_NAMES = new Set([
+  'utils',
+  'helpers',
+  'helper',
+  'misc',
+  'common',
+  'shared',
+  'tools',
+  'util',
+  'lib',
+  'libs',
+  'stuff',
+  'functions',
+  'methods',
+  'handlers',
+  'data',
+  'temp',
+  'tmp',
+  'test-utils',
+  'test-helpers',
+  'mocks',
+]);
 
 /**
  * Scan files in a directory using glob patterns
@@ -93,8 +118,14 @@ export async function scanFiles(options: ScanOptions): Promise<string[]> {
     }
   }
 
+  const TEST_PATTERNS = ['**/*.test.*', '**/*.spec.*', '**/__tests__/**', '**/test/**', '**/tests/**'];
+
+  const baseExclude = options.includeTests
+    ? DEFAULT_EXCLUDE.filter(p => !TEST_PATTERNS.includes(p))
+    : DEFAULT_EXCLUDE;
+
   const finalExclude = [
-    ...new Set([...(exclude || []), ...ignoreFromFile, ...DEFAULT_EXCLUDE]),
+    ...new Set([...(exclude || []), ...ignoreFromFile, ...baseExclude]),
   ];
 
   // First pass glob using aireadyignore + defaults + CLI excludes
@@ -107,16 +138,40 @@ export async function scanFiles(options: ScanOptions): Promise<string[]> {
   // If a .gitignore exists, apply its rules (including negations) using the
   // `ignore` package. We filter the glob result because `glob` doesn't
   // fully implement gitignore semantics (negations, directory-relative rules).
-  const gitignorePath = join(rootDir || '.', '.gitignore');
-  if (existsSync(gitignorePath)) {
+  // Recursively apply .gitignore rules from all .gitignore files in the hierarchy
+  const gitignoreFiles = await glob('**/.gitignore', {
+    cwd: rootDir,
+    ignore: finalExclude,
+    absolute: true,
+  });
+
+  if (gitignoreFiles.length > 0) {
     try {
-      const gitTxt = await readFile(gitignorePath, 'utf-8');
+      // Sort ignore files by depth (shallowest first) to ensure correct precedence if needed,
+      // though 'ignore' package handles multiple patterns.
+      // We'll create a single ignore instance and add patterns with their relative prefixes.
       const ig = ignorePkg();
-      // add accepts a newline-separated string or an array of patterns
-      ig.add(gitTxt);
+
+      for (const gitignorePath of gitignoreFiles) {
+        const gitTxt = await readFile(gitignorePath, 'utf-8');
+        const gitignoreDir = dirname(gitignorePath);
+        const relativePrefix = relative(rootDir || '.', gitignoreDir).replace(/\\/g, '/');
+
+        const patterns = gitTxt
+          .split(/\r?\n/)
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .filter((l) => !l.startsWith('#'));
+
+        if (relativePrefix === '.' || relativePrefix === '') {
+          ig.add(patterns);
+        } else {
+          // Add patterns with directory prefix for nested gitignores
+          ig.add(patterns.map((p) => (p.startsWith('/') ? `${relativePrefix}${p}` : `${relativePrefix}/**/${p}`)));
+        }
+      }
 
       const filtered = files.filter((f) => {
-        // Compute path relative to rootDir and normalize to posix-style
         let rel = relative(rootDir || '.', f).replace(/\\/g, '/');
         if (rel === '') rel = f;
         return !ig.ignores(rel);
@@ -124,12 +179,82 @@ export async function scanFiles(options: ScanOptions): Promise<string[]> {
 
       return filtered;
     } catch (e) {
-      // If gitignore can't be read/parsed, fall back to the glob result
       return files;
     }
   }
 
   return files;
+}
+
+/**
+ * Scan for both files and directories, respecting ignore rules.
+ * Useful for tools that need to analyze directory structure.
+ */
+export async function scanEntries(options: ScanOptions): Promise<{ files: string[]; dirs: string[] }> {
+  const files = await scanFiles(options);
+  const { rootDir, include = ['**/*'], exclude, includeTests } = options;
+
+  const ignoreFilePath = join(rootDir || '.', '.aireadyignore');
+  let ignoreFromFile: string[] = [];
+  if (existsSync(ignoreFilePath)) {
+    try {
+      const txt = await readFile(ignoreFilePath, 'utf-8');
+      ignoreFromFile = txt
+        .split(/\r?\n/)
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .filter((l) => !l.startsWith('#'))
+        .filter((l) => !l.startsWith('!'));
+    } catch (e) {
+      ignoreFromFile = [];
+    }
+  }
+
+  const TEST_PATTERNS = ['**/*.test.*', '**/*.spec.*', '**/__tests__/**', '**/test/**', '**/tests/**'];
+  const baseExclude = includeTests
+    ? DEFAULT_EXCLUDE.filter(p => !TEST_PATTERNS.includes(p))
+    : DEFAULT_EXCLUDE;
+
+  const finalExclude = [...new Set([...(exclude || []), ...ignoreFromFile, ...baseExclude])];
+
+  const dirs = await glob('**/', {
+    cwd: rootDir,
+    ignore: finalExclude,
+    absolute: true,
+  });
+
+  // Apply gitignore to directories if available
+  const gitignoreFiles = await glob('**/.gitignore', {
+    cwd: rootDir,
+    ignore: finalExclude,
+    absolute: true,
+  });
+
+  if (gitignoreFiles.length > 0) {
+    const ig = ignorePkg();
+    for (const gitignorePath of gitignoreFiles) {
+      const gitTxt = await readFile(gitignorePath, 'utf-8');
+      const gitignoreDir = dirname(gitignorePath);
+      const relativePrefix = relative(rootDir || '.', gitignoreDir).replace(/\\/g, '/');
+      const patterns = gitTxt.split(/\r?\n/).map((s) => s.trim()).filter(Boolean).filter((l) => !l.startsWith('#'));
+
+      if (relativePrefix === '.' || relativePrefix === '') {
+        ig.add(patterns);
+      } else {
+        ig.add(patterns.map((p) => (p.startsWith('/') ? `${relativePrefix}${p}` : `${relativePrefix}/**/${p}`)));
+      }
+    }
+
+    const filteredDirs = dirs.filter((d) => {
+      let rel = relative(rootDir || '.', d).replace(/\\/g, '/').replace(/\/$/, '');
+      if (rel === '') return true; // project root is never ignored by its own gitignore
+      return !ig.ignores(rel);
+    });
+
+    return { files, dirs: filteredDirs };
+  }
+
+  return { files, dirs };
 }
 
 export async function readFileContent(filePath: string): Promise<string> {

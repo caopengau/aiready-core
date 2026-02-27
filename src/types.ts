@@ -159,6 +159,8 @@ export interface ScanOptions {
   include?: string[];
   exclude?: string[];
   maxDepth?: number;
+  onProgress?: (processed: number, total: number, message: string) => void;
+  includeTests?: boolean;
 }
 
 export interface AIReadyConfig {
@@ -215,12 +217,12 @@ export interface AIReadyConfig {
       )[];
     };
     [toolName: string]:
-      | {
-          enabled?: boolean;
-          scoreWeight?: number;
-          [key: string]: any;
-        }
-      | undefined;
+    | {
+      enabled?: boolean;
+      scoreWeight?: number;
+      [key: string]: any;
+    }
+    | undefined;
   };
 
   // Scoring configuration

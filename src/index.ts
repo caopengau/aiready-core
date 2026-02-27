@@ -22,3 +22,4 @@ export * from './future-proof-metrics';
 
 // Temporal tracking utilities
 export * from './utils/history';
+export * from './utils/history-git';
