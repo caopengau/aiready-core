@@ -8,20 +8,20 @@
 export interface ToolScoringOutput {
   /** Unique tool identifier (e.g., "pattern-detect") */
   toolName: string;
-  
+
   /** Normalized 0-100 score for this tool */
   score: number;
-  
+
   /** Raw metrics used to calculate the score */
   rawMetrics: Record<string, any>;
-  
+
   /** Factors that influenced the score */
   factors: Array<{
     name: string;
     impact: number;           // +/- points contribution
     description: string;
   }>;
-  
+
   /** Actionable recommendations with estimated impact */
   recommendations: Array<{
     action: string;
@@ -33,19 +33,19 @@ export interface ToolScoringOutput {
 export interface ScoringResult {
   /** Overall AI Readiness Score (0-100) */
   overall: number;
-  
+
   /** Rating category */
   rating: 'Excellent' | 'Good' | 'Fair' | 'Needs Work' | 'Critical';
-  
+
   /** Timestamp of score calculation */
   timestamp: string;
-  
+
   /** Tools that contributed to this score */
   toolsUsed: string[];
-  
+
   /** Breakdown by tool */
   breakdown: ToolScoringOutput[];
-  
+
   /** Calculation details */
   calculation: {
     formula: string;
@@ -57,46 +57,48 @@ export interface ScoringResult {
 export interface ScoringConfig {
   /** Minimum passing score (exit code 1 if below) */
   threshold?: number;
-  
+
   /** Show detailed breakdown in output */
   showBreakdown?: boolean;
-  
+
   /** Path to baseline JSON for comparison */
   compareBaseline?: string;
-  
+
   /** Auto-save score to this path */
   saveTo?: string;
 }
 
 /**
- * Default weights for known tools.
- * New tools get weight of 10 if not specified.
+ * Default weights for known tools. Weights sum to 100 and read directly as
+ * percentage contribution to the overall score.
+ * New tools get weight of 5 if not specified.
  *
  * Weight philosophy:
- * - pattern-detect (40): Semantic duplication directly wastes token budget and
+ * - pattern-detect (22%): Semantic duplication directly wastes token budget and
  *   confuses AI with contradictory in-context examples.
- * - context-analyzer (35): Context limits are the primary hard constraint on
+ * - context-analyzer (19%): Context limits are the primary hard constraint on
  *   AI effectiveness regardless of model size.
- * - consistency (25): Naming/pattern inconsistency degrades AI intent understanding
+ * - consistency (14%): Naming/pattern inconsistency degrades AI intent understanding
  *   proportionally to codebase size.
- * - ai-signal-clarity (20): Code patterns empirically causing AI to generate
+ * - ai-signal-clarity (11%): Code patterns empirically causing AI to generate
  *   confidently wrong outputs — critical for agentic use cases.
- * - agent-grounding (18): How well an autonomous agent can navigate unaided —
+ * - agent-grounding (10%): How well an autonomous agent can navigate unaided —
  *   increasingly important as agentic workflows grow.
- * - testability (18): AI changes without verifiability create hidden risk.
- * - doc-drift (15): Stale docs actively mislead AI; planned spoke.
- * - deps (12): Dependency health affects AI suggestion accuracy; planned spoke.
+ * - testability (10%): AI changes without verifiability create hidden risk.
+ * - doc-drift (8%): Stale docs actively mislead AI; planned spoke.
+ * - deps (6%): Dependency health affects AI suggestion accuracy; planned spoke.
  */
 export const DEFAULT_TOOL_WEIGHTS: Record<string, number> = {
-  'pattern-detect': 40,
-  'context-analyzer': 35,
-  'consistency': 25,
-  'ai-signal-clarity': 20,
-  'agent-grounding': 18,
-  'testability': 18,
-  'doc-drift': 15,
-  'deps': 12,
+  'pattern-detect': 22,
+  'context-analyzer': 19,
+  'consistency': 14,
+  'ai-signal-clarity': 11,
+  'agent-grounding': 10,
+  'testability': 10,
+  'doc-drift': 8,
+  'deps': 6,
 };
+
 
 /**
  * Tool name normalization map (shorthand -> full name)
@@ -141,10 +143,10 @@ export const CONTEXT_TIER_THRESHOLDS: Record<ModelContextTier, {
   /** Suggested max import depth before penalty */
   idealDepth: number;
 }> = {
-  compact:  { idealTokens: 3_000,   criticalTokens: 10_000,  idealDepth: 4 },
-  standard: { idealTokens: 5_000,   criticalTokens: 15_000,  idealDepth: 5 },
-  extended: { idealTokens: 15_000,  criticalTokens: 50_000,  idealDepth: 7 },
-  frontier: { idealTokens: 50_000,  criticalTokens: 150_000, idealDepth: 10 },
+  compact: { idealTokens: 3_000, criticalTokens: 10_000, idealDepth: 4 },
+  standard: { idealTokens: 5_000, criticalTokens: 15_000, idealDepth: 5 },
+  extended: { idealTokens: 15_000, criticalTokens: 50_000, idealDepth: 7 },
+  frontier: { idealTokens: 50_000, criticalTokens: 150_000, idealDepth: 10 },
 };
 
 /**
@@ -155,10 +157,10 @@ export const CONTEXT_TIER_THRESHOLDS: Record<ModelContextTier, {
  * These are recommended minimum passing thresholds by project size.
  */
 export const SIZE_ADJUSTED_THRESHOLDS: Record<string, number> = {
-  'xs':         80,  // < 50 files
-  'small':      75,  // 50-200 files
-  'medium':     70,  // 200-500 files
-  'large':      65,  // 500-2000 files
+  'xs': 80,  // < 50 files
+  'small': 75,  // 50-200 files
+  'medium': 70,  // 200-500 files
+  'large': 65,  // 500-2000 files
   'enterprise': 58,  // 2000+ files
 };
 
@@ -210,14 +212,14 @@ export function getToolWeight(
   if (cliOverride !== undefined) {
     return cliOverride;
   }
-  
+
   // Check tool's own config
   if (toolConfig?.scoreWeight !== undefined) {
     return toolConfig.scoreWeight;
   }
-  
+
   // Fall back to defaults
-  return DEFAULT_TOOL_WEIGHTS[toolName] || 10;
+  return DEFAULT_TOOL_WEIGHTS[toolName] || 5;
 }
 
 /**
@@ -225,11 +227,11 @@ export function getToolWeight(
  */
 export function parseWeightString(weightStr?: string): Map<string, number> {
   const weights = new Map<string, number>();
-  
+
   if (!weightStr) {
     return weights;
   }
-  
+
   const pairs = weightStr.split(',');
   for (const pair of pairs) {
     const [toolShortName, weightStr] = pair.split(':');
@@ -241,7 +243,7 @@ export function parseWeightString(weightStr?: string): Map<string, number> {
       }
     }
   }
-  
+
   return weights;
 }
 
@@ -261,7 +263,7 @@ export function calculateOverallScore(
   if (toolOutputs.size === 0) {
     throw new Error('No tool outputs provided for scoring');
   }
-  
+
   // Build weights map with priority: CLI > config > defaults
   const weights = new Map<string, number>();
   for (const [toolName] of toolOutputs.entries()) {
@@ -270,32 +272,32 @@ export function calculateOverallScore(
     const weight = cliWeight ?? configWeight ?? DEFAULT_TOOL_WEIGHTS[toolName] ?? 10;
     weights.set(toolName, weight);
   }
-  
+
   // Calculate weighted sum and total weight
   let weightedSum = 0;
   let totalWeight = 0;
-  
+
   const breakdown: ToolScoringOutput[] = [];
   const toolsUsed: string[] = [];
   const calculationWeights: Record<string, number> = {};
-  
+
   for (const [toolName, output] of toolOutputs.entries()) {
     const weight = weights.get(toolName) || 10;
     const weightedScore = output.score * weight;
-    
+
     weightedSum += weightedScore;
     totalWeight += weight;
     toolsUsed.push(toolName);
     calculationWeights[toolName] = weight;
     breakdown.push(output);
   }
-  
+
   // Calculate final score
   const overall = Math.round(weightedSum / totalWeight);
-  
+
   // Determine rating
   const rating = getRating(overall);
-  
+
   // Build formula string
   const formulaParts = Array.from(toolOutputs.entries())
     .map(([name, output]) => {
@@ -303,7 +305,7 @@ export function calculateOverallScore(
       return `(${output.score} × ${w})`;
     });
   const formulaStr = `[${formulaParts.join(' + ')}] / ${totalWeight} = ${overall}`;
-  
+
   return {
     overall,
     rating,
@@ -375,7 +377,7 @@ export function formatScore(result: ScoringResult): string {
  */
 export function formatToolScore(output: ToolScoringOutput): string {
   let result = `  Score: ${output.score}/100\n\n`;
-  
+
   if (output.factors && output.factors.length > 0) {
     result += `  Factors:\n`;
     output.factors.forEach(factor => {
@@ -384,16 +386,16 @@ export function formatToolScore(output: ToolScoringOutput): string {
     });
     result += '\n';
   }
-  
+
   if (output.recommendations && output.recommendations.length > 0) {
     result += `  Recommendations:\n`;
     output.recommendations.forEach((rec, i) => {
-      const priorityIcon = rec.priority === 'high' ? '🔴' : 
-                          rec.priority === 'medium' ? '🟡' : '🔵';
+      const priorityIcon = rec.priority === 'high' ? '🔴' :
+        rec.priority === 'medium' ? '🟡' : '🔵';
       result += `    ${i + 1}. ${priorityIcon} ${rec.action}\n`;
       result += `       Impact: +${rec.estimatedImpact} points\n\n`;
     });
   }
-  
+
   return result;
 }
