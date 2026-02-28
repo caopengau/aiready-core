@@ -86,6 +86,30 @@ export interface CostConfig {
 }
 
 /**
+ * Token budget metrics (v0.13+)
+ * Technology-agnostic unit economics for AI impact.
+ */
+export interface TokenBudget {
+  /** Total tokens required for full task context */
+  totalContextTokens: number;
+  /** Estimated tokens generated in response */
+  estimatedResponseTokens: number;
+  /** Tokens wasted on redundant/duplicated context */
+  wastedTokens: {
+    total: number;
+    bySource: {
+      duplication: number;
+      fragmentation: number;
+      chattiness: number;
+    };
+  };
+  /** Context efficiency ratio (0-1). 1.0 = perfect efficiency. */
+  efficiencyRatio: number;
+  /** Estimated tokens saved if recommendations are followed */
+  potentialRetrievableTokens: number;
+}
+
+/**
  * Productivity impact estimates
  */
 export interface ProductivityImpact {
@@ -137,18 +161,52 @@ export interface ComprehensionDifficulty {
 }
 
 /**
+/**
+ * Technical Value Chain
+ * Traces a technical issue through its impact on AI and developer outcomes.
+ */
+export interface TechnicalValueChain {
+  issueType: string;
+  technicalMetric: string;
+  technicalValue: number;
+  aiImpact: {
+    description: string;
+    scoreImpact: number;
+  };
+  developerImpact: {
+    description: string;
+    productivityLoss: number; // percentage (0-1)
+  };
+  businessOutcome: {
+    directCost: number;
+    opportunityCost: number;
+    riskLevel: 'low' | 'moderate' | 'high' | 'critical';
+  };
+}
+
+/**
  * Extended report with business metrics
  */
 export interface BusinessReport extends Report {
   businessMetrics: {
-    /** Estimated monthly cost impact of AI context waste */
-    estimatedMonthlyCost: number;
+    /** Token-based unit economics (v0.13+) */
+    tokenBudget: TokenBudget;
+    /** @deprecated Use tokenBudget instead. Estimated monthly cost impact of AI context waste */
+    estimatedMonthlyCost: {
+      total: number;
+      range: [number, number];
+      confidence: number;
+    };
+    /** Opportunity cost of project delay due to technical debt */
+    opportunityCost: number;
     /** Estimated developer hours to address issues */
     estimatedDeveloperHours: number;
     /** Predicted AI suggestion acceptance rate */
     aiAcceptanceRate: number;
     /** Comprehension difficulty assessment */
     comprehensionDifficulty: ComprehensionDifficulty;
+    /** Traces for specific critical issues */
+    valueChains?: TechnicalValueChain[];
     /** Timestamp for trend tracking */
     period?: string;
   };
@@ -311,6 +369,8 @@ export interface GraphMetadata {
   majorIssues: number;
   minorIssues: number;
   infoIssues: number;
+  /** AI token budget unit economics (v0.13+) */
+  tokenBudget?: import('./types').TokenBudget;
 }
 
 /**

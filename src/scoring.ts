@@ -12,6 +12,9 @@ export interface ToolScoringOutput {
   /** Normalized 0-100 score for this tool */
   score: number;
 
+  /** AI token budget unit economics (v0.13+) */
+  tokenBudget?: import('./types').TokenBudget;
+
   /** Raw metrics used to calculate the score */
   rawMetrics: Record<string, any>;
 
