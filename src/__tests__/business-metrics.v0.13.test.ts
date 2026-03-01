@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { calculateTokenBudget, estimateCostFromBudget, MODEL_PRICING_PRESETS } from '../business-metrics';
+import {
+  calculateTokenBudget,
+  estimateCostFromBudget,
+  MODEL_PRICING_PRESETS,
+} from '../business-metrics';
 
 describe('Token Budget Unit Economics', () => {
   const sampleWastedTokens = {
@@ -27,25 +31,33 @@ describe('Token Budget Unit Economics', () => {
     });
 
     // GPT-4o: $0.005 per 1K
-    const cost4o = estimateCostFromBudget(budget, MODEL_PRICING_PRESETS['gpt-4o'], {
-      developerCount: 1,
-      queriesPerDevPerDay: 100,
-      daysPerMonth: 30
-    });
+    const cost4o = estimateCostFromBudget(
+      budget,
+      MODEL_PRICING_PRESETS['gpt-4o'],
+      {
+        developerCount: 1,
+        queriesPerDevPerDay: 100,
+        daysPerMonth: 30,
+      }
+    );
 
     // 1000 waste * 100 queries * 30 days = 3,000,000 wasted tokens per month
     // 3000K * $0.005 = $15
     expect(cost4o.total).toBe(15);
     expect(cost4o.confidence).toBe(0.85);
 
-    // GPT-4: $0.03 per 1K
-    const cost4 = estimateCostFromBudget(budget, MODEL_PRICING_PRESETS['gpt-4'], {
-      developerCount: 1,
-      queriesPerDevPerDay: 100,
-      daysPerMonth: 30
-    });
-    // 3000K * $0.03 = $90
-    expect(cost4.total).toBe(90);
+    // GPT-5.3: $0.002 per 1K
+    const cost5 = estimateCostFromBudget(
+      budget,
+      MODEL_PRICING_PRESETS['gpt-5.3'],
+      {
+        developerCount: 1,
+        queriesPerDevPerDay: 100,
+        daysPerMonth: 30,
+      }
+    );
+    // 3000K * $0.002 = $6
+    expect(cost5.total).toBe(6);
   });
 
   it('should handle zero waste correctly', () => {

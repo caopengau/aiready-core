@@ -10,6 +10,7 @@ import {
   LanguageParser,
   LANGUAGE_EXTENSIONS,
 } from '../types/language';
+export { Language, LanguageParser, LANGUAGE_EXTENSIONS };
 import { TypeScriptParser } from './typescript-parser';
 import { PythonParser } from './python-parser';
 
@@ -46,11 +47,14 @@ export class ParserFactory {
    * Register a language parser
    */
   public registerParser(parser: LanguageParser): void {
+    // Register parser for its primary language
     this.parsers.set(parser.language, parser);
 
-    // Map extensions to this parser
+    // Map extensions and register for all supported languages
     parser.extensions.forEach((ext) => {
-      this.extensionMap.set(ext, parser.language);
+      const lang = LANGUAGE_EXTENSIONS[ext] || parser.language;
+      this.extensionMap.set(ext, lang);
+      this.parsers.set(lang, parser);
     });
   }
 
