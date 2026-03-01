@@ -39,7 +39,7 @@
     "build:cli": "tsup",
     "build:web": "cd web && vite build",
     "typecheck": "tsc --noEmit && cd web && tsc --noEmit",
-    "test": "vitest"
+    "test": "vitest run"
   },
   "keywords": [
     "aiready",

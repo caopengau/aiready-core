@@ -178,7 +178,13 @@ release-one: ## Release one spoke: TYPE=patch|minor|major, SPOKE=core|pattern-de
 		$(call log_error,Tests failed for @aiready/$(SPOKE). Aborting release.); \
 		exit 1; \
 	fi; \
-	$(call log_success,Tests passed); \
+	@$(call log_success,Tests passed); \
+	$(call log_step,Performing final CLI smoke test...); \
+	if ! $(MAKE) -C $(ROOT_DIR) test-verify-cli; then \
+		$(call log_error,CLI smoke test failed. Aborting release.); \
+		exit 1; \
+	fi; \
+	$(call log_success,CLI smoke test passed); \
 	$(call log_step,Publishing @aiready/$(SPOKE) to npm...); \
 	if ! $(MAKE) -C $(ROOT_DIR) npm-publish SPOKE=$(SPOKE); then \
 		$(call log_error,NPM publish failed for @aiready/$(SPOKE). Aborting release.); \
@@ -237,7 +243,13 @@ release-all: ## Release all spokes: TYPE=patch|minor|major (excludes landing)
 		$(call log_error,Tests failed. Aborting release-all.); \
 		exit 1; \
 	}; \
-	$(call log_success,All tests passed); \
+	@$(call log_success,All tests passed); \
+	$(call log_step,Phase 4.5: Performing final CLI smoke test...); \
+	$(MAKE) -C $(ROOT_DIR) test-verify-cli || { \
+		$(call log_error,CLI smoke test failed. Aborting release-all.); \
+		exit 1; \
+	}; \
+	$(call log_success,CLI smoke test passed); \
 	$(call log_step,Phase 5: Publishing core spoke first...); \
 	$(MAKE) -C $(ROOT_DIR) npm-publish SPOKE=$(CORE_SPOKE) || exit 1; \
 	$(MAKE) -C $(ROOT_DIR) publish SPOKE=$(CORE_SPOKE) OWNER=$(OWNER) || exit 1; \

@@ -278,7 +278,7 @@ export function calculateOverallScore(
     const cliWeight = cliWeights?.get(toolName);
     const configWeight = config?.tools?.[toolName]?.scoreWeight;
     const weight =
-      cliWeight ?? configWeight ?? DEFAULT_TOOL_WEIGHTS[toolName] ?? 10;
+      cliWeight ?? configWeight ?? DEFAULT_TOOL_WEIGHTS[toolName] ?? 5;
     weights.set(toolName, weight);
   }
 
@@ -291,7 +291,7 @@ export function calculateOverallScore(
   const calculationWeights: Record<string, number> = {};
 
   for (const [toolName, output] of toolOutputs.entries()) {
-    const weight = weights.get(toolName) || 10;
+    const weight = weights.get(toolName) || 5;
     const weightedScore = output.score * weight;
 
     weightedSum += weightedScore;
@@ -310,7 +310,7 @@ export function calculateOverallScore(
   // Build formula string
   const formulaParts = Array.from(toolOutputs.entries()).map(
     ([name, output]) => {
-      const w = weights.get(name) || 10;
+      const w = weights.get(name) || 5;
       return `(${output.score} × ${w})`;
     }
   );
@@ -381,7 +381,7 @@ export function getRatingDisplay(rating: ScoringResult['rating']): {
  * Format score for display with rating
  */
 export function formatScore(result: ScoringResult): string {
-  const { emoji, color } = getRatingDisplay(result.rating);
+  const { emoji } = getRatingDisplay(result.rating);
   return `${result.overall}/100 (${result.rating}) ${emoji}`;
 }
 

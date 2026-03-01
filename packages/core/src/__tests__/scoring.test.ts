@@ -222,10 +222,10 @@ describe('Core Scoring Infrastructure', () => {
       expect(weight).toBe(DEFAULT_TOOL_WEIGHTS['pattern-detect']);
     });
 
-    it('should use 10 for unknown tools', () => {
+    it('should use 5 for unknown tools', () => {
       const weight = getToolWeight('unknown-tool', undefined, undefined);
 
-      expect(weight).toBe(10);
+      expect(weight).toBe(5);
     });
   });
 });
