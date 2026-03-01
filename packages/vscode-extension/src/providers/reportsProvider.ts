@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { existsSync, readdirSync, statSync, readFileSync } from 'fs';
-import { join, basename, dirname, parse } from 'path';
+import { join, dirname, parse } from 'path';
+import { getRatingFromScore, countIssues } from '../utils/report';
 
 export interface ScanReport {
   id: string;
@@ -20,10 +21,6 @@ export interface ScanReport {
     rating: string;
   }>;
 }
-
-/**
- * Find all AIReady report files in a specific directory
- */
 function findReportsInDir(dir: string): ScanReport[] {
   const aireadyDir = join(dir, '.aiready');
 
@@ -59,39 +56,7 @@ function findReportsInDir(dir: string): ScanReport[] {
           ? new Date(data.scoring.timestamp)
           : file.mtime;
 
-        let totalIssues = 0;
-        let criticalIssues = 0;
-        let majorIssues = 0;
-        let minorIssues = 0;
-        let infoIssues = 0;
-
-        data.patterns?.forEach((p: any) => {
-          p.issues?.forEach((issue: any) => {
-            totalIssues++;
-            if (issue.severity === 'critical') criticalIssues++;
-            else if (issue.severity === 'major') majorIssues++;
-            else if (issue.severity === 'minor') minorIssues++;
-            else infoIssues++;
-          });
-        });
-
-        data.context?.forEach((issue: any) => {
-          totalIssues++;
-          if (issue.severity === 'critical') criticalIssues++;
-          else if (issue.severity === 'major') majorIssues++;
-          else if (issue.severity === 'minor') minorIssues++;
-          else infoIssues++;
-        });
-
-        data.consistency?.results?.forEach((r: any) => {
-          r.issues?.forEach((issue: any) => {
-            totalIssues++;
-            if (issue.severity === 'critical') criticalIssues++;
-            else if (issue.severity === 'major') majorIssues++;
-            else if (issue.severity === 'minor') minorIssues++;
-            else infoIssues++;
-          });
-        });
+        const counts = countIssues(data);
 
         const tools: Array<{ name: string; score: number; rating: string }> =
           [];
@@ -110,11 +75,11 @@ function findReportsInDir(dir: string): ScanReport[] {
           timestamp,
           score,
           rating,
-          totalIssues,
-          criticalIssues,
-          majorIssues,
-          minorIssues,
-          infoIssues,
+          totalIssues: counts.total,
+          criticalIssues: counts.critical,
+          majorIssues: counts.major,
+          minorIssues: counts.minor,
+          infoIssues: counts.info,
           tools,
         });
       } catch (e) {
@@ -172,14 +137,6 @@ export function findAllReports(): ScanReport[] {
 
   // Sort all reports by timestamp descending
   return reports.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-}
-
-function getRatingFromScore(score: number): string {
-  if (score >= 90) return 'Excellent';
-  if (score >= 80) return 'Good';
-  if (score >= 70) return 'Fair';
-  if (score >= 60) return 'Needs Work';
-  return 'Critical';
 }
 
 // Tree item for reports view

@@ -1,18 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { updateTeam } from '@/lib/db';
 import Stripe from 'stripe';
-
-// Lazy-initialize Stripe only when needed
-let stripe: Stripe | null = null;
-
-function getStripe(): Stripe | null {
-  if (!stripe && process.env.STRIPE_SECRET_KEY) {
-    stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: '2026-02-25.clover',
-    });
-  }
-  return stripe;
-}
+import { getStripe, determinePlan } from '@/lib/billing';
 
 export async function POST(request: NextRequest) {
   try {
@@ -56,19 +45,11 @@ export async function POST(request: NextRequest) {
           amount_total?: number;
         };
         const teamId = session.metadata?.teamId;
-        const planFromMetadata = session.metadata?.plan;
         const customerId = session.customer as string;
         const subscriptionId = session.subscription as string;
 
         if (teamId) {
-          // Determine plan based on metadata or amount
-          // Team plan: $99/mo = 9900 cents, Pro plan: $49/mo = 4900 cents
-          let plan: 'pro' | 'team' = 'pro';
-          if (planFromMetadata === 'team') {
-            plan = 'team';
-          } else if (session.amount_total && session.amount_total >= 9900) {
-            plan = 'team';
-          }
+          const plan = determinePlan(session);
 
           await updateTeam(teamId, {
             stripeCustomerId: customerId,

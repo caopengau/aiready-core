@@ -1,11 +1,12 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 
-type Event = {
-  requestContext?: { http?: { method?: string } };
-  headers?: Record<string, string>;
-  body?: string;
-};
+import {
+  json,
+  allowedCorsHeaders,
+  extractIp,
+  LandingEvent as Event,
+} from './utils';
 
 const bucket = process.env.SUBMISSIONS_BUCKET!;
 const s3 = new S3Client({});
@@ -92,13 +93,14 @@ export async function handler(event: Event) {
         <td style="padding: 10px 0; font-weight: bold; color: #555;">📦 Repository:</td>
         <td style="padding: 10px 0;"><a href="${repoUrl}" style="color: #667eea; text-decoration: none;">${repoUrl}</a></td>
       </tr>
-      ${notes
-            ? `<tr>
+      ${
+        notes
+          ? `<tr>
         <td style="padding: 10px 0; font-weight: bold; color: #555; vertical-align: top;">📝 Notes:</td>
         <td style="padding: 10px 0; white-space: pre-wrap;">${notes}</td>
       </tr>`
-            : ''
-          }
+          : ''
+      }
       <tr>
         <td style="padding: 10px 0; font-weight: bold; color: #555;">🕐 Received:</td>
         <td style="padding: 10px 0;">${new Date(now).toLocaleString('en-US', { dateStyle: 'full', timeStyle: 'short' })}</td>
@@ -146,7 +148,7 @@ https://getaiready.dev`;
             Source: 'notifications@getaiready.dev',
           })
         );
-      } catch { }
+      } catch {}
     }
 
     return json(200, { ok: true });
@@ -154,31 +156,4 @@ https://getaiready.dev`;
     console.error('request-report error', err);
     return json(500, { error: err?.message || 'Internal error' });
   }
-}
-
-function allowedCorsHeaders() {
-  return {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-  };
-}
-
-function json(statusCode: number, body: any) {
-  return {
-    statusCode,
-    headers: { 'Content-Type': 'application/json', ...allowedCorsHeaders() },
-    body: JSON.stringify(body),
-  };
-}
-
-function extractIp(headers?: Record<string, string>) {
-  const h = headers || {};
-  return (
-    h['x-forwarded-for'] ||
-    h['X-Forwarded-For'] ||
-    h['x-real-ip'] ||
-    h['X-Real-IP'] ||
-    ''
-  );
 }

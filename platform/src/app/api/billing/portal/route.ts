@@ -1,18 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/app/api/auth/[...nextauth]/route';
-import Stripe from 'stripe';
-
-// Lazy-initialize Stripe only when needed
-let stripe: Stripe | null = null;
-
-function getStripe(): Stripe | null {
-  if (!stripe && process.env.STRIPE_SECRET_KEY) {
-    stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: '2026-02-25.clover',
-    });
-  }
-  return stripe;
-}
+import { getStripe } from '@/lib/billing';
 
 export async function GET() {
   try {

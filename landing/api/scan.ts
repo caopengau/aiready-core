@@ -1,10 +1,4 @@
-import type { IncomingMessage } from 'http';
-
-type Event = {
-  requestContext?: { http?: { method?: string } };
-  headers?: Record<string, string>;
-  body?: string;
-};
+import { json, allowedCorsHeaders, LandingEvent as Event } from './utils';
 
 export async function handler(event: Event) {
   const method = event.requestContext?.http?.method || 'POST';
@@ -118,28 +112,4 @@ export async function handler(event: Event) {
     console.error('scan handler error', err);
     return json(500, { error: err?.message || 'Internal error' });
   }
-}
-
-function allowedCorsHeaders() {
-  return {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-  };
-}
-
-function json(
-  statusCode: number,
-  body: any,
-  extraHeaders: Record<string, string> = {}
-) {
-  return {
-    statusCode,
-    headers: {
-      'Content-Type': 'application/json',
-      ...allowedCorsHeaders(),
-      ...extraHeaders,
-    },
-    body: JSON.stringify(body),
-  };
 }
