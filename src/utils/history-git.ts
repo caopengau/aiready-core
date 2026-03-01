@@ -42,3 +42,63 @@ export function getLineRangeLastModifiedCached(
   }
   return latest;
 }
+
+/**
+ * Get repository metadata (URL, branch, commit, author)
+ */
+export function getRepoMetadata(directory: string): {
+  url?: string;
+  branch?: string;
+  commit?: string;
+  author?: string;
+} {
+  const metadata: any = {};
+  try {
+    // Get remote URL
+    try {
+      metadata.url = execSync('git config --get remote.origin.url', {
+        cwd: directory,
+        encoding: 'utf-8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+      }).trim();
+    } catch {
+      // No remote origin
+    }
+
+    // Get current branch
+    try {
+      metadata.branch = execSync('git rev-parse --abbrev-ref HEAD', {
+        cwd: directory,
+        encoding: 'utf-8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+      }).trim();
+    } catch {
+      // Not on a branch
+    }
+
+    // Get latest commit hash
+    try {
+      metadata.commit = execSync('git rev-parse HEAD', {
+        cwd: directory,
+        encoding: 'utf-8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+      }).trim();
+    } catch {
+      // No commits
+    }
+
+    // Get last author
+    try {
+      metadata.author = execSync('git log -1 --format=%ae', {
+        cwd: directory,
+        encoding: 'utf-8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+      }).trim();
+    } catch {
+      // No log
+    }
+  } catch {
+    // Not a git repo or git not installed
+  }
+  return metadata;
+}
