@@ -1,6 +1,7 @@
 /**
  * Business Metrics Tests
  */
+import { describe, it, expect } from 'vitest';
 import {
   calculateMonthlyCost,
   calculateProductivityImpact,
@@ -16,24 +17,24 @@ import { ToolScoringOutput } from '../scoring';
 describe('Business Metrics', () => {
   describe('calculateMonthlyCost', () => {
     it('should calculate cost for token waste', () => {
-      // 10,000 tokens waste with default config
-      // (10000/1000) * 0.01 * 50 * 5 * 30 = $75/month
-      const cost = calculateMonthlyCost(10000);
-      expect(cost).toBe(75);
+      // 10,000 tokens waste with default config (claude-4.6 preset)
+      // (10000/1000) * 0.0015 * 60 * 5 * 30 = $135/month
+      const result = calculateMonthlyCost(10000);
+      expect(result.total).toBe(135);
     });
 
     it('should handle custom config', () => {
-      const cost = calculateMonthlyCost(10000, {
+      const result = calculateMonthlyCost(10000, {
         developerCount: 10,
         queriesPerDevPerDay: 100,
       });
-      // (10000/1000) * 0.01 * 100 * 10 * 30 = $300
-      expect(cost).toBe(300);
+      // (10000/1000) * 0.0015 * 100 * 10 * 30 = $450
+      expect(result.total).toBe(450);
     });
 
     it('should handle zero tokens', () => {
-      const cost = calculateMonthlyCost(0);
-      expect(cost).toBe(0);
+      const result = calculateMonthlyCost(0);
+      expect(result.total).toBe(0);
     });
   });
 

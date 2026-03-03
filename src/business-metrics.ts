@@ -278,7 +278,8 @@ export function calculateTokenBudget(params: {
   };
 }): TokenBudget {
   const { totalContextTokens, wastedTokens } = params;
-  const estimatedResponseTokens = params.estimatedResponseTokens ?? totalContextTokens * 0.2;
+  const estimatedResponseTokens =
+    params.estimatedResponseTokens ?? totalContextTokens * 0.2;
 
   const totalWaste =
     wastedTokens.duplication +
@@ -288,7 +289,10 @@ export function calculateTokenBudget(params: {
   // High waste reduces efficiency ratio
   const efficiencyRatio = Math.max(
     0,
-    Math.min(1, (totalContextTokens - totalWaste) / Math.max(1, totalContextTokens))
+    Math.min(
+      1,
+      (totalContextTokens - totalWaste) / Math.max(1, totalContextTokens)
+    )
   );
 
   return {
@@ -324,8 +328,9 @@ export function estimateCostFromBudget(
   const tokensPerMonth = tokensPerDay * cfg.daysPerMonth;
   const totalWeight = cfg.developerCount;
 
-  // Use model-specific input pricing
-  const baseCost = (tokensPerMonth / 1000) * model.pricePer1KInputTokens * totalWeight;
+  // Use config price override if provided, otherwise model preset price
+  const price = config.pricePer1KTokens ?? model.pricePer1KInputTokens;
+  const baseCost = (tokensPerMonth / 1000) * price * totalWeight;
 
   // Confidence reflects how well we can predict this specific model's scaling
   let confidence = 0.85;
