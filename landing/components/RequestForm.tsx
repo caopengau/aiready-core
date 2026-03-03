@@ -43,7 +43,7 @@ export default function RequestForm() {
 
       setStatus('success');
       setMessage(
-        "🎉 Thanks! Your audit request has been received. We'll analyze your codebase and email the detailed report within 24-48 hours. Expect to hear from us soon!"
+        "Thanks! Your audit request has been received. We'll analyze your codebase and email the detailed report within 24-48 hours. Expect to hear from us soon!"
       );
       // We don't clear inputs here anymore because we'll hide the form
     } catch (err: any) {

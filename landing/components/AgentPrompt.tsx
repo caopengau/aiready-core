@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bot } from 'lucide-react';
+import { Bot, Copy, Check } from 'lucide-react';
 
 interface AgentPromptProps {
   variant?: 'basic' | 'detailed' | 'fix' | 'consulting';
@@ -151,13 +151,23 @@ export default function AgentPrompt({
             onClick={handleCopy}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${
               copied
                 ? 'bg-green-500 text-white'
                 : 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:shadow-lg'
             }`}
           >
-            {copied ? '✓ Copied!' : '📋 Copy Prompt'}
+            {copied ? (
+              <>
+                <Check className="w-4 h-4" />
+                Copied!
+              </>
+            ) : (
+              <>
+                <Copy className="w-4 h-4" />
+                Copy Prompt
+              </>
+            )}
           </motion.button>
         </div>
 

@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
     "clean": "rm -rf .next out",
+    "test:e2e": "playwright test",
     "deploy:sst": "sst deploy",
     "deploy:sst:prod": "sst deploy --stage production"
   },
@@ -36,6 +37,7 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4",
     "@tailwindcss/typography": "^0.5.19",
     "@types/node": "^24.0.0",

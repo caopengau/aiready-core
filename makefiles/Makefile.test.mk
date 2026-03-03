@@ -3,7 +3,7 @@
 ###############################################################################
 include makefiles/Makefile.shared.mk
 
-.PHONY: test test-core test-pattern-detect test-watch test-coverage test-verify-cli
+.PHONY: test test-core test-pattern-detect test-watch test-coverage test-verify-cli test-landing-e2e
 
 test: ## Run tests for all packages (noninteractive)
 	@$(call log_step,Running tests for all packages (noninteractive)...) 

@@ -2,6 +2,7 @@
 
 import { motion, useInView } from 'framer-motion';
 import { useEffect, useState, useRef } from 'react';
+import { Repeat, BarChart3, Zap, Search } from 'lucide-react';
 
 interface ScanIssue {
   id: number;
@@ -96,13 +97,13 @@ const getSeverityColor = (severity: string) => {
 const getTypeIcon = (type: string) => {
   switch (type) {
     case 'duplicate':
-      return '🔄';
+      return <Repeat className="w-6 h-6 text-blue-400" />;
     case 'context':
-      return '📊';
+      return <BarChart3 className="w-6 h-6 text-purple-400" />;
     case 'consistency':
-      return '⚡';
+      return <Zap className="w-6 h-6 text-amber-400" />;
     default:
-      return '🔍';
+      return <Search className="w-6 h-6 text-slate-400" />;
   }
 };
 
@@ -395,8 +396,7 @@ export default function LiveScanDemo() {
                       <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-cyan-500/50" />
 
                       <div className="flex items-start gap-3 relative z-10">
-                        <motion.span
-                          className="text-2xl"
+                        <motion.div
                           animate={{ rotate: [0, 10, 0, -10, 0] }}
                           transition={{
                             duration: 2,
@@ -405,7 +405,7 @@ export default function LiveScanDemo() {
                           }}
                         >
                           {getTypeIcon(issue.type)}
-                        </motion.span>
+                        </motion.div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2">
                             <span
@@ -467,11 +467,11 @@ export default function LiveScanDemo() {
 
                 <div className="relative z-10">
                   <motion.div
-                    className="text-5xl mb-3"
+                    className="flex justify-center mb-3"
                     animate={{ scale: [1, 1.1, 1] }}
                     transition={{ duration: 2, repeat: Infinity }}
                   >
-                    🔍
+                    <Search className="w-12 h-12 text-cyan-400" />
                   </motion.div>
                   <p className="text-sm font-mono text-cyan-400/60 uppercase tracking-wider">
                     Initializing scan sequence...
