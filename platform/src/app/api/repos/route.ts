@@ -6,6 +6,7 @@ import {
   listTeamRepositories,
   getRepository,
   deleteRepository,
+  getLatestAnalysis,
 } from '@/lib/db';
 import { planLimits, MVP_FREE_ONLY } from '@/lib/plans';
 import { randomUUID } from 'crypto';
@@ -29,10 +30,18 @@ export async function GET(request: NextRequest) {
       repos = await listUserRepositories(session.user.id);
     }
 
+    // Attach latest analysis to each repo
+    const reposWithAnalysis = await Promise.all(
+      repos.map(async (repo) => {
+        const latestAnalysis = await getLatestAnalysis(repo.id);
+        return { ...repo, latestAnalysis };
+      })
+    );
+
     const maxRepos = planLimits.free.maxRepos; // 3 repos for free tier (default)
 
     return NextResponse.json({
-      repos,
+      repos: reposWithAnalysis,
       limits: {
         maxRepos,
         currentCount: repos.length,
