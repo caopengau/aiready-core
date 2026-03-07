@@ -662,35 +662,52 @@ export function ScanConfigForm({ repoId, initialSettings, onSave }: Props) {
 
               <div className="flex flex-col justify-end gap-4">
                 <div
-                  onClick={() =>
+                  onClick={() => {
+                    const newVal =
+                      !settings.tools?.[ToolName.ContextAnalyzer]
+                        ?.includeNodeModules;
+                    if (
+                      newVal &&
+                      !confirm(
+                        'WARNING: Scanning node_modules will exponentially increase scan time, cost, and context window usage. This is rarely needed for standard analysis. Are you sure you want to enable this?'
+                      )
+                    ) {
+                      return;
+                    }
                     setSettings({
                       ...settings,
                       tools: {
                         ...settings.tools,
                         [ToolName.ContextAnalyzer]: {
                           ...settings.tools?.[ToolName.ContextAnalyzer],
-                          includeNodeModules:
-                            !settings.tools?.[ToolName.ContextAnalyzer]
-                              ?.includeNodeModules,
+                          includeNodeModules: newVal,
                         },
                       },
-                    })
-                  }
+                    });
+                  }}
                   className={`group relative p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
                     settings.tools?.[ToolName.ContextAnalyzer]
                       ?.includeNodeModules
-                      ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-500'
-                      : 'bg-slate-900 border-slate-800 text-slate-500'
+                      ? 'bg-red-500/10 border-red-500/30 text-red-500'
+                      : 'bg-slate-900 border-slate-800 text-slate-500 hover:border-slate-700'
                   }`}
                 >
-                  <span className="text-[10px] font-bold uppercase">
-                    Scan Node Modules
-                  </span>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold uppercase flex items-center gap-2">
+                      Scan Node Modules
+                      {settings.tools?.[ToolName.ContextAnalyzer]
+                        ?.includeNodeModules && (
+                        <span className="bg-red-500 text-[8px] px-1.5 py-0.5 rounded text-white animate-pulse">
+                          HIGH RISK
+                        </span>
+                      )}
+                    </span>
+                  </div>
                   <div
                     className={`w-2.5 h-2.5 rounded-full ${
                       settings.tools?.[ToolName.ContextAnalyzer]
                         ?.includeNodeModules
-                        ? 'bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.5)]'
+                        ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]'
                         : 'bg-slate-800'
                     }`}
                   />
@@ -705,9 +722,13 @@ export function ScanConfigForm({ repoId, initialSettings, onSave }: Props) {
                     Analysis Focus:
                   </span>
                   <div className="flex bg-slate-900 rounded-lg p-1 border border-slate-800 w-full">
-                    {['all', 'cohesion', 'fragmentation'].map((f) => (
+                    {[
+                      { id: 'all', label: 'all' },
+                      { id: 'cohesion', label: 'cohesion' },
+                      { id: 'fragmentation', label: 'fragment' },
+                    ].map((f) => (
                       <button
-                        key={f}
+                        key={f.id}
                         onClick={() =>
                           setSettings({
                             ...settings,
@@ -715,19 +736,24 @@ export function ScanConfigForm({ repoId, initialSettings, onSave }: Props) {
                               ...settings.tools,
                               [ToolName.ContextAnalyzer]: {
                                 ...settings.tools?.[ToolName.ContextAnalyzer],
-                                focus: f,
+                                focus: f.id as any,
                               },
                             },
                           })
                         }
-                        className={`flex-1 text-[9px] uppercase font-bold py-1 px-2 rounded-md transition-all ${
+                        className={`flex-1 text-[9px] uppercase font-bold py-1 px-2 rounded-md transition-all flex items-center justify-center gap-1 ${
                           (settings.tools?.[ToolName.ContextAnalyzer]?.focus ||
-                            'all') === f
+                            'all') === f.id
                             ? 'bg-slate-700 text-cyan-400'
                             : 'text-slate-500 hover:text-slate-300'
                         }`}
                       >
-                        {f}
+                        {f.label}
+                        {f.id === 'all' && (
+                          <span className="text-[7px] opacity-50 underline decoration-cyan-500/50">
+                            (Rec)
+                          </span>
+                        )}
                       </button>
                     ))}
                   </div>
