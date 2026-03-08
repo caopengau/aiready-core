@@ -17,10 +17,10 @@ describe('business-metrics v0.12 evolution', () => {
         daysPerMonth: 20,
       });
 
-      // (1000 / 1000) * 0.01 * 50 * 10 * 20 = 100
-      expect(result.total).toBe(100);
-      expect(result.range[0]).toBeLessThan(100);
-      expect(result.range[1]).toBeGreaterThan(100);
+      // (1000 / 1000) * 0.01 * 50 * 10 * 20 * 1.1 = 110
+      expect(result.total).toBe(110);
+      expect(result.range[0]).toBeLessThan(110);
+      expect(result.range[1]).toBeGreaterThan(110);
       expect(result.confidence).toBe(0.7);
     });
 

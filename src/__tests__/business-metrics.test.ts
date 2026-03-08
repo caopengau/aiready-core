@@ -17,10 +17,10 @@ import { ToolScoringOutput } from '../scoring';
 describe('Business Metrics', () => {
   describe('calculateMonthlyCost', () => {
     it('should calculate cost for token waste', () => {
-      // 10,000 tokens waste with default config (claude-4.6 preset)
-      // (10000/1000) * 0.0015 * 60 * 5 * 30 = $135/month
+      // 10,000 tokens waste with default config (claude-3.5-sonnet preset)
+      // (10000/1000) * 0.0015 * 60 * 5 * 30 * 1.1 = $148.5/month
       const result = calculateMonthlyCost(10000);
-      expect(result.total).toBe(135);
+      expect(result.total).toBe(148.5);
     });
 
     it('should handle custom config', () => {
@@ -28,8 +28,8 @@ describe('Business Metrics', () => {
         developerCount: 10,
         queriesPerDevPerDay: 100,
       });
-      // (10000/1000) * 0.0015 * 100 * 10 * 30 = $450
-      expect(result.total).toBe(450);
+      // (10000/1000) * 0.0015 * 100 * 10 * 30 * 1.1 = $495
+      expect(result.total).toBe(495);
     });
 
     it('should handle zero tokens', () => {
