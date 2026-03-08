@@ -11,15 +11,18 @@ export async function initTreeSitter(): Promise<void> {
   if (isTreeSitterInitialized) return;
 
   try {
-    // In Node.js, Parser.init() looks for web-tree-sitter.wasm
-    // By default it looks in the same directory as the script.
-    // In Lambda/SST, we copy it to the root of the artifact.
-    await Parser.Parser.init();
+    await Parser.Parser.init({
+      locateFile(scriptName: string) {
+        const p = path.join(process.cwd(), scriptName);
+        if (fs.existsSync(p)) return p;
+        const p2 = path.join(__dirname, scriptName);
+        if (fs.existsSync(p2)) return p2;
+        return scriptName;
+      },
+    });
     isTreeSitterInitialized = true;
   } catch (error) {
     console.error('Failed to initialize web-tree-sitter:', error);
-    // Even if it fails, we mark as initialized to avoid repeated failures,
-    // unless it's a transient error.
     isTreeSitterInitialized = true;
   }
 }
@@ -70,10 +73,14 @@ export function getWasmPath(language: string): string | null {
 
   for (const p of possiblePaths) {
     if (fs.existsSync(p)) {
+      // console.log(`[Parser] Found WASM for ${language} at: ${p}`);
       return p;
     }
   }
 
+  console.warn(
+    `[Parser] WASM file for ${language} not found. Checked ${possiblePaths.length} paths. CWD: ${process.cwd()}, DIR: ${__dirname}`
+  );
   return null;
 }
 
