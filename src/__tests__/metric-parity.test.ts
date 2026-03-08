@@ -68,16 +68,18 @@ def impure_func(s: str) -> None:
     {
       language: Language.CSharp,
       extension: '.cs',
-      code: `public class MyClass {
-    /// <summary>Pure function with documentation</summary>
-    public string PureFunc(string s) {
-        return s.Trim();
-    }
+      code: `namespace MyNamespace {
+    public class MyClass {
+        /// <summary>Pure function with documentation</summary>
+        public string PureFunc(string s) {
+            return s.Trim();
+        }
 
-    /// <summary>Impure function with documentation</summary>
-    public void ImpureFunc(string s) {
-        Console.WriteLine(s);
-        this.value = s;
+        /// <summary>Impure function with documentation</summary>
+        public void ImpureFunc(string s) {
+            Console.WriteLine(s);
+            this.value = s;
+        }
     }
 }`,
     },
