@@ -28,7 +28,11 @@ Legend:
 
 ## Overview
 
-This package provides common utilities, type definitions, and helper functions used across all AIReady tools. It's designed as a foundational library for building code analysis tools focused on AI-readiness.
+This package provides common utilities, type definitions, and the multi-language parser factory used across all AIReady tools. It's designed as a foundational library for building code analysis tools focused on AI-readiness.
+
+### Language Support
+
+Supports **TypeScript, JavaScript, Python, Java, Go, and C#**.
 
 ## License
 

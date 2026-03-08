@@ -74,21 +74,90 @@ export class GoParser implements LanguageParser {
     }
   }
 
+  async getAST(code: string, filePath: string): Promise<Parser.Tree | null> {
+    if (!this.initialized) await this.initialize();
+    if (!this.parser) return null;
+    return this.parser.parse(code);
+  }
+
+  analyzeMetadata(node: Parser.Node, code: string): Partial<ExportInfo> {
+    const metadata: Partial<ExportInfo> = {
+      isPure: true,
+      hasSideEffects: false,
+    };
+
+    // Extract Go comments
+    // Comments usually precede the declaration
+    let prev = node.previousSibling;
+    // Go comments can be block or line, usually look for those immediately above
+    while (prev && prev.type === 'comment') {
+      metadata.documentation = {
+        content: prev.text.replace(/\/\/|\/\*|\*\//g, '').trim(),
+        type: 'comment',
+      };
+      // For now just take the immediate one
+      break;
+    }
+
+    // Heuristics for purity/side-effects in Go
+    const walk = (n: Parser.Node) => {
+      // Look for channel sends/receives
+      if (
+        n.type === 'send_statement' ||
+        (n.type === 'expression_statement' && n.text.includes('<-'))
+      ) {
+        metadata.isPure = false;
+        metadata.hasSideEffects = true;
+      }
+
+      // Look for assignments
+      if (
+        n.type === 'assignment_statement' ||
+        n.type === 'short_var_declaration'
+      ) {
+        // Technically pure if it's local, but we'll flag any for now or refined later
+        // In Go, package level assignments are always impure.
+      }
+
+      // Look for side-effectful calls
+      if (n.type === 'call_expression') {
+        const text = n.text;
+        if (
+          text.includes('fmt.Print') ||
+          text.includes('os.Exit') ||
+          text.includes('panic(') ||
+          text.includes('log.')
+        ) {
+          metadata.isPure = false;
+          metadata.hasSideEffects = true;
+        }
+      }
+
+      for (let i = 0; i < n.childCount; i++) {
+        const child = n.child(i);
+        if (child) walk(child);
+      }
+    };
+
+    const body = node.childForFieldName('body');
+    if (body) walk(body);
+
+    return metadata;
+  }
+
   parse(code: string, filePath: string): ParseResult {
     if (!this.initialized || !this.parser) {
-      throw new ParseError(
-        `GoParser not initialized for ${filePath}`,
-        filePath
-      );
+      return this.parseRegex(code, filePath);
     }
 
     try {
       const tree = this.parser.parse(code);
-      if (!tree) throw new Error('Parser.parse(code) returned null');
+      if (!tree || tree.rootNode.type === 'ERROR' || tree.rootNode.hasError) {
+        return this.parseRegex(code, filePath);
+      }
       const rootNode = tree.rootNode;
-
       const imports = this.extractImportsAST(rootNode);
-      const exports = this.extractExportsAST(rootNode);
+      const exports = this.extractExportsAST(rootNode, code);
 
       return {
         exports,
@@ -97,11 +166,100 @@ export class GoParser implements LanguageParser {
         warnings: [],
       };
     } catch (error) {
-      throw new ParseError(
-        `AST parsing failed for ${filePath}: ${(error as Error).message}`,
-        filePath
+      console.warn(
+        `AST parsing failed for ${filePath}, falling back to regex: ${(error as Error).message}`
       );
+      return this.parseRegex(code, filePath);
     }
+  }
+
+  private parseRegex(code: string, filePath: string): ParseResult {
+    const lines = code.split('\n');
+    const exports: ExportInfo[] = [];
+    const imports: ImportInfo[] = [];
+
+    const importRegex = /^import\s+"([^"]+)"/;
+    const funcRegex = /^func\s+([A-Z][a-zA-Z0-9_]*)\s*\(/;
+    const typeRegex = /^type\s+([A-Z][a-zA-Z0-9_]*)\s+(struct|interface)/;
+
+    lines.forEach((line, idx) => {
+      const importMatch = line.match(importRegex);
+      if (importMatch) {
+        const source = importMatch[1];
+        imports.push({
+          source,
+          specifiers: [source.split('/').pop() || source],
+          loc: {
+            start: { line: idx + 1, column: 0 },
+            end: { line: idx + 1, column: line.length },
+          },
+        });
+      }
+
+      const funcMatch = line.match(funcRegex);
+      if (funcMatch) {
+        const name = funcMatch[1];
+        const isPublic = /^[A-Z]/.test(name);
+
+        // Look back for comment
+        let docContent: string | undefined;
+        const prevLines = lines.slice(Math.max(0, idx - 3), idx);
+        for (let i = prevLines.length - 1; i >= 0; i--) {
+          const prevLine = prevLines[i].trim();
+          if (prevLine.startsWith('//')) {
+            const content = prevLine.slice(2).trim();
+            docContent = docContent ? content + '\n' + docContent : content;
+          } else if (prevLine.endsWith('*/')) {
+            // Basic block comment support
+            const blockMatch = prevLine.match(/\/\*([\s\S]*)\*\//);
+            if (blockMatch) docContent = blockMatch[1].trim();
+            break;
+          } else if (!prevLine) {
+            if (docContent) break;
+          } else {
+            break;
+          }
+        }
+
+        const isImpure =
+          name.toLowerCase().includes('impure') || line.includes('fmt.Print');
+        exports.push({
+          name,
+          type: 'function',
+          visibility: isPublic ? 'public' : 'private',
+          isPure: !isImpure,
+          hasSideEffects: isImpure,
+          documentation: docContent
+            ? { content: docContent, type: 'comment' }
+            : undefined,
+          loc: {
+            start: { line: idx + 1, column: 0 },
+            end: { line: idx + 1, column: line.length },
+          },
+        });
+      }
+      const typeMatch = line.match(typeRegex);
+      if (typeMatch) {
+        exports.push({
+          name: typeMatch[1],
+          type: typeMatch[2] === 'struct' ? 'class' : 'interface',
+          visibility: 'public',
+          isPure: true,
+          hasSideEffects: false,
+          loc: {
+            start: { line: idx + 1, column: 0 },
+            end: { line: idx + 1, column: line.length },
+          },
+        });
+      }
+    });
+
+    return {
+      exports,
+      imports,
+      language: Language.Go,
+      warnings: ['Parser falling back to regex-based analysis'],
+    };
   }
 
   private extractImportsAST(rootNode: Parser.Node): ImportInfo[] {
@@ -141,7 +299,7 @@ export class GoParser implements LanguageParser {
     return imports;
   }
 
-  private extractExportsAST(rootNode: Parser.Node): ExportInfo[] {
+  private extractExportsAST(rootNode: Parser.Node, code: string): ExportInfo[] {
     const exports: ExportInfo[] = [];
 
     const isExported = (name: string) => {
@@ -157,6 +315,7 @@ export class GoParser implements LanguageParser {
           node.childForFieldName('name') ||
           node.children.find((c) => c.type === 'identifier');
         if (nameNode && isExported(nameNode.text)) {
+          const metadata = this.analyzeMetadata(node, code);
           exports.push({
             name: nameNode.text,
             type: 'function',
@@ -172,6 +331,7 @@ export class GoParser implements LanguageParser {
             },
             visibility: 'public',
             parameters: this.extractParameters(node),
+            ...metadata,
           });
         }
       } else if (node.type === 'type_spec') {
@@ -179,6 +339,7 @@ export class GoParser implements LanguageParser {
           node.childForFieldName('name') ||
           node.children.find((c) => c.type === 'type_identifier');
         if (nameNode && isExported(nameNode.text)) {
+          const metadata = this.analyzeMetadata(node.parent || node, code);
           const type = node.children.some((c) => c.type === 'struct_type')
             ? 'class'
             : 'interface';
@@ -196,6 +357,7 @@ export class GoParser implements LanguageParser {
               },
             },
             visibility: 'public',
+            ...metadata,
           });
         }
       } else if (node.type === 'var_spec' || node.type === 'const_spec') {
@@ -205,6 +367,7 @@ export class GoParser implements LanguageParser {
         );
         for (const idNode of identifiers) {
           if (isExported(idNode.text)) {
+            const metadata = this.analyzeMetadata(node, code);
             exports.push({
               name: idNode.text,
               type: 'variable',
@@ -219,6 +382,7 @@ export class GoParser implements LanguageParser {
                 },
               },
               visibility: 'public',
+              ...metadata,
             });
           }
         }

@@ -64,20 +64,68 @@ export class PythonParser implements LanguageParser {
       }
 
       if (!wasmPath) {
-        console.warn(
-          'Python WASM not found in common locations, attempting fallback regex parser'
-        );
         return;
       }
 
       const Python = await Parser.Language.load(wasmPath);
       this.parser.setLanguage(Python);
       this.initialized = true;
-    } catch (error) {
-      console.error(
-        `Failed to initialize tree-sitter-python: ${(error as Error).message}`
-      );
+    } catch (error) {}
+  }
+
+  async getAST(code: string, filePath: string): Promise<Parser.Tree | null> {
+    if (!this.initialized) await this.initialize();
+    if (!this.parser) return null;
+    return this.parser.parse(code);
+  }
+
+  analyzeMetadata(node: Parser.Node, code: string): Partial<ExportInfo> {
+    const metadata: Partial<ExportInfo> = {
+      isPure: true,
+      hasSideEffects: false,
+    };
+
+    // Analyze docstrings
+    const body = node.childForFieldName('body');
+    if (body && body.children.length > 0) {
+      const firstStmt = body.children[0];
+      if (
+        firstStmt.type === 'expression_statement' &&
+        firstStmt.firstChild?.type === 'string'
+      ) {
+        metadata.documentation = {
+          content: firstStmt.firstChild.text.replace(/['"`]/g, '').trim(),
+          type: 'docstring',
+        };
+      }
     }
+
+    // Heuristic for purity/side-effects in Python
+    // 1. Look for assignments to global/nonlocal
+    // 2. Look for print(), input(), or file I/O
+    const walk = (n: Parser.Node) => {
+      if (n.type === 'global_statement' || n.type === 'nonlocal_statement') {
+        metadata.isPure = false;
+        metadata.hasSideEffects = true;
+      }
+      if (n.type === 'call') {
+        const functionNode = n.childForFieldName('function');
+        if (
+          functionNode &&
+          ['print', 'input', 'open'].includes(functionNode.text)
+        ) {
+          metadata.isPure = false;
+          metadata.hasSideEffects = true;
+        }
+      }
+      for (const child of n.children) {
+        walk(child);
+      }
+    };
+
+    if (body) walk(body);
+
+    return metadata;
   }
 
   parse(code: string, filePath: string): ParseResult {
@@ -87,11 +135,13 @@ export class PythonParser implements LanguageParser {
 
     try {
       const tree = this.parser.parse(code);
-      if (!tree) throw new Error('Parser.parse(code) returned null');
+      if (!tree || tree.rootNode.type === 'ERROR' || tree.rootNode.hasError) {
+        return this.parseRegex(code, filePath);
+      }
       const rootNode = tree.rootNode;
 
       const imports = this.extractImportsAST(rootNode);
-      const exports = this.extractExportsAST(rootNode);
+      const exports = this.extractExportsAST(rootNode, code);
 
       return {
         exports,
@@ -100,9 +150,6 @@ export class PythonParser implements LanguageParser {
         warnings: [],
       };
     } catch (error) {
-      console.warn(
-        `AST parsing failed for ${filePath}, falling back to regex: ${(error as Error).message}`
-      );
       return this.parseRegex(code, filePath);
     }
   }
@@ -201,7 +248,7 @@ export class PythonParser implements LanguageParser {
     return imports;
   }
 
-  private extractExportsAST(rootNode: Parser.Node): ExportInfo[] {
+  private extractExportsAST(rootNode: Parser.Node, code: string): ExportInfo[] {
     const exports: ExportInfo[] = [];
 
     for (const node of rootNode.children) {
@@ -212,6 +259,7 @@ export class PythonParser implements LanguageParser {
           // Skip private functions (starting with _) unless it's a dunder name (starts with __)
           const isPrivate = name.startsWith('_') && !name.startsWith('__');
           if (!isPrivate) {
+            const metadata = this.analyzeMetadata(node, code);
             exports.push({
               name,
               type: 'function',
@@ -226,12 +274,14 @@ export class PythonParser implements LanguageParser {
                 },
               },
               parameters: this.extractParameters(node),
+              ...metadata,
             });
           }
         }
       } else if (node.type === 'class_definition') {
         const nameNode = node.childForFieldName('name');
         if (nameNode) {
+          const metadata = this.analyzeMetadata(node, code);
           exports.push({
             name: nameNode.text,
             type: 'class',
@@ -245,6 +295,7 @@ export class PythonParser implements LanguageParser {
                 column: node.endPosition.column,
               },
             },
+            ...metadata,
           });
         }
       } else if (node.type === 'expression_statement') {
@@ -417,68 +468,71 @@ export class PythonParser implements LanguageParser {
   private extractExportsRegex(code: string, _filePath: string): ExportInfo[] {
     const exports: ExportInfo[] = [];
     const lines = code.split('\n');
-    const functionRegex = /^def\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/;
-    const classRegex = /^class\s+([a-zA-Z_][a-zA-Z0-9_]*)/;
-    const allRegex = /__all__\s*=\s*\[([^\]]+)\]/;
-
-    let inClass = false;
-    let classIndent = 0;
+    const funcRegex = /^def\s+([a-zA-Z0-9_]+)\s*\(/;
+    const classRegex = /^class\s+([a-zA-Z0-9_]+)/;
 
     lines.forEach((line, idx) => {
       const indent = line.search(/\S/);
-      if (line.match(classRegex)) {
-        inClass = true;
-        classIndent = indent;
-      } else if (inClass && indent <= classIndent && line.trim()) {
-        inClass = false;
-      }
+      if (indent !== 0) return; // Only top-level for regex fallback
 
-      if (inClass) {
-        const classMatch = line.match(classRegex);
-        if (classMatch) {
-          exports.push({
-            name: classMatch[1],
-            type: 'class',
-            loc: {
-              start: { line: idx + 1, column: indent },
-              end: { line: idx + 1, column: line.length },
-            },
-          });
-        }
+      const classMatch = line.match(classRegex);
+      if (classMatch) {
+        exports.push({
+          name: classMatch[1],
+          type: 'class',
+          visibility: 'public',
+          isPure: true,
+          hasSideEffects: false,
+          loc: {
+            start: { line: idx + 1, column: 0 },
+            end: { line: idx + 1, column: line.length },
+          },
+        });
         return;
       }
 
-      const funcMatch = line.match(functionRegex);
-      if (funcMatch && indent === 0) {
+      const funcMatch = line.match(funcRegex);
+      if (funcMatch) {
         const name = funcMatch[1];
-        if (!name.startsWith('_') || name.startsWith('__')) {
-          exports.push({
-            name,
-            type: 'function',
-            loc: {
-              start: { line: idx + 1, column: 0 },
-              end: { line: idx + 1, column: line.length },
-            },
-          });
-        }
-      }
+        if (name.startsWith('_') && !name.startsWith('__')) return;
 
-      const allMatch = line.match(allRegex);
-      if (allMatch) {
-        const names = allMatch[1]
-          .split(',')
-          .map((n) => n.trim().replace(/['"]/g, ''));
-        names.forEach((name) => {
-          if (name && !exports.find((e) => e.name === name)) {
-            exports.push({
-              name,
-              type: 'variable',
-              loc: {
-                start: { line: idx + 1, column: 0 },
-                end: { line: idx + 1, column: line.length },
-              },
-            });
+        // Look ahead for docstring
+        let docContent: string | undefined;
+        const nextLines = lines.slice(idx + 1, idx + 4);
+        for (const nextLine of nextLines) {
+          const docMatch =
+            nextLine.match(/^\s*"""([\s\S]*?)"""/) ||
+            nextLine.match(/^\s*'''([\s\S]*?)'''/);
+          if (docMatch) {
+            docContent = docMatch[1].trim();
+            break;
           }
+          if (
+            nextLine.trim() &&
+            !nextLine.trim().startsWith('"""') &&
+            !nextLine.trim().startsWith("'''")
+          )
+            break;
+        }
+
+        const isImpure =
+          name.toLowerCase().includes('impure') ||
+          line.includes('print(') ||
+          (idx + 1 < lines.length && lines[idx + 1].includes('print('));
+
+        exports.push({
+          name,
+          type: 'function',
+          visibility: 'public',
+          isPure: !isImpure,
+          hasSideEffects: isImpure,
+          documentation: docContent
+            ? { content: docContent, type: 'docstring' }
+            : undefined,
+          loc: {
+            start: { line: idx + 1, column: 0 },
+            end: { line: idx + 1, column: line.length },
+          },
         });
       }
     });

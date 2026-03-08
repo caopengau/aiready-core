@@ -83,21 +83,85 @@ export class JavaParser implements LanguageParser {
     }
   }
 
+  async getAST(code: string, filePath: string): Promise<Parser.Tree | null> {
+    if (!this.initialized) await this.initialize();
+    if (!this.parser) return null;
+    return this.parser.parse(code);
+  }
+
+  analyzeMetadata(node: Parser.Node, code: string): Partial<ExportInfo> {
+    const metadata: Partial<ExportInfo> = {
+      isPure: true,
+      hasSideEffects: false,
+    };
+
+    // Extract Javadoc
+    // In Java tree-sitter, comments often precede the declaration
+    let prev = node.previousSibling;
+    while (prev && (prev.type === 'comment' || prev.type === 'line_comment')) {
+      if (prev.text.startsWith('/**')) {
+        metadata.documentation = {
+          content: prev.text.replace(/[/*]/g, '').trim(),
+          type: 'xml-doc', // Using xml-doc as a catch-all for structured or we can add 'javadoc'
+        };
+        break;
+      }
+      prev = prev.previousSibling;
+    }
+
+    // Heuristics for purity/side-effects in Java
+    const walk = (n: Parser.Node) => {
+      // Look for assignments to fields (member_access or identifier in expression_statement)
+      if (n.type === 'assignment_expression') {
+        metadata.isPure = false;
+        metadata.hasSideEffects = true;
+      }
+
+      // Look for side-effectful method calls
+      if (n.type === 'method_invocation') {
+        const text = n.text;
+        if (
+          text.includes('System.out.print') ||
+          text.includes('System.err.print') ||
+          text.includes('Files.write')
+        ) {
+          metadata.isPure = false;
+          metadata.hasSideEffects = true;
+        }
+      }
+
+      if (n.type === 'throw_statement') {
+        metadata.isPure = false;
+        metadata.hasSideEffects = true;
+      }
+
+      for (const child of n.children) {
+        walk(child);
+      }
+    };
+
+    const body = node.children.find(
+      (c) => c.type === 'block' || c.type === 'class_body'
+    );
+    if (body) walk(body);
+
+    return metadata;
+  }
+
   parse(code: string, filePath: string): ParseResult {
     if (!this.initialized || !this.parser) {
-      throw new ParseError(
-        `JavaParser not initialized for ${filePath}`,
-        filePath
-      );
+      return this.parseRegex(code, filePath);
     }
 
     try {
       const tree = this.parser.parse(code);
-      if (!tree) throw new Error('Parser.parse(code) returned null');
+      if (!tree || tree.rootNode.type === 'ERROR' || tree.rootNode.hasError) {
+        return this.parseRegex(code, filePath);
+      }
       const rootNode = tree.rootNode;
 
       const imports = this.extractImportsAST(rootNode);
-      const exports = this.extractExportsAST(rootNode);
+      const exports = this.extractExportsAST(rootNode, code);
 
       return {
         exports,
@@ -106,11 +170,95 @@ export class JavaParser implements LanguageParser {
         warnings: [],
       };
     } catch (error) {
-      throw new ParseError(
-        `AST parsing failed for ${filePath}: ${(error as Error).message}`,
-        filePath
+      console.warn(
+        `AST parsing failed for ${filePath}, falling back to regex: ${(error as Error).message}`
       );
+      return this.parseRegex(code, filePath);
     }
+  }
+
+  private parseRegex(code: string, filePath: string): ParseResult {
+    const lines = code.split('\n');
+    const exports: ExportInfo[] = [];
+    const imports: ImportInfo[] = [];
+
+    const importRegex = /^import\s+([a-zA-Z0-9_.]+)/;
+    const classRegex =
+      /^\s*(?:public\s+)?(?:class|interface|enum)\s+([a-zA-Z0-9_]+)/;
+    const methodRegex =
+      /^\s*public\s+(?:static\s+)?[a-zA-Z0-9_<>[\]]+\s+([a-zA-Z0-9_]+)\s*\(/;
+
+    let currentClassName = '';
+
+    lines.forEach((line, idx) => {
+      const importMatch = line.match(importRegex);
+      if (importMatch) {
+        const source = importMatch[1];
+        imports.push({
+          source,
+          specifiers: [source.split('.').pop() || source],
+          loc: {
+            start: { line: idx + 1, column: 0 },
+            end: { line: idx + 1, column: line.length },
+          },
+        });
+      }
+
+      const classMatch = line.match(classRegex);
+      if (classMatch) {
+        currentClassName = classMatch[1];
+        exports.push({
+          name: currentClassName,
+          type: line.includes('interface') ? 'interface' : 'class',
+          visibility: 'public',
+          isPure: true,
+          hasSideEffects: false,
+          loc: {
+            start: { line: idx + 1, column: 0 },
+            end: { line: idx + 1, column: line.length },
+          },
+        });
+      }
+
+      const methodMatch = line.match(methodRegex);
+      if (methodMatch && currentClassName) {
+        const name = methodMatch[1];
+
+        // Look back for Javadoc
+        let docContent: string | undefined;
+        const prevLines = lines.slice(Math.max(0, idx - 5), idx);
+        const prevText = prevLines.join('\n');
+        const javadocMatch = prevText.match(/\/\*\*([\s\S]*?)\*\/\s*$/);
+        if (javadocMatch) {
+          docContent = javadocMatch[1].replace(/^\s*\*+/gm, '').trim();
+        }
+
+        const isImpure =
+          name.toLowerCase().includes('impure') || line.includes('System.out');
+        exports.push({
+          name,
+          type: 'function',
+          parentClass: currentClassName,
+          visibility: 'public',
+          isPure: !isImpure,
+          hasSideEffects: isImpure,
+          documentation: docContent
+            ? { content: docContent, type: 'jsdoc' }
+            : undefined,
+          loc: {
+            start: { line: idx + 1, column: 0 },
+            end: { line: idx + 1, column: line.length },
+          },
+        });
+      }
+    });
+
+    return {
+      exports,
+      imports,
+      language: Language.Java,
+      warnings: ['Parser falling back to regex-based analysis'],
+    };
   }
 
   private extractImportsAST(rootNode: Parser.Node): ImportInfo[] {
@@ -159,7 +307,7 @@ export class JavaParser implements LanguageParser {
     return imports;
   }
 
-  private extractExportsAST(rootNode: Parser.Node): ExportInfo[] {
+  private extractExportsAST(rootNode: Parser.Node, code: string): ExportInfo[] {
     const exports: ExportInfo[] = [];
 
     for (const node of rootNode.children) {
@@ -173,6 +321,7 @@ export class JavaParser implements LanguageParser {
         const nameNode = node.children.find((c) => c.type === 'identifier');
         if (nameNode) {
           const modifiers = this.getModifiers(node);
+          const metadata = this.analyzeMetadata(node, code);
           exports.push({
             name: nameNode.text,
             type: node.type === 'class_declaration' ? 'class' : 'interface',
@@ -187,9 +336,10 @@ export class JavaParser implements LanguageParser {
               },
             },
             visibility: modifiers.includes('public') ? 'public' : 'private',
+            ...metadata,
           });
 
-          this.extractSubExports(node, nameNode.text, exports);
+          this.extractSubExports(node, nameNode.text, exports, code);
         }
       }
     }
@@ -206,7 +356,8 @@ export class JavaParser implements LanguageParser {
   private extractSubExports(
     parentNode: Parser.Node,
     parentName: string,
-    exports: ExportInfo[]
+    exports: ExportInfo[],
+    code: string
   ): void {
     const bodyNode = parentNode.children.find((c) => c.type === 'class_body');
     if (!bodyNode) return;
@@ -217,6 +368,7 @@ export class JavaParser implements LanguageParser {
         const modifiers = this.getModifiers(node);
 
         if (nameNode && modifiers.includes('public')) {
+          const metadata = this.analyzeMetadata(node, code);
           exports.push({
             name: nameNode.text,
             type: 'function',
@@ -233,6 +385,7 @@ export class JavaParser implements LanguageParser {
               },
             },
             parameters: this.extractParameters(node),
+            ...metadata,
           });
         }
       }

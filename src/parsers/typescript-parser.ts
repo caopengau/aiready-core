@@ -20,8 +20,118 @@ export class TypeScriptParser implements LanguageParser {
   readonly extensions = ['.ts', '.tsx', '.js', '.jsx'];
 
   async initialize(): Promise<void> {
-    // No-op for TypeScript parser (for now)
     return Promise.resolve();
+  }
+
+  async getAST(code: string, filePath: string): Promise<TSESTree.Program> {
+    return parse(code, {
+      loc: true,
+      range: true,
+      jsx: filePath.match(/\.[jt]sx$/i) !== null,
+      filePath,
+      sourceType: 'module',
+      ecmaVersion: 'latest',
+      comment: true,
+    });
+  }
+
+  analyzeMetadata(node: TSESTree.Node, code: string): Partial<ExportInfo> {
+    const metadata: Partial<ExportInfo> = {
+      isPure: true,
+      hasSideEffects: false,
+    };
+
+    // Extract JSDoc - look for the last /** */ before the node
+    const start = node.range?.[0] ?? 0;
+    const preceding = code.slice(Math.max(0, start - 200), start);
+
+    // Find the last JSDoc comment in the preceding text
+    const jsdocMatches = Array.from(
+      preceding.matchAll(/\/\*\*([\s\S]*?)\*\//g)
+    );
+    if (jsdocMatches.length > 0) {
+      const lastMatch = jsdocMatches[jsdocMatches.length - 1];
+      // Only use it if it's "close" to the node (only whitespace/newlines between)
+      const matchEndIndex = (lastMatch.index || 0) + lastMatch[0].length;
+      const between = preceding.slice(matchEndIndex);
+      if (/^\s*$/.test(between)) {
+        metadata.documentation = {
+          content: lastMatch[1].replace(/^\s*\*+/gm, '').trim(),
+          type: 'jsdoc',
+        };
+      }
+    }
+
+    // Heuristics for purity/side-effects in TS/JS
+    const walk = (n: TSESTree.Node) => {
+      if (!n) return;
+
+      if (n.type === 'AssignmentExpression') {
+        metadata.isPure = false;
+        metadata.hasSideEffects = true;
+      }
+      if (n.type === 'UpdateExpression') {
+        metadata.isPure = false;
+        metadata.hasSideEffects = true;
+      }
+      if (
+        n.type === 'CallExpression' &&
+        n.callee.type === 'MemberExpression' &&
+        n.callee.object.type === 'Identifier'
+      ) {
+        const objName = n.callee.object.name;
+        if (
+          ['console', 'process', 'fs', 'window', 'document'].includes(objName)
+        ) {
+          metadata.isPure = false;
+          metadata.hasSideEffects = true;
+        }
+      }
+      if (n.type === 'ThrowStatement') {
+        metadata.isPure = false;
+        metadata.hasSideEffects = true;
+      }
+
+      // Recurse
+      for (const key of Object.keys(n)) {
+        if (key === 'parent') continue;
+        const child = (n as any)[key];
+        if (child && typeof child === 'object') {
+          if (Array.isArray(child)) {
+            child.forEach((c) => c?.type && walk(c));
+          } else if (child.type) {
+            walk(child);
+          }
+        }
+      }
+    };
+    // If this is an export declaration, analyze the inner declaration for purity
+    let nodeToAnalyze = node;
+    if (node.type === 'ExportNamedDeclaration' && node.declaration) {
+      nodeToAnalyze = node.declaration;
+    } else if (node.type === 'ExportDefaultDeclaration' && node.declaration) {
+      if (
+        node.declaration.type !== 'TSInterfaceDeclaration' &&
+        node.declaration.type !== 'TSTypeAliasDeclaration'
+      ) {
+        nodeToAnalyze = node.declaration as TSESTree.Node;
+      }
+    }
+
+    if (
+      nodeToAnalyze.type === 'FunctionDeclaration' ||
+      nodeToAnalyze.type === 'FunctionExpression' ||
+      nodeToAnalyze.type === 'ArrowFunctionExpression'
+    ) {
+      if (nodeToAnalyze.body) walk(nodeToAnalyze.body);
+    } else if (
+      nodeToAnalyze.type === 'ClassDeclaration' ||
+      nodeToAnalyze.type === 'ClassExpression'
+    ) {
+      walk(nodeToAnalyze.body);
+    }
+
+    return metadata;
   }
 
   parse(code: string, filePath: string): ParseResult {
@@ -34,10 +144,11 @@ export class TypeScriptParser implements LanguageParser {
         filePath,
         sourceType: 'module',
         ecmaVersion: 'latest',
+        comment: true,
       });
 
       const imports = this.extractImports(ast);
-      const exports = this.extractExports(ast, imports);
+      const exports = this.extractExports(ast, imports, code);
 
       return {
         exports,
@@ -119,7 +230,8 @@ export class TypeScriptParser implements LanguageParser {
 
   private extractExports(
     ast: TSESTree.Program,
-    imports: ImportInfo[]
+    imports: ImportInfo[],
+    code: string
   ): ExportInfo[] {
     const exports: ExportInfo[] = [];
     const importedNames = new Set(
@@ -132,10 +244,13 @@ export class TypeScriptParser implements LanguageParser {
       if (node.type === 'ExportNamedDeclaration' && node.declaration) {
         const extracted = this.extractFromDeclaration(
           node.declaration,
-          importedNames
+          importedNames,
+          code,
+          node // Pass the ExportNamedDeclaration as parent for metadata
         );
         exports.push(...extracted);
       } else if (node.type === 'ExportDefaultDeclaration') {
+        const metadata = this.analyzeMetadata(node, code); // Use the export node for metadata
         // Default export
         let name = 'default';
         let type: ExportInfo['type'] = 'default';
@@ -166,6 +281,7 @@ export class TypeScriptParser implements LanguageParser {
                 end: { line: node.loc.end.line, column: node.loc.end.column },
               }
             : undefined,
+          ...metadata,
         });
       }
     }
@@ -175,9 +291,12 @@ export class TypeScriptParser implements LanguageParser {
 
   private extractFromDeclaration(
     declaration: TSESTree.Node,
-    importedNames: Set<string>
+    importedNames: Set<string>,
+    code: string,
+    parentNode?: TSESTree.Node
   ): ExportInfo[] {
     const exports: ExportInfo[] = [];
+    const metadata = this.analyzeMetadata(parentNode || declaration, code);
 
     if (declaration.type === 'FunctionDeclaration' && declaration.id) {
       exports.push({
@@ -198,6 +317,7 @@ export class TypeScriptParser implements LanguageParser {
               },
             }
           : undefined,
+        ...metadata,
       });
     } else if (declaration.type === 'ClassDeclaration' && declaration.id) {
       exports.push({
@@ -215,6 +335,7 @@ export class TypeScriptParser implements LanguageParser {
               },
             }
           : undefined,
+        ...metadata,
       });
     } else if (declaration.type === 'VariableDeclaration') {
       for (const declarator of declaration.declarations) {
@@ -234,6 +355,7 @@ export class TypeScriptParser implements LanguageParser {
                   },
                 }
               : undefined,
+            ...metadata,
           });
         }
       }
@@ -253,6 +375,7 @@ export class TypeScriptParser implements LanguageParser {
               },
             }
           : undefined,
+        ...metadata,
       });
     } else if (declaration.type === 'TSInterfaceDeclaration') {
       exports.push({
@@ -270,6 +393,7 @@ export class TypeScriptParser implements LanguageParser {
               },
             }
           : undefined,
+        ...metadata,
       });
     }
 

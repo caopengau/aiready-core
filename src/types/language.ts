@@ -82,6 +82,15 @@ export interface ExportInfo {
   parameters?: string[];
   /** Visibility (public, private, protected) */
   visibility?: 'public' | 'private' | 'protected';
+  /** Behavioral metadata for advanced metrics */
+  isPure?: boolean;
+  hasSideEffects?: boolean;
+  /** Associated documentation */
+  documentation?: {
+    content: string;
+    type: 'jsdoc' | 'docstring' | 'comment' | 'xml-doc';
+    isStale?: boolean;
+  };
 }
 
 /**
@@ -176,6 +185,20 @@ export interface LanguageParser {
    * @param filePath - File path to check
    */
   canHandle(filePath: string): boolean;
+
+  /**
+   * Get the raw AST for advanced querying
+   * @param code - Source code to parse
+   * @param filePath - Path to the file
+   */
+  getAST(code: string, filePath: string): Promise<any>;
+
+  /**
+   * Analyze structural metadata for a node (e.g. purity)
+   * @param node - The AST node to analyze (language specific)
+   * @param code - The original source code
+   */
+  analyzeMetadata(node: any, code: string): Partial<ExportInfo>;
 }
 
 /**

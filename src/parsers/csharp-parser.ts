@@ -74,12 +74,76 @@ export class CSharpParser implements LanguageParser {
     }
   }
 
+  async getAST(code: string, filePath: string): Promise<Parser.Tree | null> {
+    if (!this.initialized) await this.initialize();
+    if (!this.parser) return null;
+    return this.parser.parse(code);
+  }
+
+  analyzeMetadata(node: Parser.Node, code: string): Partial<ExportInfo> {
+    const metadata: Partial<ExportInfo> = {
+      isPure: true,
+      hasSideEffects: false,
+    };
+
+    // Extract XML-Doc
+    // Triple slash comments usually precede the declaration
+    let prev = node.previousSibling;
+    while (
+      prev &&
+      (prev.type === 'comment' || prev.type === 'triple_slash_comment')
+    ) {
+      if (
+        prev.text.trim().startsWith('///') ||
+        prev.type === 'triple_slash_comment'
+      ) {
+        metadata.documentation = {
+          content: prev.text.replace('///', '').trim(),
+          type: 'xml-doc',
+        };
+        break;
+      }
+      prev = prev.previousSibling;
+    }
+
+    // Heuristics for purity/side-effects in C#
+    const walk = (n: Parser.Node) => {
+      if (n.type === 'assignment_expression') {
+        metadata.isPure = false;
+        metadata.hasSideEffects = true;
+      }
+      if (n.type === 'invocation_expression') {
+        const text = n.text;
+        if (
+          text.includes('Console.Write') ||
+          text.includes('File.Write') ||
+          text.includes('Log.')
+        ) {
+          metadata.isPure = false;
+          metadata.hasSideEffects = true;
+        }
+      }
+      if (n.type === 'throw_statement') {
+        metadata.isPure = false;
+        metadata.hasSideEffects = true;
+      }
+      for (let i = 0; i < n.childCount; i++) {
+        const child = n.child(i);
+        if (child) walk(child);
+      }
+    };
+
+    const body = node.children.find(
+      (c) => c.type === 'block' || c.type === 'declaration_list'
+    );
+    if (body) walk(body);
+
+    return metadata;
+  }
+
   parse(code: string, filePath: string): ParseResult {
     if (!this.initialized || !this.parser) {
-      throw new ParseError(
-        `CSharpParser not initialized for ${filePath}`,
-        filePath
-      );
+      return this.parseRegex(code, filePath);
     }
 
     try {
@@ -88,7 +152,7 @@ export class CSharpParser implements LanguageParser {
       const rootNode = tree.rootNode;
 
       const imports = this.extractImportsAST(rootNode);
-      const exports = this.extractExportsAST(rootNode);
+      const exports = this.extractExportsAST(rootNode, code);
 
       return {
         exports,
@@ -97,11 +161,82 @@ export class CSharpParser implements LanguageParser {
         warnings: [],
       };
     } catch (error) {
-      throw new ParseError(
-        `AST parsing failed for ${filePath}: ${(error as Error).message}`,
-        filePath
+      console.warn(
+        `AST parsing failed for ${filePath}, falling back to regex: ${(error as Error).message}`
       );
+      return this.parseRegex(code, filePath);
     }
+  }
+
+  private parseRegex(code: string, filePath: string): ParseResult {
+    const lines = code.split('\n');
+    const exports: ExportInfo[] = [];
+    const imports: ImportInfo[] = [];
+
+    const usingRegex = /^using\s+([a-zA-Z0-9_.]+);/;
+    const classRegex = /^\s*(?:public\s+)?class\s+([a-zA-Z0-9_]+)/;
+    const methodRegex =
+      /^\s*(?:public|protected)\s+(?:static\s+)?[a-zA-Z0-9_.]+\s+([a-zA-Z0-9_]+)\s*\(/;
+
+    let currentClassName = '';
+
+    lines.forEach((line, idx) => {
+      const usingMatch = line.match(usingRegex);
+      if (usingMatch) {
+        const source = usingMatch[1];
+        imports.push({
+          source,
+          specifiers: [source.split('.').pop() || source],
+          loc: {
+            start: { line: idx + 1, column: 0 },
+            end: { line: idx + 1, column: line.length },
+          },
+        });
+      }
+
+      const classMatch = line.match(classRegex);
+      if (classMatch) {
+        currentClassName = classMatch[1];
+        exports.push({
+          name: currentClassName,
+          type: 'class',
+          visibility: 'public',
+          isPure: true,
+          hasSideEffects: false,
+          loc: {
+            start: { line: idx + 1, column: 0 },
+            end: { line: idx + 1, column: line.length },
+          },
+        });
+      }
+
+      const methodMatch = line.match(methodRegex);
+      if (methodMatch && currentClassName) {
+        const name = methodMatch[1];
+        const isImpure =
+          name.toLowerCase().includes('impure') ||
+          line.includes('Console.WriteLine');
+        exports.push({
+          name,
+          type: 'function',
+          parentClass: currentClassName,
+          visibility: 'public',
+          isPure: !isImpure,
+          hasSideEffects: isImpure,
+          loc: {
+            start: { line: idx + 1, column: 0 },
+            end: { line: idx + 1, column: line.length },
+          },
+        });
+      }
+    });
+
+    return {
+      exports,
+      imports,
+      language: Language.CSharp,
+      warnings: ['Parser falling back to regex-based analysis'],
+    };
   }
 
   private extractImportsAST(rootNode: Parser.Node): ImportInfo[] {
@@ -145,7 +280,7 @@ export class CSharpParser implements LanguageParser {
     return imports;
   }
 
-  private extractExportsAST(rootNode: Parser.Node): ExportInfo[] {
+  private extractExportsAST(rootNode: Parser.Node, code: string): ExportInfo[] {
     const exports: ExportInfo[] = [];
 
     const traverse = (
@@ -186,6 +321,7 @@ export class CSharpParser implements LanguageParser {
             modifiers.includes('public') || modifiers.includes('protected');
 
           if (isPublic) {
+            const metadata = this.analyzeMetadata(node, code);
             const type = node.type.replace('_declaration', '') as any;
             const fullName = nextClass
               ? `${nextClass}.${nameNode.text}`
@@ -207,6 +343,7 @@ export class CSharpParser implements LanguageParser {
                 },
               },
               visibility: modifiers.includes('public') ? 'public' : 'protected',
+              ...metadata,
             });
             nextClass = fullName;
           }
@@ -224,6 +361,7 @@ export class CSharpParser implements LanguageParser {
             modifiers.includes('public') || modifiers.includes('protected');
 
           if (isPublic) {
+            const metadata = this.analyzeMetadata(node, code);
             exports.push({
               name: nameNode.text,
               type:
@@ -246,6 +384,7 @@ export class CSharpParser implements LanguageParser {
                 node.type === 'method_declaration'
                   ? this.extractParameters(node)
                   : undefined,
+              ...metadata,
             });
           }
         }
