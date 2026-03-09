@@ -1,6 +1,6 @@
 {
   "name": "@aiready/change-amplification",
-  "version": "0.11.20",
+  "version": "0.11.21",
   "description": "AI-Readiness: Change Amplification Detection",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
