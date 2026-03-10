@@ -27,6 +27,7 @@ export function calculateAiSignalClarity(params: {
   deepCallbacks: number;
   ambiguousNames: number;
   undocumentedExports: number;
+  largeFiles: number;
   totalSymbols: number;
   totalExports: number;
 }): AiSignalClarity {
@@ -38,6 +39,7 @@ export function calculateAiSignalClarity(params: {
     deepCallbacks,
     ambiguousNames,
     undocumentedExports,
+    largeFiles,
     totalSymbols,
     totalExports,
   } = params;
@@ -56,15 +58,22 @@ export function calculateAiSignalClarity(params: {
   const overloadSignal: AiSignalClaritySignal = {
     name: 'Symbol Overloading',
     count: overloadedSymbols,
-    riskContribution: Math.round(Math.min(1, overloadRatio) * 100 * 0.25),
+    riskContribution: Math.round(Math.min(1, overloadRatio) * 100 * 0.2),
     description: `${overloadedSymbols} overloaded symbols — AI picks wrong signature`,
+  };
+
+  const largeFileSignal: AiSignalClaritySignal = {
+    name: 'Large Files',
+    count: largeFiles,
+    riskContribution: Math.round(Math.min(5, largeFiles) * 5), // up to 25 points
+    description: `${largeFiles} large files — pushing AI context limits`,
   };
 
   const magicRatio = magicLiterals / Math.max(1, totalSymbols * 2);
   const magicSignal: AiSignalClaritySignal = {
     name: 'Magic Literals',
     count: magicLiterals,
-    riskContribution: Math.round(Math.min(1, magicRatio) * 100 * 0.2),
+    riskContribution: Math.round(Math.min(1, magicRatio) * 100 * 0.15),
     description: `${magicLiterals} unnamed constants — AI invents wrong values`,
   };
 
@@ -72,7 +81,7 @@ export function calculateAiSignalClarity(params: {
   const trapSignal: AiSignalClaritySignal = {
     name: 'Boolean Traps',
     count: booleanTraps,
-    riskContribution: Math.round(Math.min(1, trapRatio) * 100 * 0.2),
+    riskContribution: Math.round(Math.min(1, trapRatio) * 100 * 0.15),
     description: `${booleanTraps} boolean trap parameters — AI inverts intent`,
   };
 
@@ -80,7 +89,7 @@ export function calculateAiSignalClarity(params: {
   const sideEffectSignal: AiSignalClaritySignal = {
     name: 'Implicit Side Effects',
     count: implicitSideEffects,
-    riskContribution: Math.round(Math.min(1, sideEffectRatio) * 100 * 0.15),
+    riskContribution: Math.round(Math.min(1, sideEffectRatio) * 100 * 0.1),
     description: `${implicitSideEffects} functions with implicit side effects — AI misses contracts`,
   };
 
@@ -96,7 +105,7 @@ export function calculateAiSignalClarity(params: {
   const ambiguousSignal: AiSignalClaritySignal = {
     name: 'Ambiguous Names',
     count: ambiguousNames,
-    riskContribution: Math.round(Math.min(1, ambiguousRatio) * 100 * 0.1),
+    riskContribution: Math.round(Math.min(1, ambiguousRatio) * 100 * 0.05),
     description: `${ambiguousNames} non-descriptive identifiers — AI guesses wrong intent`,
   };
 
@@ -104,12 +113,13 @@ export function calculateAiSignalClarity(params: {
   const undocSignal: AiSignalClaritySignal = {
     name: 'Undocumented Exports',
     count: undocumentedExports,
-    riskContribution: Math.round(Math.min(1, undocRatio) * 100 * 0.1),
+    riskContribution: Math.round(Math.min(1, undocRatio) * 100 * 0.05),
     description: `${undocumentedExports} public functions without docs — AI fabricates behavior`,
   };
 
   const signals = [
     overloadSignal,
+    largeFileSignal,
     magicSignal,
     trapSignal,
     sideEffectSignal,
@@ -138,6 +148,10 @@ export function calculateAiSignalClarity(params: {
       : 'No significant issues detected';
 
   const recommendations: string[] = [];
+  if (largeFileSignal.riskContribution > 5)
+    recommendations.push(
+      `Split ${largeFiles} large files (> 500 lines) into smaller, single-responsibility modules`
+    );
   if (overloadSignal.riskContribution > 5)
     recommendations.push(
       `Rename ${overloadedSymbols} overloaded symbols to unique, intent-revealing names`
