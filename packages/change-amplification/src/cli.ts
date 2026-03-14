@@ -29,7 +29,7 @@ export const changeAmplificationAction = async (
 
     console.log(chalk.bold('\n🌐 Change Amplification Analysis\n'));
     console.log(`Rating: ${chalk.bold(report.summary.rating)}`);
-    console.log(`Score: ${Math.round(report.summary.score)}/100`);
+    console.log(`Score: ${Math.round(report.summary.score ?? 0)}/100`);
     console.log(`Critical Issues: ${report.summary.criticalIssues}`);
     console.log(`Major Issues: ${report.summary.majorIssues}`);
 

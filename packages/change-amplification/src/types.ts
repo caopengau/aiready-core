@@ -1,8 +1,9 @@
-import type {
+import {
   ScanOptions,
   AnalysisResult,
   Issue,
   IssueType,
+  SpokeOutput,
 } from '@aiready/core';
 
 export type ChangeAmplificationOptions = ScanOptions;
@@ -15,15 +16,6 @@ export interface FileChangeAmplificationResult extends AnalysisResult {
   issues: ChangeAmplificationIssue[];
 }
 
-export interface ChangeAmplificationReport {
-  summary: {
-    totalFiles: number;
-    totalIssues: number;
-    criticalIssues: number;
-    majorIssues: number;
-    score: number;
-    rating: string;
-    recommendations: string[];
-  };
+export interface ChangeAmplificationReport extends SpokeOutput {
   results: FileChangeAmplificationResult[];
 }

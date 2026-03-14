@@ -59,18 +59,22 @@ describe('Scanner Advanced Signals', () => {
 
     const result = await scanFile(filePath);
 
-    expect(result.signals.magicLiterals).toBeGreaterThanOrEqual(2);
-    expect(result.signals.undocumentedExports).toBeGreaterThanOrEqual(1);
-    expect(result.signals.implicitSideEffects).toBeGreaterThanOrEqual(1);
-    expect(result.signals.overloadedSymbols).toBeGreaterThanOrEqual(1);
-    expect(result.signals.booleanTraps).toBeGreaterThanOrEqual(1);
-    expect(result.signals.ambiguousNames).toBeGreaterThanOrEqual(2);
-    expect(result.signals.deepCallbacks).toBeGreaterThanOrEqual(1);
+    expect((result.signals as any).magicLiterals).toBeGreaterThanOrEqual(2);
+    expect((result.signals as any).undocumentedExports).toBeGreaterThanOrEqual(
+      1
+    );
+    expect((result.signals as any).implicitSideEffects).toBeGreaterThanOrEqual(
+      1
+    );
+    expect((result.signals as any).overloadedSymbols).toBeGreaterThanOrEqual(1);
+    expect((result.signals as any).booleanTraps).toBeGreaterThanOrEqual(1);
+    expect((result.signals as any).ambiguousNames).toBeGreaterThanOrEqual(2);
+    expect((result.signals as any).deepCallbacks).toBeGreaterThanOrEqual(1);
   });
 
   it('handles non-existent files gracefully', async () => {
     const result = await scanFile(join(tmpDir, 'non-existent.ts'));
     expect(result.issues).toHaveLength(0);
-    expect(result.signals.totalSymbols).toBe(0);
+    expect((result.signals as any).totalSymbols).toBe(0);
   });
 });

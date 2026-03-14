@@ -14,28 +14,17 @@ import {
   extractParameterNames,
 } from './shared-parser-utils';
 
+import { BaseLanguageParser } from './base-parser';
+
 /**
  * C# Parser implementation using tree-sitter
  */
-export class CSharpParser implements LanguageParser {
+export class CSharpParser extends BaseLanguageParser {
   readonly language = Language.CSharp;
   readonly extensions = ['.cs'];
-  private parser: Parser.Parser | null = null;
-  private initialized = false;
 
-  /**
-   * Initialize the tree-sitter parser
-   */
-  async initialize(): Promise<void> {
-    if (this.initialized) return;
-    this.parser = await setupParser('c_sharp');
-    this.initialized = true;
-  }
-
-  async getAST(code: string, filePath: string): Promise<Parser.Tree | null> {
-    if (!this.initialized) await this.initialize();
-    if (!this.parser) return null;
-    return this.parser.parse(code);
+  protected getParserName(): string {
+    return 'c_sharp';
   }
 
   analyzeMetadata(node: Parser.Node, code: string): Partial<ExportInfo> {
@@ -45,34 +34,7 @@ export class CSharpParser implements LanguageParser {
     });
   }
 
-  parse(code: string, filePath: string): ParseResult {
-    if (!this.initialized || !this.parser) {
-      return this.parseRegex(code, filePath);
-    }
-
-    try {
-      const tree = this.parser.parse(code);
-      if (!tree) throw new Error('Parser.parse(code) returned null');
-      const rootNode = tree.rootNode;
-
-      const imports = this.extractImportsAST(rootNode);
-      const exports = this.extractExportsAST(rootNode, code);
-
-      return {
-        exports,
-        imports,
-        language: Language.CSharp,
-        warnings: [],
-      };
-    } catch (error) {
-      console.warn(
-        `AST parsing failed for ${filePath}, falling back to regex: ${(error as Error).message}`
-      );
-      return this.parseRegex(code, filePath);
-    }
-  }
-
-  private parseRegex(code: string, filePath: string): ParseResult {
+  protected parseRegex(code: string, filePath: string): ParseResult {
     const lines = code.split('\n');
     const exports: ExportInfo[] = [];
     const imports: ImportInfo[] = [];
@@ -143,7 +105,7 @@ export class CSharpParser implements LanguageParser {
     };
   }
 
-  private extractImportsAST(rootNode: Parser.Node): ImportInfo[] {
+  protected extractImportsAST(rootNode: Parser.Node): ImportInfo[] {
     const imports: ImportInfo[] = [];
 
     const findUsings = (node: Parser.Node) => {
@@ -184,7 +146,10 @@ export class CSharpParser implements LanguageParser {
     return imports;
   }
 
-  private extractExportsAST(rootNode: Parser.Node, code: string): ExportInfo[] {
+  protected extractExportsAST(
+    rootNode: Parser.Node,
+    code: string
+  ): ExportInfo[] {
     const exports: ExportInfo[] = [];
 
     const traverse = (

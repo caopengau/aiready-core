@@ -21,7 +21,7 @@ export const AiSignalClarityProvider = createProvider({
   },
   getResults(report): AnalysisResult[] {
     return report.results.map((r) => ({
-      fileName: r.filePath,
+      fileName: r.fileName,
       issues: r.issues as any[],
       metrics: {
         aiSignalClarityScore: 100,

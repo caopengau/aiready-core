@@ -180,6 +180,44 @@ export function getSeverityColor(severity: string, chalk: any) {
 }
 
 /**
+ * Get numeric severity level for comparison
+ */
+export function getSeverityLevel(s: string | undefined): number {
+  if (!s) return 0;
+  switch (s.toLowerCase()) {
+    case 'critical':
+      return 4;
+    case 'major':
+      return 3;
+    case 'minor':
+      return 2;
+    case 'info':
+      return 1;
+    default:
+      return 0;
+  }
+}
+
+/**
+ * Get Severity enum from string
+ */
+export function getSeverityEnum(s: string | undefined): any {
+  const level = getSeverityLevel(s);
+  switch (level) {
+    case 4:
+      return 'critical';
+    case 3:
+      return 'major';
+    case 2:
+      return 'minor';
+    case 1:
+      return 'info';
+    default:
+      return 'info';
+  }
+}
+
+/**
  * Find the latest aiready report in a directory by modification time
  * Searches for both new format (aiready-report-*) and legacy format (aiready-scan-*)
  * @param dirPath - The directory path to search for .aiready directory

@@ -13,87 +13,7 @@ import type {
   AiSignalClarityOptions,
 } from './types';
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-const AMBIGUOUS_NAME_PATTERNS = [
-  /^[a-z]$/, // single letter: a, b, x, y
-  /^(tmp|temp|data|obj|val|res|ret|result|item|elem|thing|stuff|info|misc|util|helper|handler|cb|fn|func)$/i,
-  /^[a-z]\d+$/, // x1, x2, n3
-];
-
-const MAGIC_LITERAL_IGNORE = new Set([0, 1, -1, 2, 10, 100, 1000, 1024]);
-const MAGIC_STRING_IGNORE = new Set([
-  '',
-  ' ',
-  '\n',
-  '\t',
-  'utf8',
-  'utf-8',
-  'hex',
-  'base64',
-  'true',
-  'false',
-  'null',
-  'undefined',
-  'node',
-  'production',
-  'development',
-  'test',
-  'error',
-  'warn',
-  'info',
-  'debug',
-  'main',
-  'module',
-  'types',
-  'scripts',
-  'dependencies',
-  'devDependencies',
-  'peerDependencies',
-  'remove',
-  'delete',
-  'update',
-  'create',
-]);
-
-const TAILWIND_PATTERN = /^[a-z0-9:-]+(\/[0-9]+)?$/;
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function isAmbiguousName(name: string): boolean {
-  return AMBIGUOUS_NAME_PATTERNS.some((p) => p.test(name));
-}
-
-function isMagicNumber(value: number): boolean {
-  return !MAGIC_LITERAL_IGNORE.has(value);
-}
-
-function isMagicString(value: string): boolean {
-  if (value.length === 0) return false;
-  if (value.length > 20) return false; // Too long, usually a message or UI label
-  if (MAGIC_STRING_IGNORE.has(value)) return false;
-
-  // Heuristics for non-magic strings:
-
-  // 1. CSS/Tailwind classes (short, hyphenated, often numeric suffix)
-  if (TAILWIND_PATTERN.test(value) && value.includes('-')) return false;
-
-  // 2. Already uppercase constants (often IDs or specific enum-like values)
-  if (value === value.toUpperCase() && value.length > 3) return false;
-
-  // 3. URLs, paths, or file names (usually contain / or .)
-  if (/[/.]/.test(value)) return false;
-
-  // 4. Hex colors
-  if (/^#[0-9a-fA-F]{3,6}$/.test(value)) return false;
-
-  // 5. Short opaque strings that focus on AI intent
-  return !/^\s+$/.test(value);
-}
+import { isAmbiguousName, isMagicNumber, isMagicString } from './helpers';
 
 // ---------------------------------------------------------------------------
 // Main scanner
@@ -514,13 +434,12 @@ export async function scanFile(
     }
 
     return {
-      filePath,
-      issues,
-      signals,
       fileName: filePath,
+      issues,
+      signals: signals as any,
       metrics: {
-        totalSymbols: signals.totalSymbols,
-        totalExports: signals.totalExports,
+        totalSymbols: (signals as any).totalSymbols || 0,
+        totalExports: (signals as any).totalExports || 0,
       },
     };
   } catch (error) {
@@ -530,23 +449,24 @@ export async function scanFile(
 }
 
 function emptyResult(filePath: string): FileAiSignalClarityResult {
+  const aggregateSignals: any = {
+    magicLiterals: 0,
+    booleanTraps: 0,
+    ambiguousNames: 0,
+    undocumentedExports: 0,
+    implicitSideEffects: 0,
+    deepCallbacks: 0,
+    overloadedSymbols: 0,
+    largeFiles: 0,
+    totalSymbols: 0,
+    totalExports: 0,
+    totalLines: 0,
+  };
+
   return {
-    filePath,
-    issues: [],
-    signals: {
-      magicLiterals: 0,
-      booleanTraps: 0,
-      ambiguousNames: 0,
-      undocumentedExports: 0,
-      implicitSideEffects: 0,
-      deepCallbacks: 0,
-      overloadedSymbols: 0,
-      largeFiles: 0,
-      totalSymbols: 0,
-      totalExports: 0,
-      totalLines: 0,
-    },
     fileName: filePath,
+    issues: [],
+    signals: aggregateSignals,
     metrics: {
       totalSymbols: 0,
       totalExports: 0,

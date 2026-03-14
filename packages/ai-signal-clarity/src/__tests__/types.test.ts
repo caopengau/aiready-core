@@ -21,7 +21,7 @@ describe('AiSignalClarity Types', () => {
 
   describe('AiSignalClarityReport', () => {
     it('should structure summary correctly', () => {
-      const mockSignals: FileAiSignalClarityResult['signals'] = {
+      const mockSignals: any = {
         magicLiterals: 300,
         booleanTraps: 20,
         ambiguousNames: 50,
@@ -51,7 +51,7 @@ describe('AiSignalClarity Types', () => {
       };
 
       expect(report.summary.filesAnalyzed).toBe(100);
-      expect(report.aggregateSignals.magicLiterals).toBe(300);
+      expect((report.aggregateSignals as any).magicLiterals).toBe(300);
     });
   });
 });

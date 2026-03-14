@@ -52,7 +52,7 @@ export async function analyzeAiSignalClarity(
     const result = await scanFile(filePath, options);
     results.push(result);
     for (const key of Object.keys(aggregate) as Array<keyof typeof aggregate>) {
-      aggregate[key] += result.signals[key] ?? 0;
+      aggregate[key] += (result.signals as any)[key] ?? 0;
     }
   }
 

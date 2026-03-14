@@ -43,7 +43,7 @@ describe('analyzeAiSignalClarity', () => {
         totalExports: 2,
         largeFiles: 0,
         totalLines: 0,
-      },
+      } as any,
       metrics: { tokenCost: 0, consistencyScore: 1 },
     });
 
@@ -51,7 +51,7 @@ describe('analyzeAiSignalClarity', () => {
 
     expect(report.summary.filesAnalyzed).toBe(2);
     expect(report.summary.criticalSignals).toBe(2); // 1 per file x 2 files
-    expect(report.aggregateSignals.magicLiterals).toBe(2);
+    expect((report.aggregateSignals as any).magicLiterals).toBe(2);
     expect(report.summary.rating).toBeDefined();
     expect(core.scanFiles).toHaveBeenCalled();
   });
@@ -89,7 +89,7 @@ describe('analyzeAiSignalClarity', () => {
         totalExports: 2,
         largeFiles: 0,
         totalLines: 0,
-      },
+      } as any,
       metrics: { tokenCost: 0, consistencyScore: 1 },
     });
 

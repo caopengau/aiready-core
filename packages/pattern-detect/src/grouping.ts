@@ -1,4 +1,4 @@
-import { Severity } from '@aiready/core';
+import { Severity, getSeverityLevel } from '@aiready/core';
 import type { DuplicatePattern, PatternType } from './detector';
 import { calculateSeverity } from './context-rules';
 import path from 'path';
@@ -26,15 +26,6 @@ export interface RefactorCluster {
   averageSimilarity: number;
   reason?: string;
   suggestion?: string;
-}
-
-// Helper for severity mapping
-function getSeverityLevel(s: any): number {
-  if (s === Severity.Critical || s === 'critical') return 4;
-  if (s === Severity.Major || s === 'major') return 3;
-  if (s === Severity.Minor || s === 'minor') return 2;
-  if (s === Severity.Info || s === 'info') return 1;
-  return 0;
 }
 
 /**

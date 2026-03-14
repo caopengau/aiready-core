@@ -11,28 +11,17 @@ import {
 import { setupParser } from './tree-sitter-utils';
 import { analyzeNodeMetadata } from './metadata-utils';
 
+import { BaseLanguageParser } from './base-parser';
+
 /**
  * Python Parser implementation using tree-sitter
  */
-export class PythonParser implements LanguageParser {
+export class PythonParser extends BaseLanguageParser {
   readonly language = Language.Python;
   readonly extensions = ['.py'];
-  private parser: Parser.Parser | null = null;
-  private initialized = false;
 
-  /**
-   * Initialize the tree-sitter parser
-   */
-  async initialize(): Promise<void> {
-    if (this.initialized) return;
-    this.parser = await setupParser('python');
-    this.initialized = true;
-  }
-
-  async getAST(code: string, filePath: string): Promise<Parser.Tree | null> {
-    if (!this.initialized) await this.initialize();
-    if (!this.parser) return null;
-    return this.parser.parse(code);
+  protected getParserName(): string {
+    return 'python';
   }
 
   analyzeMetadata(node: Parser.Node, code: string): Partial<ExportInfo> {
@@ -41,33 +30,7 @@ export class PythonParser implements LanguageParser {
     });
   }
 
-  parse(code: string, filePath: string): ParseResult {
-    if (!this.initialized || !this.parser) {
-      return this.parseRegex(code, filePath);
-    }
-
-    try {
-      const tree = this.parser.parse(code);
-      if (!tree || tree.rootNode.type === 'ERROR' || tree.rootNode.hasError) {
-        return this.parseRegex(code, filePath);
-      }
-      const rootNode = tree.rootNode;
-
-      const imports = this.extractImportsAST(rootNode);
-      const exports = this.extractExportsAST(rootNode, code);
-
-      return {
-        exports,
-        imports,
-        language: Language.Python,
-        warnings: [],
-      };
-    } catch (error) {
-      return this.parseRegex(code, filePath);
-    }
-  }
-
-  private extractImportsAST(rootNode: Parser.Node): ImportInfo[] {
+  protected extractImportsAST(rootNode: Parser.Node): ImportInfo[] {
     const imports: ImportInfo[] = [];
 
     const processImportNode = (node: Parser.Node) => {
@@ -161,7 +124,10 @@ export class PythonParser implements LanguageParser {
     return imports;
   }
 
-  private extractExportsAST(rootNode: Parser.Node, code: string): ExportInfo[] {
+  protected extractExportsAST(
+    rootNode: Parser.Node,
+    code: string
+  ): ExportInfo[] {
     const exports: ExportInfo[] = [];
 
     for (const node of rootNode.children) {
@@ -268,7 +234,7 @@ export class PythonParser implements LanguageParser {
       });
   }
 
-  private parseRegex(code: string, filePath: string): ParseResult {
+  protected parseRegex(code: string, filePath: string): ParseResult {
     try {
       const imports = this.extractImportsRegex(code, filePath);
       const exports = this.extractExportsRegex(code, filePath);

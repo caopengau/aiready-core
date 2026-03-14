@@ -13,24 +13,24 @@ export function calculateChangeAmplificationScore(
   const factors: ToolScoringOutput['factors'] = [
     {
       name: 'Graph Stability',
-      impact: Math.round(summary.score - 50),
+      impact: Math.round((summary.score ?? 0) - 50),
       description:
-        summary.score < 30
+        (summary.score ?? 0) < 30
           ? 'High coupling detected in core modules'
           : 'Stable dependency structure',
     },
   ];
 
   const recommendations: ToolScoringOutput['recommendations'] =
-    summary.recommendations.map((rec) => ({
+    summary.recommendations.map((rec: string) => ({
       action: rec,
       estimatedImpact: 10,
-      priority: summary.score < 50 ? 'high' : 'medium',
+      priority: (summary.score ?? 0) < 50 ? 'high' : 'medium',
     }));
 
   return {
     toolName: ToolName.ChangeAmplification,
-    score: summary.score,
+    score: summary.score ?? 0,
     rawMetrics: {
       totalFiles: summary.totalFiles,
       totalIssues: summary.totalIssues,

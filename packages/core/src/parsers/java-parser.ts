@@ -14,28 +14,17 @@ import {
   extractParameterNames,
 } from './shared-parser-utils';
 
+import { BaseLanguageParser } from './base-parser';
+
 /**
  * Java Parser implementation using tree-sitter
  */
-export class JavaParser implements LanguageParser {
+export class JavaParser extends BaseLanguageParser {
   readonly language = Language.Java;
   readonly extensions = ['.java'];
-  private parser: Parser.Parser | null = null;
-  private initialized = false;
 
-  /**
-   * Initialize the tree-sitter parser
-   */
-  async initialize(): Promise<void> {
-    if (this.initialized) return;
-    this.parser = await setupParser('java');
-    this.initialized = true;
-  }
-
-  async getAST(code: string, filePath: string): Promise<Parser.Tree | null> {
-    if (!this.initialized) await this.initialize();
-    if (!this.parser) return null;
-    return this.parser.parse(code);
+  protected getParserName(): string {
+    return 'java';
   }
 
   analyzeMetadata(node: Parser.Node, code: string): Partial<ExportInfo> {
@@ -50,36 +39,7 @@ export class JavaParser implements LanguageParser {
     });
   }
 
-  parse(code: string, filePath: string): ParseResult {
-    if (!this.initialized || !this.parser) {
-      return this.parseRegex(code, filePath);
-    }
-
-    try {
-      const tree = this.parser.parse(code);
-      if (!tree || tree.rootNode.type === 'ERROR' || tree.rootNode.hasError) {
-        return this.parseRegex(code, filePath);
-      }
-      const rootNode = tree.rootNode;
-
-      const imports = this.extractImportsAST(rootNode);
-      const exports = this.extractExportsAST(rootNode, code);
-
-      return {
-        exports,
-        imports,
-        language: Language.Java,
-        warnings: [],
-      };
-    } catch (error) {
-      console.warn(
-        `AST parsing failed for ${filePath}, falling back to regex: ${(error as Error).message}`
-      );
-      return this.parseRegex(code, filePath);
-    }
-  }
-
-  private parseRegex(code: string, filePath: string): ParseResult {
+  protected parseRegex(code: string, filePath: string): ParseResult {
     const lines = code.split('\n');
     const exports: ExportInfo[] = [];
     const imports: ImportInfo[] = [];
@@ -163,7 +123,7 @@ export class JavaParser implements LanguageParser {
     };
   }
 
-  private extractImportsAST(rootNode: Parser.Node): ImportInfo[] {
+  protected extractImportsAST(rootNode: Parser.Node): ImportInfo[] {
     const imports: ImportInfo[] = [];
 
     for (const node of rootNode.children) {
@@ -209,7 +169,10 @@ export class JavaParser implements LanguageParser {
     return imports;
   }
 
-  private extractExportsAST(rootNode: Parser.Node, code: string): ExportInfo[] {
+  protected extractExportsAST(
+    rootNode: Parser.Node,
+    code: string
+  ): ExportInfo[] {
     const exports: ExportInfo[] = [];
 
     for (const node of rootNode.children) {

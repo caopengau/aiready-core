@@ -48,7 +48,7 @@ describe('AI Signal Clarity Scanner', () => {
       expect(issues.some((i) => i.message.includes('5000'))).toBe(true);
       expect(issues.some((i) => i.message.includes('402'))).toBe(true);
       expect(issues.some((i) => i.message.includes('failed'))).toBe(true);
-      expect(result.signals.magicLiterals).toBeGreaterThanOrEqual(3);
+      expect((result.signals as any).magicLiterals).toBeGreaterThanOrEqual(3);
     });
 
     it('should ignore literals assigned to named constants', async () => {
@@ -77,7 +77,7 @@ describe('AI Signal Clarity Scanner', () => {
       );
       // Improved: literals assigned to named constants or all-caps strings should be ignored
       expect(issues.length).toBe(0);
-      expect(result.signals.magicLiterals).toBe(0);
+      expect((result.signals as any).magicLiterals).toBe(0);
     });
 
     it('should ignore Tailwind classes and common config strings', async () => {
@@ -115,7 +115,7 @@ describe('AI Signal Clarity Scanner', () => {
       // - config values like "production", "node", "remove" (ignore list)
 
       expect(issues.length).toBe(0);
-      expect(result.signals.magicLiterals).toBe(0);
+      expect((result.signals as any).magicLiterals).toBe(0);
     });
   });
 
@@ -138,7 +138,7 @@ describe('AI Signal Clarity Scanner', () => {
       const issues = result.issues.filter((i) => i.category === 'boolean-trap');
 
       expect(issues.length).toBe(1);
-      expect(result.signals.booleanTraps).toBe(1);
+      expect((result.signals as any).booleanTraps).toBe(1);
     });
 
     it('should ignore boolean literals in assignments and returns', async () => {
@@ -164,7 +164,7 @@ describe('AI Signal Clarity Scanner', () => {
       const issues = result.issues.filter((i) => i.category === 'boolean-trap');
 
       expect(issues.length).toBe(0);
-      expect(result.signals.booleanTraps).toBe(0);
+      expect((result.signals as any).booleanTraps).toBe(0);
     });
   });
 
@@ -192,7 +192,7 @@ describe('AI Signal Clarity Scanner', () => {
 
       expect(issues.length).toBeGreaterThanOrEqual(3); // temp, data, result
       expect(issues.some((i) => i.message.includes('"temp"'))).toBe(true);
-      expect(result.signals.ambiguousNames).toBeGreaterThanOrEqual(1);
+      expect((result.signals as any).ambiguousNames).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -228,7 +228,7 @@ describe('AI Signal Clarity Scanner', () => {
       );
 
       expect(issues.length).toBeGreaterThanOrEqual(1);
-      expect(result.signals.deepCallbacks).toBeGreaterThanOrEqual(2); // level 3 and 4
+      expect((result.signals as any).deepCallbacks).toBeGreaterThanOrEqual(2); // level 3 and 4
     });
   });
 });
