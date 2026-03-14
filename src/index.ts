@@ -4,6 +4,7 @@ export * from './types/contract';
 export * from './registry';
 export * from './utils/file-scanner';
 export * from './utils/cli-helpers';
+export * from './utils/provider-utils';
 export * from './utils/ast-parser';
 export * from './utils/metrics';
 export * from './utils/config';

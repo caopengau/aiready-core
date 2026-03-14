@@ -9,6 +9,10 @@ import {
   ParseError,
 } from '../types/language';
 import { setupParser } from './tree-sitter-utils';
+import {
+  analyzeGeneralMetadata,
+  extractParameterNames,
+} from './shared-parser-utils';
 
 /**
  * C# Parser implementation using tree-sitter
@@ -35,64 +39,10 @@ export class CSharpParser implements LanguageParser {
   }
 
   analyzeMetadata(node: Parser.Node, code: string): Partial<ExportInfo> {
-    const metadata: Partial<ExportInfo> = {
-      isPure: true,
-      hasSideEffects: false,
-    };
-
-    // Extract XML-Doc
-    // Triple slash comments usually precede the declaration
-    let prev = node.previousSibling;
-    while (
-      prev &&
-      (prev.type === 'comment' || prev.type === 'triple_slash_comment')
-    ) {
-      if (
-        prev.text.trim().startsWith('///') ||
-        prev.type === 'triple_slash_comment'
-      ) {
-        metadata.documentation = {
-          content: prev.text.replace('///', '').trim(),
-          type: 'xml-doc',
-        };
-        break;
-      }
-      prev = prev.previousSibling;
-    }
-
-    // Heuristics for purity/side-effects in C#
-    const walk = (n: Parser.Node) => {
-      if (n.type === 'assignment_expression') {
-        metadata.isPure = false;
-        metadata.hasSideEffects = true;
-      }
-      if (n.type === 'invocation_expression') {
-        const text = n.text;
-        if (
-          text.includes('Console.Write') ||
-          text.includes('File.Write') ||
-          text.includes('Log.')
-        ) {
-          metadata.isPure = false;
-          metadata.hasSideEffects = true;
-        }
-      }
-      if (n.type === 'throw_statement') {
-        metadata.isPure = false;
-        metadata.hasSideEffects = true;
-      }
-      for (let i = 0; i < n.childCount; i++) {
-        const child = n.child(i);
-        if (child) walk(child);
-      }
-    };
-
-    const body = node.children.find(
-      (c) => c.type === 'block' || c.type === 'declaration_list'
-    );
-    if (body) walk(body);
-
-    return metadata;
+    // C# specific side-effect signatures
+    return analyzeGeneralMetadata(node, code, {
+      sideEffectSignatures: ['Console.Write', 'File.Write', 'Logging.'],
+    });
   }
 
   parse(code: string, filePath: string): ParseResult {
@@ -365,23 +315,7 @@ export class CSharpParser implements LanguageParser {
   }
 
   private extractParameters(node: Parser.Node): string[] {
-    const params: string[] = [];
-    const parameterList =
-      node.childForFieldName('parameters') ||
-      node.children.find((c) => c.type === 'parameter_list');
-    if (parameterList) {
-      for (const param of parameterList.children) {
-        if (param.type === 'parameter') {
-          const nameNode =
-            param.childForFieldName('name') ||
-            param.children.find((c) => c.type === 'identifier');
-          if (nameNode) {
-            params.push(nameNode.text);
-          }
-        }
-      }
-    }
-    return params;
+    return extractParameterNames(node);
   }
 
   getNamingConventions(): NamingConvention {

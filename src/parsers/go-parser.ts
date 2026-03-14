@@ -9,6 +9,10 @@ import {
   ParseError,
 } from '../types/language';
 import { setupParser } from './tree-sitter-utils';
+import {
+  analyzeGeneralMetadata,
+  extractParameterNames,
+} from './shared-parser-utils';
 
 /**
  * Go Parser implementation using tree-sitter
@@ -35,68 +39,10 @@ export class GoParser implements LanguageParser {
   }
 
   analyzeMetadata(node: Parser.Node, code: string): Partial<ExportInfo> {
-    const metadata: Partial<ExportInfo> = {
-      isPure: true,
-      hasSideEffects: false,
-    };
-
-    // Extract Go comments
-    // Comments usually precede the declaration
-    let prev = node.previousSibling;
-    // Go comments can be block or line, usually look for those immediately above
-    while (prev && prev.type === 'comment') {
-      metadata.documentation = {
-        content: prev.text.replace(/\/\/|\/\*|\*\//g, '').trim(),
-        type: 'comment',
-      };
-      // For now just take the immediate one
-      break;
-    }
-
-    // Heuristics for purity/side-effects in Go
-    const walk = (n: Parser.Node) => {
-      // Look for channel sends/receives
-      if (
-        n.type === 'send_statement' ||
-        (n.type === 'expression_statement' && n.text.includes('<-'))
-      ) {
-        metadata.isPure = false;
-        metadata.hasSideEffects = true;
-      }
-
-      // Look for assignments
-      if (
-        n.type === 'assignment_statement' ||
-        n.type === 'short_var_declaration'
-      ) {
-        // Technically pure if it's local, but we'll flag any for now or refined later
-        // In Go, package level assignments are always impure.
-      }
-
-      // Look for side-effectful calls
-      if (n.type === 'call_expression') {
-        const text = n.text;
-        if (
-          text.includes('fmt.Print') ||
-          text.includes('os.Exit') ||
-          text.includes('panic(') ||
-          text.includes('log.')
-        ) {
-          metadata.isPure = false;
-          metadata.hasSideEffects = true;
-        }
-      }
-
-      for (let i = 0; i < n.childCount; i++) {
-        const child = n.child(i);
-        if (child) walk(child);
-      }
-    };
-
-    const body = node.childForFieldName('body');
-    if (body) walk(body);
-
-    return metadata;
+    // Go-specific: channel operators and standard libs
+    return analyzeGeneralMetadata(node, code, {
+      sideEffectSignatures: ['<-', 'fmt.Print', 'fmt.Fprintf', 'os.Exit'],
+    });
   }
 
   parse(code: string, filePath: string): ParseResult {
@@ -353,19 +299,7 @@ export class GoParser implements LanguageParser {
   }
 
   private extractParameters(node: Parser.Node): string[] {
-    const params: string[] = [];
-    const parameterList =
-      node.childForFieldName('parameters') ||
-      node.children.find((c) => c.type === 'parameter_list');
-    if (parameterList) {
-      for (const param of parameterList.children) {
-        if (param.type === 'parameter_declaration') {
-          const names = param.children.filter((c) => c.type === 'identifier');
-          names.forEach((n) => params.push(n.text));
-        }
-      }
-    }
-    return params;
+    return extractParameterNames(node);
   }
 
   getNamingConventions(): NamingConvention {

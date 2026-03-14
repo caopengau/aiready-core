@@ -9,6 +9,10 @@ import {
   ParseError,
 } from '../types/language';
 import { setupParser } from './tree-sitter-utils';
+import {
+  analyzeGeneralMetadata,
+  extractParameterNames,
+} from './shared-parser-utils';
 
 /**
  * Java Parser implementation using tree-sitter
@@ -35,62 +39,15 @@ export class JavaParser implements LanguageParser {
   }
 
   analyzeMetadata(node: Parser.Node, code: string): Partial<ExportInfo> {
-    const metadata: Partial<ExportInfo> = {
-      isPure: true,
-      hasSideEffects: false,
-    };
-
-    // Extract Javadoc
-    // In Java tree-sitter, comments often precede the declaration
-    let prev = node.previousSibling;
-    while (prev && (prev.type === 'comment' || prev.type === 'line_comment')) {
-      if (prev.text.startsWith('/**')) {
-        metadata.documentation = {
-          content: prev.text.replace(/[/*]/g, '').trim(),
-          type: 'xml-doc', // Using xml-doc as a catch-all for structured or we can add 'javadoc'
-        };
-        break;
-      }
-      prev = prev.previousSibling;
-    }
-
-    // Heuristics for purity/side-effects in Java
-    const walk = (n: Parser.Node) => {
-      // Look for assignments to fields (member_access or identifier in expression_statement)
-      if (n.type === 'assignment_expression') {
-        metadata.isPure = false;
-        metadata.hasSideEffects = true;
-      }
-
-      // Look for side-effectful method calls
-      if (n.type === 'method_invocation') {
-        const text = n.text;
-        if (
-          text.includes('System.out.print') ||
-          text.includes('System.err.print') ||
-          text.includes('Files.write')
-        ) {
-          metadata.isPure = false;
-          metadata.hasSideEffects = true;
-        }
-      }
-
-      if (n.type === 'throw_statement') {
-        metadata.isPure = false;
-        metadata.hasSideEffects = true;
-      }
-
-      for (const child of n.children) {
-        walk(child);
-      }
-    };
-
-    const body = node.children.find(
-      (c) => c.type === 'block' || c.type === 'class_body'
-    );
-    if (body) walk(body);
-
-    return metadata;
+    // Java specific side-effect signatures
+    return analyzeGeneralMetadata(node, code, {
+      sideEffectSignatures: [
+        'System.out',
+        'System.err',
+        'Files.write',
+        'Logging.',
+      ],
+    });
   }
 
   parse(code: string, filePath: string): ParseResult {
@@ -211,7 +168,7 @@ export class JavaParser implements LanguageParser {
 
     for (const node of rootNode.children) {
       if (node.type === 'import_declaration') {
-        let sourceArr: string[] = [];
+        const sourceArr: string[] = [];
         let isStatic = false;
         let isWildcard = false;
 
@@ -338,17 +295,7 @@ export class JavaParser implements LanguageParser {
   }
 
   private extractParameters(node: Parser.Node): string[] {
-    const paramsNode = node.children.find(
-      (c) => c.type === 'formal_parameters'
-    );
-    if (!paramsNode) return [];
-
-    return paramsNode.children
-      .filter((c) => c.type === 'formal_parameter')
-      .map((c) => {
-        const idNode = c.children.find((child) => child.type === 'identifier');
-        return idNode ? idNode.text : 'unknown';
-      });
+    return extractParameterNames(node);
   }
 
   getNamingConventions(): NamingConvention {
