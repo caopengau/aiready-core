@@ -134,6 +134,10 @@ export interface NamingConvention {
   classPattern: RegExp;
   /** Allowed constant naming patterns */
   constantPattern: RegExp;
+  /** Allowed type naming patterns */
+  typePattern?: RegExp;
+  /** Allowed interface naming patterns */
+  interfacePattern?: RegExp;
   /** Language-specific exceptions (e.g., __init__ in Python) */
   exceptions?: string[];
 }

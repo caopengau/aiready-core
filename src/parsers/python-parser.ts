@@ -9,6 +9,7 @@ import {
   ParseError,
 } from '../types/language';
 import { setupParser } from './tree-sitter-utils';
+import { analyzeNodeMetadata } from './metadata-utils';
 
 /**
  * Python Parser implementation using tree-sitter
@@ -35,52 +36,9 @@ export class PythonParser implements LanguageParser {
   }
 
   analyzeMetadata(node: Parser.Node, code: string): Partial<ExportInfo> {
-    const metadata: Partial<ExportInfo> = {
-      isPure: true,
-      hasSideEffects: false,
-    };
-
-    // Analyze docstrings
-    const body = node.childForFieldName('body');
-    if (body && body.children.length > 0) {
-      const firstStmt = body.children[0];
-      if (
-        firstStmt.type === 'expression_statement' &&
-        firstStmt.firstChild?.type === 'string'
-      ) {
-        metadata.documentation = {
-          content: firstStmt.firstChild.text.replace(/['"`]/g, '').trim(),
-          type: 'docstring',
-        };
-      }
-    }
-
-    // Heuristic for purity/side-effects in Python
-    // 1. Look for assignments to global/nonlocal
-    // 2. Look for print(), input(), or file I/O
-    const walk = (n: Parser.Node) => {
-      if (n.type === 'global_statement' || n.type === 'nonlocal_statement') {
-        metadata.isPure = false;
-        metadata.hasSideEffects = true;
-      }
-      if (n.type === 'call') {
-        const functionNode = n.childForFieldName('function');
-        if (
-          functionNode &&
-          ['print', 'input', 'open'].includes(functionNode.text)
-        ) {
-          metadata.isPure = false;
-          metadata.hasSideEffects = true;
-        }
-      }
-      for (const child of n.children) {
-        walk(child);
-      }
-    };
-
-    if (body) walk(body);
-
-    return metadata;
+    return analyzeNodeMetadata(node, code, {
+      sideEffectSignatures: ['print(', 'input(', 'open('],
+    });
   }
 
   parse(code: string, filePath: string): ParseResult {

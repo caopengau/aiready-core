@@ -1,5 +1,11 @@
-import { writeFileSync, mkdirSync, existsSync } from 'fs';
-import { join, dirname } from 'path';
+import {
+  writeFileSync,
+  mkdirSync,
+  existsSync,
+  readdirSync,
+  statSync,
+} from 'fs';
+import { join, dirname, resolve as resolvePath } from 'path';
 import { loadConfig, mergeConfigWithDefaults } from '../index';
 
 /**
@@ -170,5 +176,75 @@ export function getSeverityColor(severity: string, chalk: any) {
       return chalk.blue;
     default:
       return chalk.white;
+  }
+}
+
+/**
+ * Find the latest aiready report in a directory by modification time
+ * Searches for both new format (aiready-report-*) and legacy format (aiready-scan-*)
+ * @param dirPath - The directory path to search for .aiready directory
+ * @returns The path to the latest report or null if not found
+ */
+export function findLatestReport(dirPath: string): string | null {
+  const aireadyDir = resolvePath(dirPath, '.aiready');
+  if (!existsSync(aireadyDir)) {
+    return null;
+  }
+
+  // Search for new format first, then legacy format
+  let files = readdirSync(aireadyDir).filter(
+    (f) => f.startsWith('aiready-report-') && f.endsWith('.json')
+  );
+  if (files.length === 0) {
+    files = readdirSync(aireadyDir).filter(
+      (f) => f.startsWith('aiready-scan-') && f.endsWith('.json')
+    );
+  }
+
+  if (files.length === 0) {
+    return null;
+  }
+
+  // Sort by modification time, most recent first
+  const sortedFiles = files
+    .map((f) => ({
+      name: f,
+      path: resolvePath(aireadyDir, f),
+      mtime: statSync(resolvePath(aireadyDir, f)).mtime,
+    }))
+    .sort((a, b) => b.mtime.getTime() - a.mtime.getTime());
+
+  return sortedFiles[0].path;
+}
+
+/**
+ * Find the latest scan report file in a directory
+ */
+export function findLatestScanReport(
+  scanReportsDir: string,
+  reportFilePrefix: string
+): string | null {
+  try {
+    let reportFiles: string[] = [];
+    if (existsSync(scanReportsDir)) {
+      const files = readdirSync(scanReportsDir);
+      if (files.length > 0) {
+        const prefixRegex = new RegExp(`^${reportFilePrefix}\\d+\\.json$`);
+        reportFiles = files.filter((file) => prefixRegex.test(file));
+      }
+    }
+    if (reportFiles.length === 0) return null;
+
+    // Sort the files by their ID numbers in descending order
+    reportFiles.sort((a, b) => {
+      const idA = parseInt(a.match(/\d+/)?.[0] || '0', 10);
+      const idB = parseInt(b.match(/\d+/)?.[0] || '0', 10);
+      return idB - idA; // Descending order
+    });
+
+    return join(scanReportsDir, reportFiles[0]);
+  } catch (e) {
+    console.error('Error while finding latest scan report:', e);
+    return null;
   }
 }

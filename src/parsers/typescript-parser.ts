@@ -170,8 +170,10 @@ export class TypeScriptParser implements LanguageParser {
       // camelCase for variables and functions
       variablePattern: /^[a-z][a-zA-Z0-9]*$/,
       functionPattern: /^[a-z][a-zA-Z0-9]*$/,
-      // PascalCase for classes
+      // PascalCase for classes, types and interfaces
       classPattern: /^[A-Z][a-zA-Z0-9]*$/,
+      typePattern: /^[A-Z][a-zA-Z0-9]*$/,
+      interfacePattern: /^[A-Z][a-zA-Z0-9]*$/,
       // UPPER_CASE for constants
       constantPattern: /^[A-Z][A-Z0-9_]*$/,
       // Common exceptions (React hooks, etc.)
