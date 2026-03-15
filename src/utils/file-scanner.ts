@@ -5,6 +5,11 @@ import { join, relative, dirname } from 'path';
 import ignorePkg from 'ignore';
 import { ScanOptions } from '../types';
 
+/**
+ * Default file exclusion patterns for AIReady scans.
+ * These patterns are applied to exclude build artifacts, dependencies,
+ * test files, and other non-source files from analysis.
+ */
 export const DEFAULT_EXCLUDE = [
   // Dependencies
   '**/node_modules/**',
@@ -59,6 +64,11 @@ export const DEFAULT_EXCLUDE = [
   '**/.DS_Store',
 ];
 
+/**
+ * Set of vague/abiguous file names that indicate poor code organization.
+ * These names don't convey the file's purpose and make it harder for AI
+ * to understand the codebase structure.
+ */
 export const VAGUE_FILE_NAMES = new Set([
   'utils',
   'helpers',
@@ -296,14 +306,30 @@ export async function scanEntries(
   return { files, dirs };
 }
 
+/**
+ * Read the contents of a file as a UTF-8 string.
+ * @param filePath - Absolute path to the file to read
+ * @returns The file contents as a string
+ */
 export async function readFileContent(filePath: string): Promise<string> {
   return readFile(filePath, 'utf-8');
 }
 
+/**
+ * Extract the file extension from a file path.
+ * @param filePath - The file path to extract extension from
+ * @returns The file extension without the dot (e.g., 'ts', 'js', 'py')
+ */
 export function getFileExtension(filePath: string): string {
   return filePath.split('.').pop() || '';
 }
 
+/**
+ * Check if a file is a source code file based on its extension.
+ * Supports TypeScript, JavaScript, Python, Java, Go, Rust, and C#.
+ * @param filePath - The file path to check
+ * @returns True if the file has a source code extension
+ */
 export function isSourceFile(filePath: string): boolean {
   const ext = getFileExtension(filePath);
   return ['ts', 'tsx', 'js', 'jsx', 'py', 'java', 'go', 'rs'].includes(ext);

@@ -63,16 +63,17 @@ export async function loadConfig(
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : String(error);
-        const e = new Error(
+        const configError = new Error(
           `Failed to load config from ${configPath}: ${errorMessage}`
         );
         try {
           // Attach original error as cause when supported
-          (e as any).cause = error instanceof Error ? error : undefined;
+          (configError as any).cause =
+            error instanceof Error ? error : undefined;
         } catch {
           /* ignore */
         }
-        throw e;
+        throw configError;
       }
     }
 
@@ -92,12 +93,12 @@ export function mergeConfigWithDefaults(
 ): any {
   if (!userConfig) return defaults;
 
-  const result = { ...defaults };
+  const mergedConfig = { ...defaults };
 
   // Merge scan options
   if (userConfig.scan) {
-    if (userConfig.scan.include) result.include = userConfig.scan.include;
-    if (userConfig.scan.exclude) result.exclude = userConfig.scan.exclude;
+    if (userConfig.scan.include) mergedConfig.include = userConfig.scan.include;
+    if (userConfig.scan.exclude) mergedConfig.exclude = userConfig.scan.exclude;
   }
 
   // Merge tool-specific options (support both 'tools' and 'toolConfigs' for backward compatibility)
@@ -110,13 +111,13 @@ export function mergeConfigWithDefaults(
       : (userConfig as any).toolConfigs;
 
   if (toolOverrides) {
-    if (!result.toolConfigs) result.toolConfigs = {};
+    if (!mergedConfig.toolConfigs) mergedConfig.toolConfigs = {};
     for (const [toolName, toolConfig] of Object.entries(toolOverrides)) {
       if (typeof toolConfig === 'object' && toolConfig !== null) {
         // Add tool configs under their names (legacy) and in the toolConfigs map
-        result[toolName] = { ...result[toolName], ...toolConfig };
-        result.toolConfigs[toolName] = {
-          ...result.toolConfigs[toolName],
+        mergedConfig[toolName] = { ...mergedConfig[toolName], ...toolConfig };
+        mergedConfig.toolConfigs[toolName] = {
+          ...mergedConfig.toolConfigs[toolName],
           ...toolConfig,
         };
       }
@@ -125,8 +126,8 @@ export function mergeConfigWithDefaults(
 
   // Merge output preferences
   if (userConfig.output) {
-    result.output = { ...result.output, ...userConfig.output };
+    mergedConfig.output = { ...mergedConfig.output, ...userConfig.output };
   }
 
-  return result;
+  return mergedConfig;
 }
