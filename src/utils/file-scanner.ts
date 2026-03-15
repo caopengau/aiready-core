@@ -122,7 +122,7 @@ export async function scanFiles(options: ScanOptions): Promise<string[]> {
         .filter(Boolean)
         .filter((l) => !l.startsWith('#'))
         .filter((l) => !l.startsWith('!')); // ignore negations for now
-    } catch (e) {
+    } catch {
       // noop - fall back to defaults if file can't be read
       ignoreFromFile = [];
     }
@@ -202,7 +202,7 @@ export async function scanFiles(options: ScanOptions): Promise<string[]> {
       });
 
       return filtered;
-    } catch (e) {
+    } catch {
       return files;
     }
   }
@@ -218,7 +218,7 @@ export async function scanEntries(
   options: ScanOptions
 ): Promise<{ files: string[]; dirs: string[] }> {
   const files = await scanFiles(options);
-  const { rootDir, include = ['**/*'], exclude, includeTests } = options;
+  const { rootDir, exclude, includeTests } = options;
 
   const ignoreFilePath = join(rootDir || '.', '.aireadyignore');
   let ignoreFromFile: string[] = [];
@@ -231,7 +231,7 @@ export async function scanEntries(
         .filter(Boolean)
         .filter((l) => !l.startsWith('#'))
         .filter((l) => !l.startsWith('!'));
-    } catch (e) {
+    } catch {
       ignoreFromFile = [];
     }
   }

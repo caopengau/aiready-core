@@ -5,12 +5,7 @@
  */
 
 import { z } from 'zod';
-import {
-  AnalysisResult,
-  SpokeOutput,
-  UnifiedReport,
-  ScanOptions,
-} from '../types';
+import { SpokeOutput, UnifiedReport, ScanOptions } from '../types';
 import { ToolName } from './schema';
 import { ToolScoringOutput } from '../scoring';
 

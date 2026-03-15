@@ -73,7 +73,7 @@ function findFileRecursively(
         if (found) return found;
       }
     }
-  } catch (err) {
+  } catch {
     // Ignore errors
   }
 
@@ -133,7 +133,7 @@ export async function setupParser(
     const Lang = await Parser.Language.load(wasmPath);
     parser.setLanguage(Lang);
     return parser;
-  } catch (error) {
+  } catch {
     // console.error(`Failed to setup parser for ${language}:`, error);
     return null;
   }

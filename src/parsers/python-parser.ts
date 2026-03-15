@@ -1,14 +1,11 @@
 import * as Parser from 'web-tree-sitter';
 import {
   Language,
-  LanguageParser,
   ParseResult,
   ExportInfo,
   ImportInfo,
   NamingConvention,
-  ParseError,
 } from '../types/language';
-import { setupParser } from './tree-sitter-utils';
 import { analyzeNodeMetadata } from './metadata-utils';
 
 import { BaseLanguageParser } from './base-parser';
@@ -248,10 +245,11 @@ export class PythonParser extends BaseLanguageParser {
         ],
       };
     } catch (error) {
-      throw new ParseError(
-        `Failed to parse Python file ${filePath}: ${(error as Error).message}`,
-        filePath
+      const wrapper = new Error(
+        `Failed to parse Python file ${filePath}: ${(error as Error).message}`
       );
+      (wrapper as any).cause = error;
+      throw wrapper;
     }
   }
 
@@ -285,6 +283,7 @@ export class PythonParser extends BaseLanguageParser {
   }
 
   private extractImportsRegex(code: string, _filePath: string): ImportInfo[] {
+    void _filePath;
     const imports: ImportInfo[] = [];
     const lines = code.split('\n');
 
@@ -345,6 +344,7 @@ export class PythonParser extends BaseLanguageParser {
   }
 
   private extractExportsRegex(code: string, _filePath: string): ExportInfo[] {
+    void _filePath;
     const exports: ExportInfo[] = [];
     const lines = code.split('\n');
     const funcRegex = /^def\s+([a-zA-Z0-9_]+)\s*\(/;

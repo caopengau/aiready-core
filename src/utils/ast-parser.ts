@@ -55,7 +55,7 @@ export function parseFileExports(
           isTypeOnly: i.isTypeOnly || false,
         })),
       };
-    } catch (e) {
+    } catch {
       // Fallback
       return { exports: [], imports: [] };
     }
@@ -73,7 +73,7 @@ export function parseFileExports(
     const exports = extractExportsWithDependencies(ast, imports);
 
     return { exports, imports };
-  } catch (error) {
+  } catch {
     // Fallback to empty if parsing fails
     return { exports: [], imports: [] };
   }
@@ -112,7 +112,9 @@ export function calculateImportSimilarity(
  * @param language - Target language
  * @returns Generic AST node or null if unsupported
  */
-export function parseCode(code: string, language: string): ASTNode | null {
+export function parseCode(_code: string, _language: string): ASTNode | null {
+  void _code;
+  void _language;
   // Deprecated: Use parseFileExports instead
   return null;
 }
@@ -124,7 +126,8 @@ export function parseCode(code: string, language: string): ASTNode | null {
  * @param ast - The AST to scan
  * @returns Array of function nodes
  */
-export function extractFunctions(ast: ASTNode): ASTNode[] {
+export function extractFunctions(_ast: ASTNode): ASTNode[] {
+  void _ast;
   // Deprecated
   return [];
 }
@@ -136,7 +139,8 @@ export function extractFunctions(ast: ASTNode): ASTNode[] {
  * @param ast - The AST to scan
  * @returns Array of imported module names
  */
-export function extractImports(ast: ASTNode): string[] {
+export function extractImports(_ast: ASTNode): string[] {
+  void _ast;
   // Deprecated
   return [];
 }

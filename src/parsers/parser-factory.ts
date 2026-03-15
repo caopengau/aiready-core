@@ -1,4 +1,3 @@
-import * as fs from 'fs';
 /**
  * Parser Factory - Manages language-specific parsers
  *

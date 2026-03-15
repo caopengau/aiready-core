@@ -8,41 +8,9 @@
  */
 
 import type { ToolScoringOutput } from './scoring';
-import {
-  calculateCognitiveLoad,
-  CognitiveLoad,
-} from './metrics/cognitive-load';
-import {
-  calculateSemanticDistance,
-  SemanticDistance,
-} from './metrics/semantic-distance';
-import {
-  calculatePatternEntropy,
-  calculateConceptCohesion,
-  PatternEntropy,
-  ConceptCohesion,
-} from './metrics/structural-metrics';
-import {
-  calculateAiSignalClarity,
-  AiSignalClarity,
-} from './metrics/ai-signal-clarity';
-import {
-  calculateAgentGrounding,
-  AgentGroundingScore,
-} from './metrics/agent-grounding';
-import {
-  calculateTestabilityIndex,
-  TestabilityIndex,
-} from './metrics/testability-index';
-import { calculateDocDrift, DocDriftRisk } from './metrics/doc-drift';
-import {
-  calculateDependencyHealth,
-  DependencyHealthScore,
-} from './metrics/dependency-health';
-import {
-  calculateChangeAmplification,
-  ChangeAmplificationScore,
-} from './metrics/change-amplification';
+import { CognitiveLoad } from './metrics/cognitive-load';
+import { SemanticDistance } from './metrics/semantic-distance';
+import { PatternEntropy, ConceptCohesion } from './metrics/structural-metrics';
 import {
   collectBaseFutureProofRecommendations,
   collectFutureProofRecommendations,

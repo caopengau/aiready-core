@@ -1,14 +1,11 @@
 import * as Parser from 'web-tree-sitter';
 import {
   Language,
-  LanguageParser,
   ParseResult,
   ExportInfo,
   ImportInfo,
   NamingConvention,
-  ParseError,
 } from '../types/language';
-import { setupParser } from './tree-sitter-utils';
 import {
   analyzeGeneralMetadata,
   extractParameterNames,
@@ -34,7 +31,7 @@ export class CSharpParser extends BaseLanguageParser {
     });
   }
 
-  protected parseRegex(code: string, filePath: string): ParseResult {
+  protected parseRegex(code: string): ParseResult {
     const lines = code.split('\n');
     const exports: ExportInfo[] = [];
     const imports: ImportInfo[] = [];

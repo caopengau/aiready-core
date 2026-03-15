@@ -4,7 +4,6 @@
  * Provides business-aligned metrics that quantify ROI and survive technology changes.
  */
 
-import type { ToolScoringOutput } from './scoring';
 import {
   calculateTokenBudget,
   estimateCostFromBudget,

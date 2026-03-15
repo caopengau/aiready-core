@@ -8,10 +8,7 @@ import {
   beforeEach,
 } from 'vitest';
 import {
-  resolveOutputPath,
   getScoreBar,
-  getSafetyIcon,
-  emitProgress,
   loadMergedConfig,
   handleJSONOutput,
 } from '../utils/cli-helpers';

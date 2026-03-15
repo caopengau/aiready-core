@@ -6,7 +6,6 @@ import {
   ExportInfo,
   ImportInfo,
   NamingConvention,
-  ParseError,
 } from '../types/language';
 import { setupParser } from './tree-sitter-utils';
 
@@ -37,7 +36,8 @@ export abstract class BaseLanguageParser implements LanguageParser {
    */
   protected abstract getParserName(): string;
 
-  async getAST(code: string, filePath: string): Promise<Parser.Tree | null> {
+  async getAST(code: string, _filePath?: string): Promise<Parser.Tree | null> {
+    void _filePath;
     if (!this.initialized) await this.initialize();
     if (!this.parser) return null;
     return this.parser.parse(code);

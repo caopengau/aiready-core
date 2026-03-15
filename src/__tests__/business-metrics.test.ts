@@ -10,7 +10,6 @@ import {
   formatCost,
   formatHours,
   formatAcceptanceRate,
-  DEFAULT_COST_CONFIG,
 } from '../business-metrics';
 import { ToolScoringOutput } from '../scoring';
 

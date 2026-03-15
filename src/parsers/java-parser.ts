@@ -1,14 +1,11 @@
 import * as Parser from 'web-tree-sitter';
 import {
   Language,
-  LanguageParser,
   ParseResult,
   ExportInfo,
   ImportInfo,
   NamingConvention,
-  ParseError,
 } from '../types/language';
-import { setupParser } from './tree-sitter-utils';
 import {
   analyzeGeneralMetadata,
   extractParameterNames,
@@ -39,7 +36,7 @@ export class JavaParser extends BaseLanguageParser {
     });
   }
 
-  protected parseRegex(code: string, filePath: string): ParseResult {
+  protected parseRegex(code: string): ParseResult {
     const lines = code.split('\n');
     const exports: ExportInfo[] = [];
     const imports: ImportInfo[] = [];
@@ -129,12 +126,10 @@ export class JavaParser extends BaseLanguageParser {
     for (const node of rootNode.children) {
       if (node.type === 'import_declaration') {
         const sourceArr: string[] = [];
-        let isStatic = false;
         let isWildcard = false;
 
         // Traverse to find identifier or scoped_identifier
         for (const child of node.children) {
-          if (child.type === 'static') isStatic = true;
           if (
             child.type === 'scoped_identifier' ||
             child.type === 'identifier'
