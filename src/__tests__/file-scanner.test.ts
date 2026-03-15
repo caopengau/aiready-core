@@ -40,7 +40,7 @@ describe('File Scanner Advanced', () => {
     const relFiles = files.map((f) =>
       join(f)
         .replace(tmpDir, '')
-        .replace(/^[\/\\]/, '')
+        .replace(/^[/\\]/, '')
     );
 
     expect(relFiles).toContain('src/main.ts');
@@ -52,7 +52,7 @@ describe('File Scanner Advanced', () => {
     const relFiles = files.map((f) =>
       join(f)
         .replace(tmpDir, '')
-        .replace(/^[\/\\]/, '')
+        .replace(/^[/\\]/, '')
     );
 
     expect(relFiles).toContain('src/nested/internal.ts');
