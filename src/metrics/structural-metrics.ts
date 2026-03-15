@@ -3,28 +3,47 @@
  * Measures pattern entropy and concept cohesion.
  */
 
+/**
+ * Represents the entropy of patterns in a domain
+ */
 export interface PatternEntropy {
+  /** Domain identifier */
   domain: string;
+  /** Entropy score (0-1) where higher mean more fragmented */
   entropy: number;
+  /** Human-readable structural rating */
   rating:
     | 'crystalline'
     | 'well-structured'
     | 'moderate'
     | 'fragmented'
     | 'chaotic';
+  /** Distribution metrics */
   distribution: {
+    /** Number of distinct locations */
     locationCount: number;
+    /** Single most frequent location */
     dominantLocation: string;
+    /** Gini coefficient of concentration (0-1) */
     giniCoefficient: number;
   };
+  /** Recommendations for structural improvement */
   recommendations: string[];
 }
 
+/**
+ * A file path with its inferred domain
+ */
 export interface FileWithDomain {
   path: string;
   domain: string;
 }
 
+/**
+ * Calculate pattern entropy (degree of fragmentation) for a set of files
+ * @param files Array of files with their domains
+ * @returns Entropy analysis result
+ */
 export function calculatePatternEntropy(
   files: FileWithDomain[]
 ): PatternEntropy {
@@ -107,16 +126,30 @@ export function calculatePatternEntropy(
   };
 }
 
+/**
+ * Measures how focused a set of concepts is within a domain
+ */
 export interface ConceptCohesion {
+  /** Normalized score (0-1) where 1 is perfect cohesion */
   score: number;
+  /** Human-readable rating */
   rating: 'excellent' | 'good' | 'moderate' | 'poor';
+  /** Detailed cohesion metrics */
   analysis: {
+    /** Number of distinct domains involved */
     uniqueDomains: number;
+    /** Percentage of exports belonging to the dominant domain */
     domainConcentration: number;
+    /** Ratio of unique domains to total exports */
     exportPurposeClarity: number;
   };
 }
 
+/**
+ * Calculate concept cohesion for a set of exports
+ * @param params Object containing exports to analyze
+ * @returns Cohesion analysis result
+ */
 export function calculateConceptCohesion(params: {
   exports: Array<{ name: string; inferredDomain?: string; domains?: string[] }>;
 }): ConceptCohesion {

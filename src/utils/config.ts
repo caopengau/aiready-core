@@ -12,6 +12,11 @@ const CONFIG_FILES = [
   '.aireadyrc.js',
 ];
 
+/**
+ * Search upwards for AIReady configuration files and load the first one found.
+ * @param rootDir Starting directory for the search
+ * @returns Parsed configuration object or null if not found
+ */
 export async function loadConfig(
   rootDir: string
 ): Promise<AIReadyConfig | null> {
@@ -87,6 +92,12 @@ export async function loadConfig(
   return null;
 }
 
+/**
+ * Merge user-provided configuration with default settings.
+ * @param userConfig The configuration loaded from file
+ * @param defaults The default configuration object
+ * @returns Merged configuration with all defaults applied
+ */
 export function mergeConfigWithDefaults(
   userConfig: AIReadyConfig | null,
   defaults: any

@@ -1,24 +1,10 @@
 import { parse, TSESTree } from '@typescript-eslint/typescript-estree';
 import { getParser } from '../parsers/parser-factory';
 import { Language } from '../types/language';
+import { ExportWithImports, FileImport, ASTNode } from '../types/ast';
+import { findUsedImports, extractTypeReferences } from './ast-visitor';
 
-export interface ExportWithImports {
-  name: string;
-  type: 'function' | 'class' | 'const' | 'type' | 'interface' | 'default';
-  imports: string[]; // Imports used within this export's scope
-  dependencies: string[]; // Other exports from same file this depends on
-  typeReferences: string[]; // TypeScript types referenced in this export
-  loc?: {
-    start: { line: number; column: number };
-    end: { line: number; column: number };
-  };
-}
-
-export interface FileImport {
-  source: string; // Module being imported from
-  specifiers: string[]; // What's being imported
-  isTypeOnly: boolean;
-}
+export { ExportWithImports, FileImport, ASTNode };
 
 /**
  * Parse TypeScript/JavaScript file and extract exports with their import dependencies
@@ -196,42 +182,8 @@ function extractFromDeclaration(
 }
 
 /**
- * Find which imports are used within a node
- */
-function findUsedImports(
-  node: TSESTree.Node,
-  importedNames: Set<string>
-): string[] {
-  const usedImports = new Set<string>();
-
-  function visit(n: TSESTree.Node) {
-    if (n.type === 'Identifier' && importedNames.has(n.name)) {
-      usedImports.add(n.name);
-    }
-
-    // Recursively visit child nodes
-    for (const key in n) {
-      const value = (n as any)[key];
-      if (value && typeof value === 'object') {
-        if (Array.isArray(value)) {
-          value.forEach((child) => {
-            if (child && typeof child === 'object' && 'type' in child) {
-              visit(child);
-            }
-          });
-        } else if ('type' in value) {
-          visit(value);
-        }
-      }
-    }
-  }
-
-  visit(node);
-  return Array.from(usedImports);
-}
-
-/**
  * Calculate import-based similarity between two exports (Jaccard index)
+ * Returns a score between 0 and 1.
  */
 export function calculateImportSimilarity(
   export1: ExportWithImports,
@@ -251,75 +203,27 @@ export function calculateImportSimilarity(
 }
 
 /**
- * Extract TypeScript type references from a node
- * Collects all type identifiers used in type annotations
+ * Parse code into an AST node
+ * @deprecated Use parseFileExports instead
  */
-function extractTypeReferences(node: TSESTree.Node): string[] {
-  const types = new Set<string>();
-
-  function visit(n: any) {
-    if (!n || typeof n !== 'object') return;
-
-    // Type references
-    if (n.type === 'TSTypeReference' && n.typeName) {
-      if (n.typeName.type === 'Identifier') {
-        types.add(n.typeName.name);
-      } else if (n.typeName.type === 'TSQualifiedName') {
-        // Handle qualified names like A.B.C
-        let current = n.typeName;
-        while (current.type === 'TSQualifiedName') {
-          if (current.right?.type === 'Identifier') {
-            types.add(current.right.name);
-          }
-          current = current.left;
-        }
-        if (current.type === 'Identifier') {
-          types.add(current.name);
-        }
-      }
-    }
-
-    // Interface references
-    if (n.type === 'TSInterfaceHeritage' && n.expression) {
-      if (n.expression.type === 'Identifier') {
-        types.add(n.expression.name);
-      }
-    }
-
-    // Recursively visit children
-    for (const key of Object.keys(n)) {
-      const value = n[key];
-      if (Array.isArray(value)) {
-        value.forEach(visit);
-      } else if (value && typeof value === 'object') {
-        visit(value);
-      }
-    }
-  }
-
-  visit(node);
-  return Array.from(types);
-}
-
-// Legacy exports for backwards compatibility
-export interface ASTNode {
-  type: string;
-  loc?: {
-    start: { line: number; column: number };
-    end: { line: number; column: number };
-  };
-}
-
 export function parseCode(code: string, language: string): ASTNode | null {
   // Deprecated: Use parseFileExports instead
   return null;
 }
 
+/**
+ * Extract functions from an AST
+ * @deprecated Use parseFileExports instead
+ */
 export function extractFunctions(ast: ASTNode): ASTNode[] {
   // Deprecated
   return [];
 }
 
+/**
+ * Extract imports from an AST
+ * @deprecated Use parseFileExports instead
+ */
 export function extractImports(ast: ASTNode): string[] {
   // Deprecated
   return [];

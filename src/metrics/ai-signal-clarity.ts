@@ -3,22 +3,43 @@
  * Measures code patterns that increase the likelihood of AI generating incorrect code.
  */
 
+/**
+ * Represents a single risk signal affecting AI clarity
+ */
 export interface AiSignalClaritySignal {
+  /** Name of the signal */
   name: string;
+  /** Occurrences of this signal */
   count: number;
+  /** Numerical contribution to the risk score */
   riskContribution: number;
+  /** Human-readable description of the risk */
   description: string;
+  /** Examples of problematic patterns */
   examples?: string[];
 }
 
+/**
+ * Complete AI Signal Clarity analysis result
+ */
 export interface AiSignalClarity {
+  /** Normalized risk score (0-100) where higher means more confusion risk */
   score: number;
+  /** Human-readable risk rating */
   rating: 'minimal' | 'low' | 'moderate' | 'high' | 'severe';
+  /** Individual signals detected */
   signals: AiSignalClaritySignal[];
+  /** The single highest risk factor identified */
   topRisk: string;
+  /** Actionable recommendations to improve clarity */
   recommendations: string[];
 }
 
+/**
+ * Calculate AI Signal Clarity metrics based on various code patterns
+ * @param params Object containing counts of various problematic patterns
+ * @returns Clarity analysis result
+ */
 export function calculateAiSignalClarity(params: {
   overloadedSymbols: number;
   magicLiterals: number;

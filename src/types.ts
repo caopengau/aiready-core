@@ -1,125 +1,236 @@
-export * from './types/schema';
 import {
-  Severity,
+  ToolName,
   IssueType,
-  Location,
-  Issue,
+  Severity,
   Metrics,
   AnalysisResult,
-  ModelTier,
-  ToolName,
+  SpokeOutput,
+  UnifiedReport,
+  Location,
+  Issue,
+  UnifiedReportSchema,
+  AnalysisStatus,
+  FRIENDLY_TOOL_NAMES,
 } from './types/schema';
+import { TokenBudget } from './types/ast';
+import { GraphNode, GraphEdge, GraphData } from './types/visualization';
 
-// Re-export specific common types as needed (though schema.ts exports them too)
-
-// ============================================
-// Business Value Metrics
-// ============================================
+export {
+  GraphNode,
+  GraphEdge,
+  GraphData,
+  TokenBudget,
+  UnifiedReportSchema,
+  AnalysisStatus,
+  FRIENDLY_TOOL_NAMES,
+};
+export {
+  ToolName,
+  IssueType,
+  Severity,
+  Metrics,
+  AnalysisResult,
+  SpokeOutput,
+  UnifiedReport,
+  Location,
+  Issue,
+};
 
 /**
- * Cost estimation configuration
+ * AI readiness configuration
+ */
+export interface AIReadyConfig {
+  /** Target score threshold (0-100) */
+  threshold?: number;
+  /** Files or directories to include in scan */
+  include?: string[];
+  /** Files or directories to exclude from scan */
+  exclude?: string[];
+  /** Scan-specific configuration */
+  scan?: {
+    include?: string[];
+    exclude?: string[];
+    parallel?: boolean;
+    deep?: boolean;
+  };
+  /** Output-specific configuration */
+  output?: {
+    /** Output format (json, console, html) */
+    format?: 'json' | 'console' | 'html';
+    /** Output file path */
+    path?: string;
+    /** Output directory */
+    saveTo?: string;
+    /** Whether to show score breakdown in console */
+    showBreakdown?: boolean;
+    /** Baseline report to compare against */
+    compareBaseline?: string;
+  };
+  /** Tool-specific configuration overrides */
+  tools?: Record<string, any>;
+  /** Scoring profile and weights */
+  scoring?: {
+    /** Name of the scoring profile (e.g. "strict", "balanced") */
+    profile?: string;
+    /** Custom weights for tools and metrics */
+    weights?: Record<string, number>;
+  };
+}
+
+/**
+ * Legacy alias for Config
+ */
+export type Config = AIReadyConfig;
+
+/**
+ * Common tool options
+ */
+export interface ToolOptions {
+  /** Root directory of the project */
+  rootDir: string;
+  /** Files to include in this tool's analysis */
+  include?: string[];
+  /** Files to exclude from this tool's analysis */
+  exclude?: string[];
+  /** Tool-specific configuration values */
+  config?: any;
+  /** Any other dynamic options */
+  [key: string]: any;
+}
+
+/**
+ * Scan options for tool providers
+ */
+export interface ScanOptions extends ToolOptions {
+  /** Target output format */
+  output?: string | { format: string; file?: string };
+  /** Visual format (json/console/html) */
+  format?: 'json' | 'console' | 'html';
+  /** Whether to run in parallel */
+  parallel?: boolean;
+}
+
+/**
+ * Result of a single tool execution
+ */
+export interface ToolOutput {
+  /** Unique name/ID of the tool */
+  toolName: ToolName | string;
+  /** Whether the tool ran successfully */
+  success: boolean;
+  /** List of issues found by the tool */
+  issues: IssueType[] | any[];
+  /** Numeric metrics produced by the tool */
+  metrics: Metrics;
+  /** Execution duration in milliseconds */
+  duration?: number;
+}
+
+/**
+ * Overall scan result
+ */
+export interface ScanResult {
+  /** ISO timestamp of the scan */
+  timestamp: string;
+  /** Root directory analyzed */
+  rootDir: string;
+  /** Number of files processed */
+  filesAnalyzed: number;
+  /** Total issues found across all tools */
+  totalIssues: number;
+  /** Breakdown of issue counts by type */
+  issuesByType: Record<string, number>;
+  /** Breakdown of issue counts by severity */
+  issuesBySeverity: Record<Severity | string, number>;
+  /** Final calculated AIReady score (0-100) */
+  score: number;
+  /** Individual tool outputs */
+  tools: ToolOutput[];
+}
+
+/**
+ * Cost configuration for business impact analysis
  */
 export interface CostConfig {
-  /** Price per 1K tokens (default: $0.01 for GPT-4) */
+  /** Price in USD per 1,000 tokens */
   pricePer1KTokens: number;
-  /** Average AI queries per developer per day */
+  /** Average number of AI queries per developer per day */
   queriesPerDevPerDay: number;
-  /** Number of developers on the team */
+  /** Total number of developers in the team */
   developerCount: number;
-  /** Days per month (default: 30) */
+  /** Working days per month */
   daysPerMonth: number;
 }
 
 /**
- * Token budget metrics (v0.13+)
- * Technology-agnostic unit economics for AI impact.
- */
-export interface TokenBudget {
-  /** Total tokens required for full task context */
-  totalContextTokens: number;
-  /** Estimated tokens generated in response */
-  estimatedResponseTokens: number;
-  /** Tokens wasted on redundant/duplicated context */
-  wastedTokens: {
-    total: number;
-    bySource: {
-      duplication: number;
-      fragmentation: number;
-      chattiness: number;
-    };
-  };
-  /** Context efficiency ratio (0-1). 1.0 = perfect efficiency. */
-  efficiencyRatio: number;
-  /** Estimated tokens saved if recommendations are followed */
-  potentialRetrievableTokens: number;
-}
-
-/**
- * Productivity impact estimates
+ * Productivity impact metrics
  */
 export interface ProductivityImpact {
-  /** Estimated hours to fix all issues */
+  /** Estimated developer hours wasted on quality issues */
   totalHours: number;
-  /** Average hourly rate for developers */
+  /** Developer hourly rate used for calculation */
   hourlyRate: number;
-  /** Estimated total fix cost */
+  /** Estimated total monthly cost of productivity loss */
   totalCost: number;
-  /** Breakdown by severity */
-  bySeverity: {
-    [K in Severity]: { hours: number; cost: number };
-  };
+  /** Impact breakdown by severity */
+  bySeverity: Record<
+    Severity | string,
+    {
+      /** Hours lost for this severity level */
+      hours: number;
+      /** Cost associated with these hours */
+      cost: number;
+    }
+  >;
 }
 
 /**
- * AI acceptance rate prediction
- * Based on research correlating code quality to AI suggestion acceptance
+ * AI suggestion acceptance prediction
  */
 export interface AcceptancePrediction {
   /** Predicted acceptance rate (0-1) */
   rate: number;
-  /** Confidence level (0-1) */
+  /** Confidence level of the prediction (0-1) */
   confidence: number;
-  /** Factors affecting acceptance */
-  factors: {
+  /** Qualitative factors influencing the prediction */
+  factors: Array<{
+    /** Factor name */
     name: string;
-    impact: number; // +/- percentage points
-  }[];
+    /** Impact weight (-100 to 100) */
+    impact: number;
+  }>;
 }
 
 /**
- * Comprehension difficulty score (future-proof abstraction)
- * Normalized 0-100 scale: lower = easier for AI to understand
- */
-export interface ComprehensionDifficulty {
-  /** Overall difficulty score (0-100) */
-  score: number;
-  /** Factors contributing to difficulty */
-  factors: {
-    budgetRatio: number;
-    depthRatio: number;
-    fragmentation: number;
-  };
-  /** Interpretation */
-  rating: 'trivial' | 'easy' | 'moderate' | 'difficult' | 'expert';
-}
-
-/**
- * Technical Value Chain
- * Traces a technical issue through its impact on AI and developer outcomes.
+ * Technical Value Chain summary
  */
 export interface TechnicalValueChain {
-  issueType: string;
-  technicalMetric: string;
-  technicalValue: number;
-  aiImpact: {
+  /** Overall business value score for the component */
+  score?: number;
+  /** Business logic density (e.g. core vs boilerplate) */
+  density?: number;
+  /** Data access layer complexity */
+  complexity?: number;
+  /** API surface area and exposure */
+  surface?: number;
+  /** Issue type associated with this chain */
+  issueType?: string;
+  /** Name of the leading technical metric */
+  technicalMetric?: string;
+  /** Raw value of the technical metric */
+  technicalValue?: number;
+  /** Impact on AI agents */
+  aiImpact?: {
     description: string;
     scoreImpact: number;
   };
-  developerImpact: {
+  /** Impact on developer experience */
+  developerImpact?: {
     description: string;
-    productivityLoss: number; // percentage (0-1)
+    productivityLoss: number;
   };
-  businessOutcome: {
+  /** Predicted business outcome */
+  businessOutcome?: {
     directCost: number;
     opportunityCost: number;
     riskLevel: 'low' | 'moderate' | 'high' | 'critical';
@@ -127,331 +238,115 @@ export interface TechnicalValueChain {
 }
 
 /**
- * v0.13+ simplified technical value chain
+ * Compatibility alias
  */
-export interface TechnicalValueChainSummary {
-  score: number;
-  density: number;
-  complexity: number;
-  surface: number;
-}
+export type TechnicalValueChainSummary = TechnicalValueChain;
 
 /**
- * Extended report with business metrics
+ * Code comprehension difficulty metrics
  */
-export interface BusinessReport extends Report {
-  businessMetrics: {
-    /** Token-based unit economics (v0.13+) */
-    tokenBudget: TokenBudget;
-    /** @deprecated Use tokenBudget instead. Estimated monthly cost impact of AI context waste */
-    estimatedMonthlyCost: {
-      total: number;
-      range: [number, number];
-      confidence: number;
-    };
-    /** Opportunity cost of project delay due to technical debt */
-    opportunityCost: number;
-    /** Estimated developer hours to address issues */
-    estimatedDeveloperHours: number;
-    /** Predicted AI suggestion acceptance rate */
-    aiAcceptanceRate: number;
-    /** Comprehension difficulty assessment */
-    comprehensionDifficulty: ComprehensionDifficulty;
-    /** Traces for specific critical issues */
-    valueChains?: TechnicalValueChain[];
-    /** Timestamp for trend tracking */
-    period?: string;
+export interface ComprehensionDifficulty {
+  /** Overall difficulty score (0-100) */
+  score: number;
+  /** Descriptive rating of difficulty */
+  rating: 'trivial' | 'easy' | 'moderate' | 'difficult' | 'expert';
+  /** Ratios and factors contributing to difficulty */
+  factors: {
+    /** Ratio of file tokens to model context limit */
+    budgetRatio: number;
+    /** Relative depth of dependency tree */
+    depthRatio: number;
+    /** Level of logical fragmentation */
+    fragmentation: number;
   };
 }
 
-export interface ScanOptions {
-  rootDir: string;
-  include?: string[];
-  exclude?: string[];
-  maxDepth?: number;
-  onProgress?: (processed: number, total: number, message: string) => void;
-  includeTests?: boolean;
+/**
+ * Business impact metrics (v0.10+)
+ */
+export interface BusinessMetrics {
+  /** Predicted monthly cost of technical waste */
+  estimatedMonthlyCost?: number;
+  /** Estimated developer hours lost per month */
+  estimatedDeveloperHours?: number;
+  /** Predicted rate of AI suggestion acceptance */
+  aiAcceptanceRate?: number;
+  /** Overall AI readiness score */
+  aiReadinessScore?: number;
 }
 
 /**
- * Global infrastructure options that apply to the whole scan process.
- * These are passed to all tools but usually omitted from tool-specific audit logs
- * to avoid redundancy.
+ * Canonical file content structure
  */
-export const GLOBAL_INFRA_OPTIONS = [
-  'rootDir', // Essential for every tool
-  'include',
-  'exclude',
-  'onProgress',
-  'progressCallback',
-  'includeTests',
-  'useSmartDefaults',
-  'streamResults',
-  'batchSize',
-  'costConfig',
-  'tools',
-  'toolConfigs',
-];
+export interface FileContent {
+  /** Absolute or relative file path */
+  file: string;
+  /** UTF-8 file content */
+  content: string;
+}
 
 /**
- * Common fine-tuning options that might be passed globally but are actually tool-specific.
+ * Constants for tests and configuration stability
  */
+export const GLOBAL_INFRA_OPTIONS = [
+  'rootDir',
+  'include',
+  'exclude',
+  'tools',
+  'scoring',
+];
+export const GLOBAL_SCAN_OPTIONS = [
+  'rootDir',
+  'include',
+  'exclude',
+  'config',
+  'threshold',
+  'output',
+  'format',
+  'parallel',
+  'showBreakdown',
+];
 export const COMMON_FINE_TUNING_OPTIONS = [
   'maxDepth',
   'minSimilarity',
-  'minLines',
-  'minCohesion',
-  // AI Signal Clarity options
-  'checkMagicLiterals',
-  'checkBooleanTraps',
-  'checkAmbiguousNames',
-  'checkUndocumentedExports',
-  'checkImplicitSideEffects',
-  'checkDeepCallbacks',
+  'threshold',
+  'showBreakdown',
 ];
 
-export const GLOBAL_SCAN_OPTIONS = [...GLOBAL_INFRA_OPTIONS];
-
 /**
- * Base configuration for any AIReady tool
+ * Re-export Severity for convenience
  */
-export interface BaseToolConfig {
-  /** Whether this tool is enabled for the scan */
-  enabled?: boolean;
-  /** Custom weight for overall score calculation (sum should be 100) */
-  scoreWeight?: number;
-  /** Catch-all for any other tool-specific options */
-  [key: string]: any;
-}
+export type { Severity as SeverityType };
 
 /**
- * Configuration for the pattern-detect tool (semantic duplicate detection)
- */
-export interface PatternDetectConfig extends BaseToolConfig {
-  /** Similarity threshold (0-1). Higher = more strict. */
-  minSimilarity?: number;
-  /** Minimum lines to consider a block */
-  minLines?: number;
-  /** Batch size for parallel processing */
-  batchSize?: number;
-  /** Use approximate matching engine for faster results on large repos */
-  approx?: boolean;
-  /** Minimum tokens shared between blocks for candidates */
-  minSharedTokens?: number;
-  /** Maximum number of candidates to compare per block */
-  maxCandidatesPerBlock?: number;
-}
-
-/**
- * Configuration for the context-analyzer tool (fragmentation and budget)
- */
-export interface ContextAnalyzerConfig extends BaseToolConfig {
-  /** Maximum directory depth to traverse */
-  maxDepth?: number;
-  /** Maximum tokens allowed per context window */
-  maxContextBudget?: number;
-  /** Minimum cohesion score required (0-1) */
-  minCohesion?: number;
-  /** Maximum fragmentation ratio allowed (0-1) */
-  maxFragmentation?: number;
-  /** Primary focus area for the analyzer */
-  focus?: 'fragmentation' | 'cohesion' | 'depth' | 'all';
-  /** Whether to include dependencies from node_modules */
-  includeNodeModules?: boolean;
-  /** Project-specific domain keywords for better inference */
-  domainKeywords?: string[];
-}
-
-/**
- * Configuration for the naming-consistency tool
- */
-export interface NamingConsistencyConfig extends BaseToolConfig {
-  /** Project-approved abbreviations */
-  acceptedAbbreviations?: string[];
-  /** Words that are allowed to be short (like 'id', 'db') */
-  shortWords?: string[];
-  /** Specific checks to disable */
-  disableChecks?: (
-    | 'single-letter'
-    | 'abbreviation'
-    | 'convention-mix'
-    | 'unclear'
-    | 'poor-naming'
-  )[];
-}
-
-/**
- * Configuration for the ai-signal-clarity tool
- */
-export interface AiSignalClarityConfig extends BaseToolConfig {
-  /** Detect unnamed constants */
-  checkMagicLiterals?: boolean;
-  /** Detect positional boolean arguments */
-  checkBooleanTraps?: boolean;
-  /** Detect generic names like 'temp', 'data' */
-  checkAmbiguousNames?: boolean;
-  /** Detect public exports missing JSDoc */
-  checkUndocumentedExports?: boolean;
-  /** Detect implicit state mutations */
-  checkImplicitSideEffects?: boolean;
-  /** Detect deeply nested callbacks */
-  checkDeepCallbacks?: boolean;
-}
-
-/**
- * Consolidated AIReady configuration schema
- */
-export interface AIReadyConfig {
-  /** Global scan settings */
-  scan?: {
-    /** Glob patterns to include */
-    include?: string[];
-    /** Glob patterns to exclude */
-    exclude?: string[];
-    /** List of tools to execute */
-    tools?: string[];
-  };
-
-  /** Tool-specific configurations */
-  tools?: {
-    'pattern-detect'?: PatternDetectConfig;
-    'context-analyzer'?: ContextAnalyzerConfig;
-    [ToolName.NamingConsistency]?: NamingConsistencyConfig;
-    [ToolName.AiSignalClarity]?: AiSignalClarityConfig;
-    [ToolName.AgentGrounding]?: BaseToolConfig & {
-      maxRecommendedDepth?: number;
-      readmeStaleDays?: number;
-    };
-    [ToolName.TestabilityIndex]?: BaseToolConfig & {
-      minCoverageRatio?: number;
-      testPatterns?: string[];
-    };
-    [ToolName.DocDrift]?: BaseToolConfig & {
-      maxCommits?: number;
-      staleMonths?: number;
-    };
-    [ToolName.DependencyHealth]?: BaseToolConfig & {
-      trainingCutoffYear?: number;
-    };
-    [ToolName.ChangeAmplification]?: BaseToolConfig;
-    /** Support for custom/third-party tools */
-    [toolName: string]: BaseToolConfig | undefined;
-  };
-
-  /** Global scoring and threshold settings */
-  scoring?: {
-    /** Minimum overall score required to pass CI/CD */
-    threshold?: number;
-    /** Detailed breakdown in terminal output */
-    showBreakdown?: boolean;
-    /** Comparison with a previous run */
-    compareBaseline?: string;
-    /** Auto-persist result to this path */
-    saveTo?: string;
-  };
-
-  /** Console and file output preferences */
-  output?: {
-    /** Output format (console, json, html) */
-    format?: 'console' | 'json' | 'html';
-    /** Target file for the full report */
-    file?: string;
-  };
-
-  /** Graph Visualizer preferences */
-  visualizer?: {
-    /** Custom directory grouping levels */
-    groupingDirs?: string[];
-    /** Performance constraints for large graphs */
-    graph?: {
-      maxNodes?: number;
-      maxEdges?: number;
-    };
-  };
-}
-
-export interface Report {
-  summary: {
-    totalFiles: number;
-    totalIssues: number;
-    criticalIssues: number;
-    majorIssues: number;
-  };
-  results: AnalysisResult[];
-  metrics: {
-    overallScore: number;
-    tokenCostTotal: number;
-    avgConsistency: number;
-    executionTime?: number;
-  };
-}
-
-// ============================================
-// Graph Visualization Types
-// ============================================
-
-/**
- * Severity levels for issues
+ * Analysis issue mapping to graph
  */
 export type GraphIssueSeverity = Severity;
-
-/**
- * Base graph node
- */
-export interface GraphNode {
-  id: string;
-  label: string;
-  path?: string;
-  size?: number;
-  value?: number;
-  color?: string;
-  group?: string;
-  x?: number;
-  y?: number;
-}
-
-/**
- * Graph edge between nodes
- */
-export interface GraphEdge {
-  source: string | GraphNode;
-  target: string | GraphNode;
-  type?: string;
-  weight?: number;
-}
 
 /**
  * Graph metadata
  */
 export interface GraphMetadata {
+  /** Project name if available */
   projectName?: string;
+  /** ISO timestamp of analysis */
   timestamp: string;
+  /** Total number of files in the graph */
   totalFiles: number;
+  /** Total dependency edges in the graph */
   totalDependencies: number;
+  /** Types of analysis performed */
   analysisTypes: string[];
+  /** Count of critical issues in graph nodes */
   criticalIssues: number;
+  /** Count of major issues in graph nodes */
   majorIssues: number;
+  /** Count of minor issues in graph nodes */
   minorIssues: number;
+  /** Count of informational issues in graph nodes */
   infoIssues: number;
   /** AI token budget unit economics (v0.13+) */
   tokenBudget?: TokenBudget;
   /** Execution time in milliseconds */
   executionTime?: number;
-}
-
-/**
- * Complete graph data structure for visualization
- */
-export interface GraphData {
-  nodes: GraphNode[];
-  edges: GraphEdge[];
-  clusters?: { id: string; name: string; nodeIds: string[] }[];
-  issues?: {
-    id: string;
-    type: string;
-    severity: Severity;
-    nodeIds: string[];
-    message: string;
-  }[];
-  metadata: GraphMetadata;
 }

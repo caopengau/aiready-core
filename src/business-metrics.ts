@@ -19,29 +19,51 @@ export * from './business/risk-metrics';
 export * from './business/comprehension-metrics';
 
 /**
- * Historical score entry for trend tracking
+ * Historical score entry for trend tracking.
+ * Used to store and compare results across different points in time.
  */
 export interface ScoreHistoryEntry {
+  /** ISO timestamp of the scan */
   timestamp: string;
+  /** Overall score (0-100) */
   overallScore: number;
+  /** Breakdown of scores by tool */
   breakdown: Record<string, number>;
+  /** Total number of issues detected */
   totalIssues: number;
+  /** Total tokens analyzed */
   totalTokens: number;
 }
 
 /**
- * Trend analysis comparing current vs historical scores
+ * Trend analysis comparing current vs historical scores.
+ * Helps teams understand if their AI-readiness is improving or degrading.
  */
 export interface ScoreTrend {
+  /** Overall trend direction */
   direction: 'improving' | 'stable' | 'degrading';
+  /** Percentage change in score over last 30 days */
   change30Days: number;
+  /** Percentage change in score over last 90 days */
   change90Days: number;
-  velocity: number; // points per week
-  projectedScore: number; // 30-day projection
+  /** Rate of change (points per week) */
+  velocity: number;
+  /** Projected score in 30 days based on current velocity */
+  projectedScore: number;
 }
 
 /**
- * Calculate Aggregate Business ROI
+ * Calculate Aggregate Business ROI from code analysis results.
+ *
+ * This high-level function combines token waste and productivity impact
+ * to produce a monthly and annual dollar value of the issues found.
+ *
+ * @param params - Parameters for ROI calculation
+ * @param params.tokenWaste - Estimated total tokens wasted on context inefficiencies
+ * @param params.issues - Array of issues with severity levels for productivity impact
+ * @param params.developerCount - Number of developers in the team (default: 5)
+ * @param params.modelId - AI model ID for pricing model selection (default: 'claude-4.6')
+ * @returns Business ROI metrics including savings and recommendations
  */
 export function calculateBusinessROI(params: {
   tokenWaste: number;
@@ -49,8 +71,11 @@ export function calculateBusinessROI(params: {
   developerCount?: number;
   modelId?: string;
 }): {
+  /** Estimated monthly savings if issues are resolved */
   monthlySavings: number;
+  /** Total developer hours gained per month */
   productivityGainHours: number;
+  /** Projected total annual business value gained */
   annualValue: number;
 } {
   const model = getModelPreset(params.modelId || 'claude-4.6');
@@ -82,7 +107,12 @@ export function calculateBusinessROI(params: {
 }
 
 /**
- * Format cost for display
+ * Format currency value for display in console or reports.
+ *
+ * Handles small values with decimals and large values with 'k' suffix.
+ *
+ * @param cost Cost in USD
+ * @returns Formatted currency string (e.g. "$0.50", "$500", "$1.2k")
  */
 export function formatCost(cost: number): string {
   if (cost < 1) {
@@ -95,7 +125,12 @@ export function formatCost(cost: number): string {
 }
 
 /**
- * Format hours for display
+ * Format time duration in hours for display in console or reports.
+ *
+ * Automatically switches between minutes, hours, and weeks based on magnitude.
+ *
+ * @param hours Number of hours
+ * @returns Formatted duration string (e.g. "30min", "4.5h", "2.1 weeks")
  */
 export function formatHours(hours: number): string {
   if (hours < 1) {
@@ -112,14 +147,25 @@ export function formatHours(hours: number): string {
 import type { TechnicalValueChain } from './types';
 
 /**
- * Format acceptance rate for display
+ * Format AI acceptance rate as a human-readable percentage string.
+ * @param rate Rate value between 0 and 1
+ * @returns Formatted percentage (e.g. "85%")
  */
 export function formatAcceptanceRate(rate: number): string {
   return `${Math.round(rate * 100)}%`;
 }
 
 /**
- * Generate technical value chain for an issue (v0.12 legacy)
+ * Generate a technical value chain map for a specific issue category.
+ *
+ * maps technical metrics (like duplication count) to business outcomes
+ * by explaining the impact on AI models and developer workflow.
+ *
+ * @param params Issue information
+ * @param params.issueType Unique identifier for the issue type
+ * @param params.count Total occurrences of this issue
+ * @param params.severity Severity level of the issues
+ * @returns A structured technical value chain object
  */
 export function generateValueChain(params: {
   issueType: string;

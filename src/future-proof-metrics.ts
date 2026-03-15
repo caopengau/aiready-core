@@ -3,6 +3,8 @@
  *
  * This module provides technology-agnostic metric primitives that will
  * remain valid across changes in AI models, tokenization, and paradigms.
+ *
+ * It focuses on cognitive load, semantic cohesion, and structural entropy.
  */
 
 import type { ToolScoringOutput } from './scoring';
@@ -58,7 +60,17 @@ export * from './metrics/dependency-health';
 export * from './metrics/change-amplification';
 
 /**
- * Aggregate Future-Proof Score (Base)
+ * Calculate the Aggregate Future-Proof Score based on core structural metrics.
+ *
+ * Combines cognitive load, pattern entropy, and concept cohesion into a single
+ * normalized score that predicts how well AI systems can handle this code in the long term.
+ *
+ * @param params - Configuration for score calculation
+ * @param params.cognitiveLoad - Cognitive load metrics (file size, depth, fragmentation)
+ * @param params.patternEntropy - Structural randomness vs consistency
+ * @param params.conceptCohesion - Semantic alignment within logical blocks
+ * @param params.semanticDistances - Optional measurements of conceptual drift
+ * @returns ToolScoringOutput containing the final score and influencing factors
  */
 export function calculateFutureProofScore(params: {
   cognitiveLoad: CognitiveLoad;
@@ -117,7 +129,13 @@ export function calculateFutureProofScore(params: {
 }
 
 /**
- * Complete Extended Future-Proof Score
+ * Calculate a Comprehensive Extended Future-Proof Score.
+ *
+ * Incorporates secondary signals like documentation drift, dependency health,
+ * and testability index to provide a holistic view of the repository's AI readiness.
+ *
+ * @param params - Comprehensive set of metric outputs
+ * @returns ToolScoringOutput with extended analysis results
  */
 export function calculateExtendedFutureProofScore(
   params: FutureProofRecommendationParams & {

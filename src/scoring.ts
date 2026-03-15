@@ -1,7 +1,9 @@
 import { ToolName } from './types/schema';
 
 /**
- * Priority levels for actionable recommendations
+ * Priority levels for actionable recommendations.
+ *
+ * Used to Sort and display fixes for the user.
  */
 export enum RecommendationPriority {
   High = 'high',
@@ -10,7 +12,9 @@ export enum RecommendationPriority {
 }
 
 /**
- * AI Readiness Rating categories
+ * AI Readiness Rating categories.
+ *
+ * Provides a high-level qualitative assessment based on the numeric score.
  */
 export enum ReadinessRating {
   Excellent = 'Excellent',
@@ -21,7 +25,7 @@ export enum ReadinessRating {
 }
 
 /**
- * Output structure for a single tool's scoring analysis
+ * Output structure for a single tool's scoring analysis.
  */
 export interface ToolScoringOutput {
   /** Unique tool identifier (e.g., "pattern-detect") */
@@ -58,7 +62,10 @@ export interface ToolScoringOutput {
 }
 
 /**
- * Consolidated scoring result across all tools
+ * Consolidated scoring result across all tools.
+ *
+ * This is the final report object containing the overall score,
+ * rating, and detailed breakdown for all tools.
  */
 export interface ScoringResult {
   /** Overall AI Readiness Score (0-100) */
@@ -88,7 +95,7 @@ export interface ScoringResult {
 }
 
 /**
- * Configuration options for the scoring system
+ * Configuration options for the scoring system.
  */
 export interface ScoringConfig {
   /** Minimum passing score (CLI will exit with non-zero if below) */
@@ -105,9 +112,10 @@ export interface ScoringConfig {
 }
 
 /**
- * Default weights for known tools. Weights sum to 100 and read directly as
- * percentage contribution to the overall score.
- * New tools get weight of 5 if not specified.
+ * Default weights for known tools.
+ *
+ * Weights represent the percentage contribution of each tool to the overall score.
+ * By default, they sum to 100 for a standard project.
  */
 export const DEFAULT_TOOL_WEIGHTS: Record<string, number> = {
   [ToolName.PatternDetect]: 22,
@@ -122,7 +130,9 @@ export const DEFAULT_TOOL_WEIGHTS: Record<string, number> = {
 };
 
 /**
- * Tool name normalization map (shorthand -> canonical name)
+ * Tool name normalization map.
+ *
+ * Maps common shorthands and aliases to canonical tool IDs.
  */
 export const TOOL_NAME_MAP: Record<string, string> = {
   patterns: ToolName.PatternDetect,
@@ -154,19 +164,22 @@ export type ModelContextTier =
   | 'frontier'; // 200k+
 
 /**
- * Scoring profiles for project-type-aware weighting.
+ * Scoring profiles for project-aware weighting adjustments.
+ *
+ * Different profiles prioritize different aspects of AI readiness based
+ * on the project's primary focus.
  */
 export enum ScoringProfile {
   Default = 'default',
   Agentic = 'agentic', // Focus on AI agent navigation and signal
   Logic = 'logic', // Focus on testability and complexity
-  UI = 'ui', // Focus on consistency and context (lower penalty for magic literals)
-  Cost = 'cost', // Focus on token waste (duplication and fragmentation)
-  Security = 'security', // Focus on consistency and testability
+  UI = 'ui', // Focus on consistency and context
+  Cost = 'cost', // Focus on token waste reduction
+  Security = 'security', // Focus on consistency and dependency health
 }
 
 /**
- * Project-type-aware tool weight presets.
+ * Project-type-aware tool weight presets for different profiles.
  */
 export const SCORING_PROFILES: Record<
   ScoringProfile,
@@ -210,6 +223,8 @@ export const SCORING_PROFILES: Record<
 
 /**
  * Context budget thresholds per tier.
+ *
+ * "Ideal" represents target state. "Critical" represents failure state.
  */
 export const CONTEXT_TIER_THRESHOLDS: Record<
   ModelContextTier,
@@ -227,6 +242,8 @@ export const CONTEXT_TIER_THRESHOLDS: Record<
 
 /**
  * Project-size-adjusted minimum thresholds.
+ *
+ * Larger projects have slightly lower thresholds due to inherent complexity.
  */
 export const SIZE_ADJUSTED_THRESHOLDS: Record<string, number> = {
   xs: 80, // < 50 files
@@ -237,7 +254,7 @@ export const SIZE_ADJUSTED_THRESHOLDS: Record<string, number> = {
 };
 
 /**
- * Determine project size tier based on the total number of files
+ * Determine project size tier based on the total number of files.
  *
  * @param fileCount Total number of files in the project
  * @returns A string identifier for the project size tier (xs, small, medium, large, enterprise)
@@ -253,7 +270,9 @@ export function getProjectSizeTier(
 }
 
 /**
- * Calculate the recommended minimum AI readiness threshold for a project
+ * Calculate the recommended minimum AI readiness threshold for a project.
+ *
+ * Threshold is adjusted based on project size and the model context tier targeted.
  *
  * @param fileCount Total number of files in the project
  * @param modelTier The model context tier targeted (compact, standard, extended, frontier)
@@ -271,7 +290,7 @@ export function getRecommendedThreshold(
 }
 
 /**
- * Normalize a tool name from a shorthand or alias to its canonical ID
+ * Normalize a tool name from a shorthand or alias to its canonical ID.
  *
  * @param shortName The tool shorthand or alias name
  * @returns The canonical tool ID
@@ -281,7 +300,7 @@ export function normalizeToolName(shortName: string): string {
 }
 
 /**
- * Retrieve the weight for a specific tool, considering overrides and profiles
+ * Retrieve the weight for a specific tool, considering overrides and profiles.
  *
  * @param toolName The canonical tool ID
  * @param toolConfig Optional configuration for the tool containing a weight
@@ -303,7 +322,9 @@ export function getToolWeight(
 }
 
 /**
- * Parse a comma-separated weight string (e.g. "patterns:30,context:10")
+ * Parse a comma-separated weight string from the CLI.
+ *
+ * Format: "tool1:weight1,tool2:weight2"
  *
  * @param weightStr The raw weight string from the CLI or config
  * @returns A Map of tool IDs to their parsed weights
@@ -327,7 +348,9 @@ export function parseWeightString(weightStr?: string): Map<string, number> {
 }
 
 /**
- * Calculate the overall consolidated AI Readiness Score
+ * Calculate the overall consolidated AI Readiness Score.
+ *
+ * Orchestrates the weighted aggregation of all tool individual scores.
  *
  * @param toolOutputs Map of tool IDs to their individual scoring outputs
  * @param config Optional global configuration
@@ -400,7 +423,7 @@ export function calculateOverallScore(
 }
 
 /**
- * Convert numeric score to rating category
+ * Convert numeric score to qualitative rating category.
  *
  * @param score The numerical AI readiness score (0-100)
  * @returns The corresponding ReadinessRating category
@@ -414,12 +437,28 @@ export function getRating(score: number): ReadinessRating {
 }
 
 /**
- * Convert score to rating with project-size awareness.
+ * Get a URL-friendly slug representing the rating category.
+ *
+ * @param score The numerical score
+ * @returns A kebab-case string (e.g., 'excellent', 'needs-work')
+ */
+export function getRatingSlug(score: number): string {
+  if (score >= 90) return 'excellent';
+  if (score >= 75) return 'good';
+  if (score >= 60) return 'fair';
+  if (score >= 40) return 'needs-work';
+  return 'critical';
+}
+
+/**
+ * Convert score to rating with project-size and model awareness.
+ *
+ * Provides a more accurate rating by considering the target model's limits.
  *
  * @param score The numerical AI readiness score
  * @param fileCount Total number of files in the project
  * @param modelTier The model context tier being targeted
- * @returns The size-adjusted ReadinessRating
+ * @returns The size-aware ReadinessRating
  */
 export function getRatingWithContext(
   score: number,
@@ -432,7 +471,7 @@ export function getRatingWithContext(
 }
 
 /**
- * Get rating display properties (emoji and color)
+ * Get display properties (emoji and color) for a given rating.
  *
  * @param rating The readiness rating category
  * @returns Object containing display emoji and color string
@@ -458,10 +497,10 @@ export function getRatingDisplay(rating: ReadinessRating | string): {
 }
 
 /**
- * Format score for human-readable console display
+ * Format overall score for compact console display.
  *
  * @param result The consolidated scoring result
- * @returns Formatted string for display
+ * @returns Formatted string (e.g., "85/100 (Good) 👍")
  */
 export function formatScore(result: ScoringResult): string {
   const { emoji } = getRatingDisplay(result.rating as ReadinessRating);
@@ -469,10 +508,12 @@ export function formatScore(result: ScoringResult): string {
 }
 
 /**
- * Format individual tool score for detailed console display
+ * Format detailed tool score for expanded console display.
+ *
+ * Includes breakdown of influencing factors and actionable recommendations.
  *
  * @param output The scoring output for a single tool
- * @returns Formatted string with factors and recommendations
+ * @returns Multi-line formatted string for console output
  */
 export function formatToolScore(output: ToolScoringOutput): string {
   let result = `  Score: ${output.score}/100\n\n`;

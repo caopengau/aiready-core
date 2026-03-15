@@ -115,7 +115,10 @@ export function predictAcceptanceRate(
     });
   }
 
-  const totalImpact = factors.reduce((sum, f) => sum + f.impact / 100, 0);
+  const totalImpact = factors.reduce(
+    (sum: number, f: { impact: number }) => sum + f.impact / 100,
+    0
+  );
   const rate = Math.max(0.05, Math.min(0.8, baseRate + totalImpact));
 
   let confidence = 0.35;

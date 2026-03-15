@@ -1,17 +1,16 @@
 export * from './types';
+export * from './types/schema';
 export * from './types/language';
 export * from './types/contract';
 export * from './registry';
 export * from './utils/file-scanner';
 export * from './utils/cli-helpers';
-export { getSeverityLevel } from './utils/cli-helpers';
 export * from './utils/provider-utils';
 export * from './utils/ast-parser';
 export * from './utils/metrics';
 export * from './utils/config';
 export * from './utils/visualization';
 export * from './scoring';
-export type { ToolScoringOutput } from './scoring';
 
 // Business value metrics (v0.10+)
 export * from './business-metrics';
@@ -34,5 +33,3 @@ export * from './utils/history-git';
 
 // CI/CD Utilities
 export * from './utils/github-utils';
-export * from './types/contract';
-export * from './types/schema';

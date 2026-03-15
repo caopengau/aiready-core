@@ -10,6 +10,7 @@ export enum Severity {
   Info = 'info',
 }
 
+/** Zod schema for Severity enum */
 export const SeveritySchema = z.nativeEnum(Severity);
 
 /**
@@ -32,6 +33,7 @@ export enum ToolName {
   SemanticDistance = 'semantic-distance',
 }
 
+/** Zod schema for ToolName enum */
 export const ToolNameSchema = z.nativeEnum(ToolName);
 
 /**
@@ -84,6 +86,7 @@ export enum IssueType {
   ChangeAmplification = 'change-amplification',
 }
 
+/** Zod schema for IssueType enum */
 export const IssueTypeSchema = z.nativeEnum(IssueType);
 
 /**
@@ -95,6 +98,7 @@ export enum AnalysisStatus {
   Failed = 'failed',
 }
 
+/** Zod schema for AnalysisStatus enum */
 export const AnalysisStatusSchema = z.nativeEnum(AnalysisStatus);
 
 /**
@@ -107,11 +111,13 @@ export enum ModelTier {
   Frontier = 'frontier',
 }
 
+/** Zod schema for ModelTier enum */
 export const ModelTierSchema = z.nativeEnum(ModelTier);
 
 /**
  * Source code location schema.
  */
+/** Zod schema for Location object */
 export const LocationSchema = z.object({
   file: z.string(),
   line: z.number(),
@@ -125,6 +131,7 @@ export type Location = z.infer<typeof LocationSchema>;
 /**
  * Standard Issue schema.
  */
+/** Zod schema for Issue object */
 export const IssueSchema = z.object({
   type: IssueTypeSchema,
   severity: SeveritySchema,
@@ -138,6 +145,7 @@ export type Issue = z.infer<typeof IssueSchema>;
 /**
  * Standard Metrics schema.
  */
+/** Zod schema for Metrics object */
 export const MetricsSchema = z.object({
   tokenCost: z.number().optional(),
   complexityScore: z.number().optional(),

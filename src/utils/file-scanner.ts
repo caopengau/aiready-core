@@ -311,6 +311,11 @@ export async function scanEntries(
  * @param filePath - Absolute path to the file to read
  * @returns The file contents as a string
  */
+/**
+ * Read the contents of a file as a UTF-8 string.
+ * @param filePath - Absolute path to the file to read
+ * @returns The file contents as a string
+ */
 export async function readFileContent(filePath: string): Promise<string> {
   return readFile(filePath, 'utf-8');
 }
@@ -320,10 +325,21 @@ export async function readFileContent(filePath: string): Promise<string> {
  * @param filePath - The file path to extract extension from
  * @returns The file extension without the dot (e.g., 'ts', 'js', 'py')
  */
+/**
+ * Extract the file extension from a file path.
+ * @param filePath - The file path to extract extension from
+ * @returns The file extension without the dot (e.g., 'ts', 'js', 'py')
+ */
 export function getFileExtension(filePath: string): string {
   return filePath.split('.').pop() || '';
 }
 
+/**
+ * Check if a file is a source code file based on its extension.
+ * Supports TypeScript, JavaScript, Python, Java, Go, Rust, and C#.
+ * @param filePath - The file path to check
+ * @returns True if the file has a source code extension
+ */
 /**
  * Check if a file is a source code file based on its extension.
  * Supports TypeScript, JavaScript, Python, Java, Go, Rust, and C#.
