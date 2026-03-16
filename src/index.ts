@@ -14,6 +14,7 @@ export * from './scoring';
 
 // Business value metrics (v0.10+)
 export * from './business-metrics';
+export * from './types/business';
 
 // Multi-language parser support
 export * from './parsers/parser-factory';

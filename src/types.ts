@@ -14,6 +14,14 @@ import {
 } from './types/schema';
 import { TokenBudget } from './types/ast';
 import { GraphNode, GraphEdge, GraphData } from './types/visualization';
+import {
+  Lead,
+  LeadSchema,
+  LeadSubmission,
+  LeadSubmissionSchema,
+  LeadSource,
+  LeadSourceSchema,
+} from './types/business';
 
 export {
   GraphNode,
@@ -23,6 +31,12 @@ export {
   UnifiedReportSchema,
   AnalysisStatus,
   FRIENDLY_TOOL_NAMES,
+  Lead,
+  LeadSchema,
+  LeadSubmission,
+  LeadSubmissionSchema,
+  LeadSource,
+  LeadSourceSchema,
 };
 export {
   ToolName,
