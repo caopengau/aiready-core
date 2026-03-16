@@ -335,6 +335,40 @@ sync-clawmore: ## Sync changes from aiready-clawmore back to monorepo
 	git subtree pull --prefix=clawmore "$$remote" "$$branch" --squash -m "chore: sync clawmore from standalone repo"; \
 	$(call log_success,Synced changes from aiready-clawmore)
 
+# Sync changes from serverlessclaw repo back to monorepo
+sync-serverlessclaw: ## Sync changes from serverlessclaw back to monorepo
+	@$(call log_step,Syncing changes from serverlessclaw back to monorepo...)
+	@url="https://github.com/$(OWNER)/serverlessclaw.git"; \
+	remote="serverlessclaw-repo"; \
+	branch="main"; \
+	git remote add "$$remote" "$$url" 2>/dev/null || git remote set-url "$$remote" "$$url"; \
+	$(call log_info,Fetching latest from $$remote...); \
+	git fetch "$$remote" "$$branch"; \
+	$(call log_info,Pulling changes into serverlessclaw/ directory...); \
+	git subtree pull --prefix=serverlessclaw "$$remote" "$$branch" --squash -m "chore: sync serverlessclaw from standalone repo"; \
+	$(call log_success,Synced changes from serverlessclaw)
+
+publish-serverlessclaw: ## Publish serverlessclaw to GitHub. Usage: make publish-serverlessclaw [OWNER=username]
+	@$(call log_step,Publishing serverlessclaw to GitHub...)
+	@url="https://github.com/$(OWNER)/serverlessclaw.git"; \
+	remote="serverlessclaw-repo"; \
+	branch="publish-serverlessclaw"; \
+	target_branch="main"; \
+	serverlessclaw_version=$$(node -p "require('$(REPO_ROOT)/serverlessclaw/package.json').version" 2>/dev/null || echo "0.1.0"); \
+	git remote add "$$remote" "$$url" 2>/dev/null || git remote set-url "$$remote" "$$url"; \
+	$(call log_info,Remote set: $$remote -> $$url); \
+	git branch -D "$$branch" >/dev/null 2>&1 || true; \
+	$(call log_info,Creating subtree split for serverlessclaw...); \
+	git subtree split --prefix=serverlessclaw -b "$$branch" >/dev/null; \
+	$(call log_info,Subtree split complete: $$branch); \
+	split_commit=$$(git rev-parse "$$branch"); \
+	git push -f "$$remote" "$$branch:$$target_branch"; \
+	$(call log_success,Synced serverlessclaw to GitHub repo ($$target_branch)); \
+	serverlessclaw_tag="v$$serverlessclaw_version"; \
+	git tag -f "$$serverlessclaw_tag" "$$split_commit" -m "Release serverlessclaw v$$serverlessclaw_version" 2>/dev/null || true; \
+	git push -f "$$remote" "$$serverlessclaw_tag"; \
+	$(call log_success,ServerlessClaw tag pushed: $$serverlessclaw_tag)
+
 publish-clawmore: ## Publish clawmore to GitHub. Usage: make publish-clawmore [OWNER=username]
 	@$(call log_step,Publishing clawmore to GitHub...)
 	@url="https://github.com/$(OWNER)/aiready-clawmore.git"; \
@@ -378,7 +412,7 @@ sync: ## Push monorepo to origin and sync all spokes to their public repos. Use 
 	@SKIP_PRE_PUSH=true git push origin $(TARGET_BRANCH)
 	@$(call log_success,Pushed to monorepo)
 	@$(call log_step,Syncing relevant repositories in parallel...)
-	@SKIP_PRE_PUSH=true $(MAKE) $(MAKE_PARALLEL) $(addprefix github-sync-spoke-,$(ALL_SPOKES)) github-sync-landing github-sync-clawmore github-sync-vscode github-sync-action CHANGED_FILES="$CHANGED_FILES" FORCE="$(FORCE)"
+	@SKIP_PRE_PUSH=true $(MAKE) $(MAKE_PARALLEL) $(addprefix github-sync-spoke-,$(ALL_SPOKES)) github-sync-landing github-sync-clawmore github-sync-serverlessclaw github-sync-vscode github-sync-action CHANGED_FILES="$CHANGED_FILES" FORCE="$(FORCE)"
 	@$(call log_success,Sync process completed)
 
 .PHONY: github-sync-spoke-%
@@ -414,6 +448,17 @@ github-sync-clawmore:
 	if [ "$$should_sync" = "true" ]; then \
 		$(call log_step,Syncing ClawMore repository...); \
 		$(MAKE) publish-clawmore OWNER=$(OWNER) 2>&1 | grep -E '(SUCCESS|ERROR|Synced|tag pushed)' || true; \
+	fi
+
+.PHONY: github-sync-serverlessclaw
+github-sync-serverlessclaw:
+	@should_sync=false; \
+	if [ "$(FORCE)" = "true" ] || [ "$(CHANGED_FILES)" = "FORCE_ALL" ] || echo "$(CHANGED_FILES)" | grep -q "serverlessclaw/"; then \
+		should_sync=true; \
+	fi; \
+	if [ "$$should_sync" = "true" ]; then \
+		$(call log_step,Syncing ServerlessClaw repository...); \
+		$(MAKE) publish-serverlessclaw OWNER=$(OWNER) 2>&1 | grep -E '(SUCCESS|ERROR|Synced|tag pushed)' || true; \
 	fi
 
 .PHONY: github-sync-vscode

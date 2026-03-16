@@ -9,7 +9,7 @@ async function main() {
   // Configuration for the sync
   const options = {
     workingDir: process.env.CLIENT_REPO_PATH || '/tmp/clawmore-test-client',
-    hubUrl: '/Users/pengcao/projects/serverlessclaw',
+    hubUrl: path.resolve(__dirname, '../../serverlessclaw'),
     hubBranch: 'main',
     spokeBranch: 'main',
     prefix: 'core-blueprint',

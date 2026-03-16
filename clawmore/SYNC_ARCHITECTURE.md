@@ -10,7 +10,7 @@ While `git subtree` is the primitive, our architecture wraps it in a governance 
 
 ### **Hub (Mother): `serverlessclaw`**
 
-- **Location**: `/Users/pengcao/projects/serverlessclaw`
+- **Location**: `serverlessclaw/` (Internal to Monorepo)
 - Contains the "Canonical Blueprint".
 - Master source of truth for all "Agentic Ready" infra.
 - **Upstream Updates**: When a core feature is improved here, it prepares for "Broadcast" to client repositories.

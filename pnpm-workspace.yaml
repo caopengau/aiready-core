@@ -5,3 +5,4 @@ packages:
   - 'platform'
   - 'integration-tests'
   - 'vscode-extension'
+  - 'serverlessclaw'

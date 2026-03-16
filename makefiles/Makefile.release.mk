@@ -361,7 +361,7 @@ release-status: ## Show local vs published/tagged versions for all components
 			{ [ "$$npm_ver" = "n/a" ] && s="$(YELLOW)new$(RESET_COLOR)" || s="$(CYAN)ahead$(RESET_COLOR)"; }; \
 		printf "%-30s %-15s %-17s %-10b\n" "@aiready/$$spoke" "$$local_ver" "$$npm_ver (npm)" "$$s"; \
 	done; \
-	for app in landing platform clawmore; do \
+	for app in landing platform clawmore serverlessclaw; do \
 		app_dir="$(ROOT_DIR)/$$app"; \
 		[ -f "$$app_dir/package.json" ] || continue; \
 		local_ver=$$(node -p "require('$$app_dir/package.json').version" 2>/dev/null || echo "n/a"); \
