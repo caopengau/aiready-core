@@ -92,6 +92,7 @@ export interface ExportInfo {
   documentation?: {
     content: string;
     type: 'jsdoc' | 'docstring' | 'comment' | 'xml-doc';
+    loc?: SourceRange;
     isStale?: boolean;
   };
 }

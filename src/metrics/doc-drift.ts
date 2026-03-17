@@ -10,31 +10,65 @@ export interface DocDriftRisk {
     uncommentedExports: number;
     outdatedComments: number;
     undocumentedComplexity: number;
+    actualDrift: number;
   };
   recommendations: string[];
 }
 
+/**
+ * Calculate the documentation drift risk score based on various metrics.
+ *
+ * @param params - The raw metrics for doc-drift analysis
+ * @returns The calculated risk score and recommendations
+ */
 export function calculateDocDrift(params: {
   uncommentedExports: number;
   totalExports: number;
   outdatedComments: number;
   undocumentedComplexity: number;
+  actualDrift: number;
 }): DocDriftRisk {
   const {
     uncommentedExports,
     totalExports,
     outdatedComments,
     undocumentedComplexity,
+    actualDrift,
   } = params;
 
   const uncommentedRatio =
     totalExports > 0 ? uncommentedExports / totalExports : 0;
-  const outdatedRisk = Math.min(100, outdatedComments * 15);
-  const uncommentedRisk = Math.min(100, uncommentedRatio * 100);
-  const complexityRisk = Math.min(100, undocumentedComplexity * 10);
+  const outdatedRatio = totalExports > 0 ? outdatedComments / totalExports : 0;
+  const complexityRatio =
+    totalExports > 0 ? undocumentedComplexity / totalExports : 0;
+  const driftRatio = totalExports > 0 ? actualDrift / totalExports : 0;
 
+  // Scaling factors: how much % of the codebase must be bad to hit 100% risk for that factor
+  const DRIFT_THRESHOLD = 0.2; // 20% temporal drift = max risk for factor
+  const OUTDATED_THRESHOLD = 0.4; // 40% mismatch = max risk for factor
+  const COMPLEXITY_THRESHOLD = 0.2; // 20% undocumented complexity = max risk for factor
+  const UNCOMMENTED_THRESHOLD = 0.8; // 80% uncommented exports = max risk for factor
+
+  const driftRisk = Math.min(100, (driftRatio / DRIFT_THRESHOLD) * 100);
+  const outdatedRisk = Math.min(
+    100,
+    (outdatedRatio / OUTDATED_THRESHOLD) * 100
+  );
+  const complexityRisk = Math.min(
+    100,
+    (complexityRatio / COMPLEXITY_THRESHOLD) * 100
+  );
+  const uncommentedRisk = Math.min(
+    100,
+    (uncommentedRatio / UNCOMMENTED_THRESHOLD) * 100
+  );
+
+  // Rebalanced weights: Actual Drift is now the most critical
   const risk = Math.round(
-    outdatedRisk * 0.6 + uncommentedRisk * 0.2 + complexityRisk * 0.2
+    driftRisk * 0.4 +
+      complexityRisk * 0.3 +
+      outdatedRisk * 0.2 +
+      uncommentedRisk * 0.1
   );
   const finalRisk = Math.min(100, Math.max(0, risk));
 
@@ -51,6 +85,10 @@ export function calculateDocDrift(params: {
   else rating = 'severe'; // high risk
 
   const recommendations: string[] = [];
+  if (actualDrift > 0)
+    recommendations.push(
+      `Review ${actualDrift} functions where code was changed after documentation was last updated.`
+    );
   if (outdatedComments > 0)
     recommendations.push(
       `Update or remove ${outdatedComments} outdated comments that contradict the code.`
@@ -71,6 +109,7 @@ export function calculateDocDrift(params: {
       uncommentedExports,
       outdatedComments,
       undocumentedComplexity,
+      actualDrift,
     },
     recommendations,
   };

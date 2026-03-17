@@ -20,11 +20,23 @@ export function analyzeNodeMetadata(
     let prev: Parser.Node | null = (node as any).previousSibling || null;
     while (prev && /comment/i.test(prev.type)) {
       const text = prev.text || '';
+      const loc = {
+        start: {
+          line: prev.startPosition.row + 1,
+          column: prev.startPosition.column,
+        },
+        end: {
+          line: prev.endPosition.row + 1,
+          column: prev.endPosition.column,
+        },
+      };
+
       // Prefer structured doc comments when available
       if (text.trim().startsWith('/**') || text.trim().startsWith('/*')) {
         metadata.documentation = {
           content: text.replace(/^[/*]+|[/*]+$/g, '').trim(),
           type: 'comment',
+          loc,
         };
         break;
       }
@@ -32,6 +44,7 @@ export function analyzeNodeMetadata(
         metadata.documentation = {
           content: text.replace(/^\/\/\//, '').trim(),
           type: 'xml-doc',
+          loc,
         };
         break;
       }
@@ -39,6 +52,7 @@ export function analyzeNodeMetadata(
         metadata.documentation = {
           content: text.replace(/^\/\//, '').trim(),
           type: 'comment',
+          loc,
         };
         break;
       }
@@ -46,7 +60,10 @@ export function analyzeNodeMetadata(
     }
 
     // Language-specific: Python docstrings (inside body)
-    if (node.type === 'function_definition') {
+    if (
+      node.type === 'function_definition' ||
+      node.type === 'class_definition'
+    ) {
       const body = (node as any).childForFieldName
         ? (node as any).childForFieldName('body')
         : node.children.find((c) => c.type === 'block');
@@ -60,6 +77,16 @@ export function analyzeNodeMetadata(
           metadata.documentation = {
             content: firstStmt.firstChild.text.replace(/['"`]/g, '').trim(),
             type: 'docstring',
+            loc: {
+              start: {
+                line: firstStmt.startPosition.row + 1,
+                column: firstStmt.startPosition.column,
+              },
+              end: {
+                line: firstStmt.endPosition.row + 1,
+                column: firstStmt.endPosition.column,
+              },
+            },
           };
         }
       }

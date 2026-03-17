@@ -43,7 +43,7 @@ export class TypeScriptParser implements LanguageParser {
 
     // Extract JSDoc - look for the last /** */ before the node
     const start = node.range?.[0] ?? 0;
-    const preceding = code.slice(Math.max(0, start - 200), start);
+    const preceding = code.slice(Math.max(0, start - 1000), start);
 
     // Find the last JSDoc comment in the preceding text
     const jsdocMatches = Array.from(
@@ -55,9 +55,29 @@ export class TypeScriptParser implements LanguageParser {
       const matchEndIndex = (lastMatch.index || 0) + lastMatch[0].length;
       const between = preceding.slice(matchEndIndex);
       if (/^\s*$/.test(between)) {
+        // Calculate location
+        const precedingStartOffset = Math.max(0, start - 1000);
+        const absoluteStartOffset =
+          precedingStartOffset + (lastMatch.index || 0);
+        const absoluteEndOffset = precedingStartOffset + matchEndIndex;
+
+        const codeBeforeStart = code.slice(0, absoluteStartOffset);
+        const startLines = codeBeforeStart.split('\n');
+        const startLine = startLines.length;
+        const startColumn = startLines[startLines.length - 1].length;
+
+        const codeBeforeEnd = code.slice(0, absoluteEndOffset);
+        const endLines = codeBeforeEnd.split('\n');
+        const endLine = endLines.length;
+        const endColumn = endLines[endLines.length - 1].length;
+
         metadata.documentation = {
           content: lastMatch[1].replace(/^\s*\*+/gm, '').trim(),
           type: 'jsdoc',
+          loc: {
+            start: { line: startLine, column: startColumn },
+            end: { line: endLine, column: endColumn },
+          },
         };
       }
     }

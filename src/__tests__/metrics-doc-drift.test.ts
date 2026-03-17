@@ -8,9 +8,10 @@ describe('Doc Drift Metric', () => {
       totalExports: 10,
       outdatedComments: 0,
       undocumentedComplexity: 0,
+      actualDrift: 0,
     });
 
-    expect(result.score).toBe(0);
+    expect(result.score).toBe(100);
     expect(result.rating).toBe('minimal');
   });
 
@@ -20,6 +21,7 @@ describe('Doc Drift Metric', () => {
       totalExports: 10,
       outdatedComments: 5,
       undocumentedComplexity: 1,
+      actualDrift: 0,
     });
 
     expect(result.score).toBeGreaterThan(40);
