@@ -10,6 +10,22 @@ export enum Severity {
   Info = 'info',
 }
 
+/**
+ * Common tool options
+ */
+export interface ToolOptions {
+  /** Root directory of the project */
+  rootDir: string;
+  /** Files to include in this tool's analysis */
+  include?: string[];
+  /** Files to exclude from this tool's analysis */
+  exclude?: string[];
+  /** Tool-specific configuration values */
+  config?: any;
+  /** Any other dynamic options */
+  [key: string]: any;
+}
+
 /** Zod schema for Severity enum */
 export const SeveritySchema = z.nativeEnum(Severity);
 

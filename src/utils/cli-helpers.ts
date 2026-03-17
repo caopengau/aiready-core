@@ -8,21 +8,13 @@ import {
 import { join, dirname, resolve as resolvePath } from 'path';
 import chalk from 'chalk';
 import { loadConfig, mergeConfigWithDefaults } from '../index';
-import { Severity } from '../types';
+import { Severity, ToolOptions } from '../types/schema';
 
 /**
  * Common CLI configuration interface
+ * @deprecated Use ToolOptions from @aiready/core instead
  */
-export interface CLIOptions {
-  /** Root directory for analysis */
-  rootDir: string;
-  /** Glob patterns to include */
-  include?: string[];
-  /** Glob patterns to exclude */
-  exclude?: string[];
-  /** Any other tool-specific options */
-  [key: string]: any;
-}
+export type CLIOptions = ToolOptions;
 
 /**
  * Resolve output file path, defaulting to .aiready directory
@@ -50,7 +42,7 @@ export function resolveOutputPath(
       if (statSync(workingDir).isFile()) {
         baseDir = dirname(workingDir);
       }
-    } catch (e) {
+    } catch {
       // Ignore errors (e.g. if path doesn't exist yet)
     }
     const aireadyDir = join(baseDir, '.aiready');
@@ -363,8 +355,8 @@ export function findLatestScanReport(
     });
 
     return join(scanReportsDir, reportFiles[0]);
-  } catch (e) {
-    console.error('Error while finding latest scan report:', e);
+  } catch {
+    console.error('Error while finding latest scan report');
     return null;
   }
 }

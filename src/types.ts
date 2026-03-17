@@ -11,6 +11,7 @@ import {
   UnifiedReportSchema,
   AnalysisStatus,
   FRIENDLY_TOOL_NAMES,
+  ToolOptions,
 } from './types/schema';
 import { TokenBudget } from './types/ast';
 import { GraphNode, GraphEdge, GraphData } from './types/visualization';
@@ -38,16 +39,16 @@ export {
   LeadSource,
   LeadSourceSchema,
 };
-export {
-  ToolName,
-  IssueType,
-  Severity,
+export { ToolName, IssueType, Severity };
+
+export type {
   Metrics,
   AnalysisResult,
   SpokeOutput,
   UnifiedReport,
   Location,
   Issue,
+  ToolOptions,
 };
 
 /**
@@ -95,22 +96,6 @@ export interface AIReadyConfig {
  * Legacy alias for Config
  */
 export type Config = AIReadyConfig;
-
-/**
- * Common tool options
- */
-export interface ToolOptions {
-  /** Root directory of the project */
-  rootDir: string;
-  /** Files to include in this tool's analysis */
-  include?: string[];
-  /** Files to exclude from this tool's analysis */
-  exclude?: string[];
-  /** Tool-specific configuration values */
-  config?: any;
-  /** Any other dynamic options */
-  [key: string]: any;
-}
 
 /**
  * Scan options for tool providers
