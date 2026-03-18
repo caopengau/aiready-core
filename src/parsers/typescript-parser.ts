@@ -83,7 +83,8 @@ export class TypeScriptParser implements LanguageParser {
     };
   }
 
-  analyzeMetadata(node: any, _code: string): Partial<ExportInfo> {
+  analyzeMetadata(node: any, code: string): Partial<ExportInfo> {
+    if (!code) return {};
     // Implementation for behavioral analysis (purity, etc.)
     return {
       isPure: this.isLikelyPure(node),
