@@ -63,12 +63,12 @@ export function calculateTestabilityIndex(params: {
   const rawCoverageRatio = sourceFiles > 0 ? testFiles / sourceFiles : 0;
   const testCoverageRatio = Math.min(100, Math.round(rawCoverageRatio * 100));
   const purityScore = Math.round(
-    (totalFunctions > 0 ? pureFunctions / totalFunctions : 0.5) * 100
+    (totalFunctions > 0 ? pureFunctions / totalFunctions : 0.7) * 100
   );
   const dependencyInjectionScore = Math.round(
     Math.min(
       100,
-      (totalClasses > 0 ? injectionPatterns / totalClasses : 0.5) * 100
+      (totalClasses > 0 ? injectionPatterns / totalClasses : 0.8) * 100
     )
   );
   const interfaceFocusScore = Math.max(

@@ -51,9 +51,9 @@ export function calculateDocDrift(params: {
   const driftRatio = totalExports > 0 ? actualDrift / totalExports : 0;
 
   // Scaling factors: how much % of the codebase must be bad to hit 100% risk for that factor
-  const DRIFT_THRESHOLD = 0.2; // 20% temporal drift = max risk for factor
-  const OUTDATED_THRESHOLD = 0.4; // 40% mismatch = max risk for factor
-  const COMPLEXITY_THRESHOLD = 0.2; // 20% undocumented complexity = max risk for factor
+  const DRIFT_THRESHOLD = 0.35; // 35% temporal drift = max risk for factor
+  const OUTDATED_THRESHOLD = 0.5; // 50% mismatch = max risk for factor
+  const COMPLEXITY_THRESHOLD = 0.3; // 30% undocumented complexity = max risk for factor
   const UNCOMMENTED_THRESHOLD = 0.8; // 80% uncommented exports = max risk for factor
 
   const driftRisk = Math.min(100, (driftRatio / DRIFT_THRESHOLD) * 100);
