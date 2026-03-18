@@ -150,7 +150,7 @@ export class TypeScriptParser implements LanguageParser {
               this.createExport(
                 declaration.id.name,
                 'function',
-                declaration,
+                node, // Pass the outer ExportNamedDeclaration
                 code
               )
             );
@@ -159,18 +159,28 @@ export class TypeScriptParser implements LanguageParser {
             declaration.id
           ) {
             exports.push(
-              this.createExport(declaration.id.name, 'class', declaration, code)
+              this.createExport(
+                declaration.id.name,
+                'class',
+                node, // Pass the outer ExportNamedDeclaration
+                code
+              )
             );
           } else if (declaration.type === 'TSTypeAliasDeclaration') {
             exports.push(
-              this.createExport(declaration.id.name, 'type', declaration, code)
+              this.createExport(
+                declaration.id.name,
+                'type',
+                node, // Pass the outer ExportNamedDeclaration
+                code
+              )
             );
           } else if (declaration.type === 'TSInterfaceDeclaration') {
             exports.push(
               this.createExport(
                 declaration.id.name,
                 'interface',
-                declaration,
+                node, // Pass the outer ExportNamedDeclaration
                 code
               )
             );
@@ -178,7 +188,12 @@ export class TypeScriptParser implements LanguageParser {
             for (const decl of declaration.declarations) {
               if (decl.id.type === 'Identifier') {
                 exports.push(
-                  this.createExport(decl.id.name, 'const', declaration, code)
+                  this.createExport(
+                    decl.id.name,
+                    'const',
+                    node, // Pass the outer ExportNamedDeclaration
+                    code
+                  )
                 );
               }
             }
@@ -201,17 +216,26 @@ export class TypeScriptParser implements LanguageParser {
     code: string
   ): ExportInfo {
     const documentation = this.extractDocumentation(node, code);
-
-    // Analyze class details if applicable
     let methodCount: number | undefined;
     let propertyCount: number | undefined;
+    let parameters: string[] | undefined;
+
+    // Resolve internal node if this is an export declaration
+    const structNode =
+      node.type === 'ExportNamedDeclaration'
+        ? node.declaration
+        : node.type === 'ExportDefaultDeclaration'
+          ? node.declaration
+          : node;
 
     if (
-      node.type === 'ClassDeclaration' ||
-      node.type === 'TSInterfaceDeclaration'
+      structNode.type === 'ClassDeclaration' ||
+      structNode.type === 'TSInterfaceDeclaration'
     ) {
       const body =
-        node.type === 'ClassDeclaration' ? node.body.body : node.body.body;
+        structNode.type === 'ClassDeclaration'
+          ? structNode.body.body
+          : structNode.body.body;
       methodCount = body.filter(
         (m: any) =>
           m.type === 'MethodDefinition' || m.type === 'TSMethodSignature'
@@ -220,6 +244,43 @@ export class TypeScriptParser implements LanguageParser {
         (m: any) =>
           m.type === 'PropertyDefinition' || m.type === 'TSPropertySignature'
       ).length;
+
+      // Extract constructor parameters for classes
+      if (structNode.type === 'ClassDeclaration') {
+        const constructor = body.find(
+          (m: any) => m.type === 'MethodDefinition' && m.kind === 'constructor'
+        );
+        if (constructor && constructor.value && constructor.value.params) {
+          parameters = constructor.value.params
+            .map((p: any) => {
+              if (p.type === 'Identifier') return p.name;
+              if (
+                p.type === 'TSParameterProperty' &&
+                p.parameter.type === 'Identifier'
+              ) {
+                return p.parameter.name;
+              }
+              return undefined;
+            })
+            .filter(Boolean);
+        }
+      }
+    }
+
+    // Extract parameters for functions
+    if (
+      !parameters &&
+      (structNode.type === 'FunctionDeclaration' ||
+        structNode.type === 'MethodDefinition')
+    ) {
+      const funcNode =
+        structNode.type === 'MethodDefinition' ? structNode.value : structNode;
+      parameters = funcNode.params
+        .map((p: any) => {
+          if (p.type === 'Identifier') return p.name;
+          return undefined;
+        })
+        .filter(Boolean);
     }
 
     return {
@@ -234,21 +295,68 @@ export class TypeScriptParser implements LanguageParser {
       documentation,
       methodCount,
       propertyCount,
+      parameters,
       isPure: this.isLikelyPure(node),
       hasSideEffects: !this.isLikelyPure(node),
     };
   }
 
-  private extractDocumentation(_node: any, _code: string): any {
-    // In a real implementation, we would use the tokens/comments from the parser
-    // For now, look at leading comments if available via location
+  private extractDocumentation(node: any, code: string): any {
+    // Look for JSDoc style comments in the code before the node
+    if (node.range) {
+      const start = node.range[0];
+      // Search further back to find the comment even if there are multiple lines of whitespace
+      const precedingCode = code.substring(0, start);
+      const jsdocMatch = precedingCode.match(/\/\*\*([\s\S]*?)\*\/\s*$/);
+
+      if (jsdocMatch) {
+        return {
+          content: jsdocMatch[1].trim(),
+          type: 'jsdoc',
+        };
+      }
+    }
     return undefined;
   }
 
   private isLikelyPure(node: any): boolean {
-    // Simple heuristic: constants are pure, functions/classes depends on body
-    if (node.type === 'VariableDeclaration' && node.kind === 'const')
+    const structNode =
+      node.type === 'ExportNamedDeclaration'
+        ? node.declaration
+        : node.type === 'ExportDefaultDeclaration'
+          ? node.declaration
+          : node;
+
+    // Constants are likely pure
+    if (
+      structNode.type === 'VariableDeclaration' &&
+      structNode.kind === 'const'
+    )
       return true;
+
+    // For functions, check if the body has obvious side effects
+    if (
+      structNode.type === 'FunctionDeclaration' ||
+      (structNode.type === 'MethodDefinition' && structNode.value)
+    ) {
+      const body =
+        structNode.type === 'MethodDefinition'
+          ? structNode.value.body
+          : structNode.body;
+      if (body && body.type === 'BlockStatement') {
+        const bodyContent = JSON.stringify(body);
+        // Look for common side-effect indicators in the stringified AST
+        if (
+          bodyContent.includes('"name":"console"') ||
+          bodyContent.includes('"name":"process"') ||
+          bodyContent.includes('"type":"AssignmentExpression"')
+        ) {
+          return false;
+        }
+        return true;
+      }
+    }
+
     return false;
   }
 }
