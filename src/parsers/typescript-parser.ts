@@ -145,7 +145,11 @@ export class TypeScriptParser implements LanguageParser {
         if (node.declaration) {
           const declaration = node.declaration;
 
-          if (declaration.type === 'FunctionDeclaration' && declaration.id) {
+          if (
+            (declaration.type === 'FunctionDeclaration' ||
+              declaration.type === 'TSDeclareFunction') &&
+            declaration.id
+          ) {
             exports.push(
               this.createExport(
                 declaration.id.name,
@@ -271,16 +275,19 @@ export class TypeScriptParser implements LanguageParser {
     if (
       !parameters &&
       (structNode.type === 'FunctionDeclaration' ||
+        structNode.type === 'TSDeclareFunction' ||
         structNode.type === 'MethodDefinition')
     ) {
       const funcNode =
         structNode.type === 'MethodDefinition' ? structNode.value : structNode;
-      parameters = funcNode.params
-        .map((p: any) => {
-          if (p.type === 'Identifier') return p.name;
-          return undefined;
-        })
-        .filter(Boolean);
+      if (funcNode && funcNode.params) {
+        parameters = funcNode.params
+          .map((p: any) => {
+            if (p.type === 'Identifier') return p.name;
+            return undefined;
+          })
+          .filter(Boolean);
+      }
     }
 
     return {
@@ -337,6 +344,7 @@ export class TypeScriptParser implements LanguageParser {
     // For functions, check if the body has obvious side effects
     if (
       structNode.type === 'FunctionDeclaration' ||
+      structNode.type === 'TSDeclareFunction' ||
       (structNode.type === 'MethodDefinition' && structNode.value)
     ) {
       const body =
@@ -355,6 +363,8 @@ export class TypeScriptParser implements LanguageParser {
         }
         return true;
       }
+      // If it's a signature (no body), it's likely part of an overloaded function.
+      return true;
     }
 
     return false;
