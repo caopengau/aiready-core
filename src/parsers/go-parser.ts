@@ -1,11 +1,11 @@
 import * as Parser from 'web-tree-sitter';
 import {
-  Language,
-  ParseResult,
   ExportInfo,
-  ImportInfo,
+  Language,
   NamingConvention,
+  ParseResult,
 } from '../types/language';
+import { FileImport } from '../types/ast';
 import {
   analyzeGeneralMetadata,
   extractParameterNames,
@@ -50,7 +50,7 @@ export class GoParser extends BaseLanguageParser {
   protected parseRegex(code: string): ParseResult {
     const lines = code.split('\n');
     const exports: ExportInfo[] = [];
-    const imports: ImportInfo[] = [];
+    const imports: FileImport[] = [];
 
     const importRegex = /^import\s+"([^"]+)"/;
     const funcRegex = /^func\s+([A-Z][a-zA-Z0-9_]*)\s*\(/;
@@ -140,10 +140,10 @@ export class GoParser extends BaseLanguageParser {
    * Extract import information using AST walk.
    *
    * @param rootNode - Root node of the Go AST.
-   * @returns Array of discovered ImportInfo objects.
+   * @returns Array of discovered FileImport objects.
    */
-  protected extractImportsAST(rootNode: Parser.Node): ImportInfo[] {
-    const imports: ImportInfo[] = [];
+  protected extractImportsAST(rootNode: Parser.Node): FileImport[] {
+    const imports: FileImport[] = [];
 
     const findImports = (node: Parser.Node) => {
       if (node.type === 'import_spec') {

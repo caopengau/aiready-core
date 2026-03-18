@@ -1,12 +1,12 @@
 import * as Parser from 'web-tree-sitter';
 import {
+  ExportInfo,
   Language,
   LanguageParser,
-  ParseResult,
-  ExportInfo,
-  ImportInfo,
   NamingConvention,
+  ParseResult,
 } from '../types/language';
+import { FileImport } from '../types/ast';
 import { setupParser } from './tree-sitter-utils';
 
 /**
@@ -76,7 +76,7 @@ export abstract class BaseLanguageParser implements LanguageParser {
     }
   }
 
-  protected abstract extractImportsAST(rootNode: Parser.Node): ImportInfo[];
+  protected abstract extractImportsAST(rootNode: Parser.Node): FileImport[];
   protected abstract extractExportsAST(
     rootNode: Parser.Node,
     code: string

@@ -1,11 +1,11 @@
 import * as Parser from 'web-tree-sitter';
 import {
-  Language,
-  ParseResult,
   ExportInfo,
-  ImportInfo,
+  Language,
   NamingConvention,
+  ParseResult,
 } from '../types/language';
+import { FileImport } from '../types/ast';
 import { analyzeNodeMetadata } from './metadata-utils';
 
 import { BaseLanguageParser } from './base-parser';
@@ -41,10 +41,10 @@ export class PythonParser extends BaseLanguageParser {
    * Extract import information using AST walk.
    *
    * @param rootNode - Root node of the Python AST.
-   * @returns Array of discovered ImportInfo objects.
+   * @returns Array of discovered FileImport objects.
    */
-  protected extractImportsAST(rootNode: Parser.Node): ImportInfo[] {
-    const imports: ImportInfo[] = [];
+  protected extractImportsAST(rootNode: Parser.Node): FileImport[] {
+    const imports: FileImport[] = [];
 
     const processImportNode = (node: Parser.Node) => {
       if (node.type === 'import_statement') {
@@ -318,9 +318,9 @@ export class PythonParser extends BaseLanguageParser {
     return filePath.toLowerCase().endsWith('.py');
   }
 
-  private extractImportsRegex(code: string, _filePath: string): ImportInfo[] {
+  private extractImportsRegex(code: string, _filePath: string): FileImport[] {
     void _filePath;
-    const imports: ImportInfo[] = [];
+    const imports: FileImport[] = [];
     const lines = code.split('\n');
 
     const importRegex = /^\s*import\s+([a-zA-Z0-9_., ]+)/;

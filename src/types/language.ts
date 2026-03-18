@@ -5,6 +5,8 @@
  * while maintaining a consistent interface for analysis tools.
  */
 
+import { FileImport, SourceRange, SourceLocation } from './ast';
+
 /**
  * Supported programming languages
  */
@@ -32,19 +34,6 @@ export const LANGUAGE_EXTENSIONS: Record<string, Language> = {
   '.rs': Language.Rust,
   '.cs': Language.CSharp,
 };
-
-/**
- * Location information in source code
- */
-export interface SourceLocation {
-  line: number;
-  column: number;
-}
-
-export interface SourceRange {
-  start: SourceLocation;
-  end: SourceLocation;
-}
 
 /**
  * Common AST node type (language-agnostic)
@@ -98,25 +87,11 @@ export interface ExportInfo {
 }
 
 /**
- * Import information
- */
-export interface ImportInfo {
-  /** Module being imported from */
-  source: string;
-  /** What's being imported */
-  specifiers: string[];
-  /** Is this a type-only import (TypeScript) */
-  isTypeOnly?: boolean;
-  /** Location in source */
-  loc?: SourceRange;
-}
-
-/**
  * Parse result containing exports and imports
  */
 export interface ParseResult {
   exports: ExportInfo[];
-  imports: ImportInfo[];
+  imports: FileImport[];
   /** Language of the parsed file */
   language: Language;
   /** Any parse warnings (non-fatal) */
@@ -234,3 +209,5 @@ export interface ParseStatistics {
   parseErrors: number;
   warnings: number;
 }
+
+export { SourceLocation, SourceRange };

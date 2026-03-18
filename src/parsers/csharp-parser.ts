@@ -1,11 +1,11 @@
 import * as Parser from 'web-tree-sitter';
 import {
-  Language,
-  ParseResult,
   ExportInfo,
-  ImportInfo,
+  Language,
   NamingConvention,
+  ParseResult,
 } from '../types/language';
+import { FileImport } from '../types/ast';
 import {
   analyzeGeneralMetadata,
   extractParameterNames,
@@ -50,7 +50,7 @@ export class CSharpParser extends BaseLanguageParser {
   protected parseRegex(code: string): ParseResult {
     const lines = code.split('\n');
     const exports: ExportInfo[] = [];
-    const imports: ImportInfo[] = [];
+    const imports: FileImport[] = [];
 
     const usingRegex = /^using\s+([a-zA-Z0-9_.]+);/;
     const classRegex = /^\s*(?:public\s+)?class\s+([a-zA-Z0-9_]+)/;
@@ -122,10 +122,10 @@ export class CSharpParser extends BaseLanguageParser {
    * Extract import information (usings) using AST walk.
    *
    * @param rootNode - Root node of the C# AST.
-   * @returns Array of discovered ImportInfo objects.
+   * @returns Array of discovered FileImport objects.
    */
-  protected extractImportsAST(rootNode: Parser.Node): ImportInfo[] {
-    const imports: ImportInfo[] = [];
+  protected extractImportsAST(rootNode: Parser.Node): FileImport[] {
+    const imports: FileImport[] = [];
 
     const findUsings = (node: Parser.Node) => {
       if (node.type === 'using_directive') {

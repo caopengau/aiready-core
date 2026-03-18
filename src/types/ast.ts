@@ -2,30 +2,48 @@
  * AST Parsing and Export Extraction Types
  */
 
+/**
+ * Location information in source code
+ */
+export interface SourceLocation {
+  line: number;
+  column: number;
+}
+
+/**
+ * Range information in source code
+ */
+export interface SourceRange {
+  start: SourceLocation;
+  end: SourceLocation;
+}
+
 export interface ExportWithImports {
   name: string;
   type: 'function' | 'class' | 'const' | 'type' | 'interface' | 'default';
   imports: string[]; // Imports used within this export's scope
   dependencies: string[]; // Other exports from same file this depends on
   typeReferences: string[]; // TypeScript types referenced in this export
-  loc?: {
-    start: { line: number; column: number };
-    end: { line: number; column: number };
-  };
+  loc?: SourceRange;
 }
 
+/**
+ * Information about a single import declaration
+ */
 export interface FileImport {
-  source: string; // Module being imported from
-  specifiers: string[]; // What's being imported
-  isTypeOnly: boolean;
+  /** Module being imported from */
+  source: string;
+  /** What's being imported */
+  specifiers: string[];
+  /** Is this a type-only import (TypeScript) */
+  isTypeOnly?: boolean;
+  /** Location in source */
+  loc?: SourceRange;
 }
 
 export interface ASTNode {
   type: string;
-  loc?: {
-    start: { line: number; column: number };
-    end: { line: number; column: number };
-  };
+  loc?: SourceRange;
 }
 
 /**
