@@ -126,6 +126,88 @@ The `sst.config.ts` handles:
 - Webhook endpoint: `/api/billing/webhook`
 - Customer Portal: `/api/billing/portal`
 
+### Remediation Agent System
+
+The platform includes an automated code remediation system that improves AI-readiness of customer repositories.
+
+#### Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                         REMEDIATION FLOW                            │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  [Analysis Spokes]                                                  │
+│  pattern-detect, context-analyzer, consistency                      │
+│         │                                                           │
+│         ▼                                                           │
+│  [RemediationRequest] ──► DynamoDB (status: pending)               │
+│         │                                                           │
+│         ▼                                                           │
+│  [User Approves in UI] ──► POST /api/remediate                      │
+│         │                                                           │
+│         ▼                                                           │
+│  [SQS Queue] ──► RemediationWorker (Lambda)                         │
+│         │                                                           │
+│         │  ┌────────────────────────────────────────────────────┐   │
+│         │  │  1. Clone repo to /tmp                             │   │
+│         │  │  2. Load RemediationSwarm from @aiready/agents    │   │
+│         │  │  3. Execute Mastra agent with MCP tools:          │   │
+│         │  │     - GitHub: create branch, commit, PR            │   │
+│         │  │     - Filesystem: read/write files                │   │
+│         │  │  4. Create Pull Request for expert review         │   │
+│         │  └────────────────────────────────────────────────────┘   │
+│         │                                                           │
+│         ▼                                                           │
+│  [Status: reviewing] ──► PR URL stored in DynamoDB                  │
+│         │                                                           │
+│         ▼                                                           │
+│  [Expert Review in GitHub] ──► Approve/Reject                       │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+#### Key Components
+
+| Component              | Location                         | Purpose                                        |
+| ---------------------- | -------------------------------- | ---------------------------------------------- |
+| `RemediationQueue.tsx` | `src/app/.../components/`        | UI for viewing/managing remediation queue      |
+| `RemediationWorker`    | `src/worker/remediation.ts`      | AWS Lambda handler for processing remediations |
+| `RemediationSwarm`     | `packages/agents/src/workflows/` | Mastra AI agent workflow                       |
+| `github.ts`            | `packages/agents/src/tools/`     | GitHub MCP tools (branch, commit, PR)          |
+| `fs.ts`                | `packages/agents/src/tools/`     | Filesystem MCP tools (read/write files)        |
+
+#### Remediation Types
+
+- **consolidation**: Merge duplicate code patterns
+- **rename**: Fix naming convention issues
+- **restructure**: Reorganize file/folder structure
+- **refactor**: General code improvements
+
+#### Safety Features
+
+1. **Human-in-the-loop**: All remediations require explicit user approval
+2. **PR-based**: Changes are submitted as Pull Requests for review
+3. **In-progress blocking**: UI prevents approving new remediations while one is running
+4. **Single-threaded**: SQS processes messages sequentially
+
+#### Database Schema
+
+| Entity      | PK              | SK                 |
+| ----------- | --------------- | ------------------ |
+| Remediation | `REPO#{repoId}` | `REMEDIATION#{id}` |
+
+GSI1: `REMEDIATION#{id}` - For looking up remediation by ID
+GSI2: `REPO#{repoId}` - For listing remediations by repo
+GSI3: `TEAM#{teamId}` - For listing remediations by team
+
+#### Future Enhancements
+
+- SQS FIFO with `MessageGroupId = repoId` for ordered processing
+- DynamoDB repo-level locking for concurrent safety
+- File overlap detection before execution
+- Autonomous mode with auto-approve for trusted repos
+
 ## License
 
 MIT

@@ -34,6 +34,11 @@ export function RemediationQueue({ repoId, hasIssues }: RemediationQueueProps) {
     return () => clearInterval(interval);
   }, [repoId]);
 
+  // Check if any remediation for this repo is currently in-progress
+  const hasInProgressRemediation = remediations.some(
+    (r) => r.status === 'in-progress'
+  );
+
   async function fetchRemediations() {
     try {
       const res = await fetch(`/api/repos/${repoId}/remediations`);
@@ -241,12 +246,22 @@ export function RemediationQueue({ repoId, hasIssues }: RemediationQueueProps) {
                     )}
                     {rem.status === 'pending' && rem.rank === 'P0' && (
                       <button
-                        disabled
-                        title="Autonomous Swarm Remediation is coming soon"
-                        className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/50 text-white/50 rounded-lg cursor-not-allowed shadow-lg"
+                        disabled={hasInProgressRemediation}
+                        title={
+                          hasInProgressRemediation
+                            ? 'Another remediation is in progress. Please wait for it to complete.'
+                            : 'Autonomous Swarm Remediation is coming soon'
+                        }
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg shadow-lg transition-all ${
+                          hasInProgressRemediation
+                            ? 'bg-purple-500/30 text-white/30 cursor-not-allowed'
+                            : 'bg-purple-500/50 text-white/50 cursor-not-allowed'
+                        }`}
                       >
                         <span className="text-[10px] font-black uppercase">
-                          Trigger Swarm
+                          {hasInProgressRemediation
+                            ? 'Blocked'
+                            : 'Trigger Swarm'}
                         </span>
                         <Icon name="ZapIcon" className="w-3 h-3" />
                       </button>
