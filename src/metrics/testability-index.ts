@@ -2,8 +2,15 @@
  * Testability Index Metrics.
  * Measures how verifiable AI-generated changes are based on local testing infrastructure.
  *
- * @lastUpdated 2026-03-18
+ * @lastUpdated 2026-03-19
  */
+
+export interface FileTestability {
+  filePath: string;
+  score: number;
+  purityScore: number;
+  isEntryPoint: boolean;
+}
 
 export interface TestabilityIndex {
   score: number;
@@ -17,6 +24,67 @@ export interface TestabilityIndex {
   };
   aiChangeSafetyRating: 'safe' | 'moderate-risk' | 'high-risk' | 'blind-risk';
   recommendations: string[];
+  /** Per-file testability metrics */
+  fileMetrics?: FileTestability[];
+  /** Score based only on library code (excluding CLI entry points) */
+  libraryScore?: number;
+}
+
+/**
+ * Check if a file is likely a CLI entry point that inherently has side effects.
+ * These files are expected to have console/process I/O and should be weighted lower.
+ */
+function isLikelyEntryPoint(filePath: string): boolean {
+  const basename = filePath.split('/').pop() || '';
+  const lowerBasename = basename.toLowerCase();
+
+  // CLI entry point patterns
+  const entryPointPatterns = [
+    'cli',
+    'main',
+    'bin',
+    'index', // often used as entry point
+    'run',
+    'serve',
+    'start',
+    'boot',
+    'init',
+  ];
+
+  // Check if filename matches entry point patterns
+  const nameWithoutExt = lowerBasename.replace(
+    /\.(ts|js|tsx|jsx|mjs|cjs)$/,
+    ''
+  );
+  if (
+    entryPointPatterns.some(
+      (p) =>
+        nameWithoutExt === p ||
+        nameWithoutExt.endsWith(`-${p}`) ||
+        nameWithoutExt.startsWith(`${p}-`)
+    )
+  ) {
+    return true;
+  }
+
+  // Check for common CLI directories
+  const cliDirPatterns = ['/bin/', '/cli/', '/cmd/', '/commands/'];
+  if (cliDirPatterns.some((p) => filePath.includes(p))) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Calculate file-level purity score.
+ */
+function calculateFilePurityScore(
+  pureFunctions: number,
+  totalFunctions: number
+): number {
+  if (totalFunctions === 0) return 100; // No functions = fully pure
+  return Math.round((pureFunctions / totalFunctions) * 100);
 }
 
 /**
@@ -33,6 +101,7 @@ export interface TestabilityIndex {
  * @param params.totalInterfaces - Total number of interfaces analyzed.
  * @param params.externalStateMutations - Count of nodes that mutate external state.
  * @param params.hasTestFramework - Whether a testing framework (e.g., Vitest) is detected.
+ * @param params.fileDetails - Optional per-file data for detailed analysis.
  * @returns Comprehensive TestabilityIndex analysis.
  */
 export function calculateTestabilityIndex(params: {
@@ -46,6 +115,11 @@ export function calculateTestabilityIndex(params: {
   totalInterfaces: number;
   externalStateMutations: number;
   hasTestFramework: boolean;
+  fileDetails?: Array<{
+    filePath: string;
+    pureFunctions: number;
+    totalFunctions: number;
+  }>;
 }): TestabilityIndex {
   const {
     testFiles,
@@ -58,6 +132,7 @@ export function calculateTestabilityIndex(params: {
     totalInterfaces,
     externalStateMutations,
     hasTestFramework,
+    fileDetails,
   } = params;
 
   const rawCoverageRatio = sourceFiles > 0 ? testFiles / sourceFiles : 0;
@@ -89,9 +164,54 @@ export function calculateTestabilityIndex(params: {
   );
 
   const frameworkWeight = hasTestFramework ? 1.0 : 0.8;
+
+  // Process file-level metrics if provided
+  let fileMetrics: FileTestability[] | undefined;
+  let libraryPureFunctions = pureFunctions;
+  let libraryTotalFunctions = totalFunctions;
+  let entryPointCount = 0;
+
+  if (fileDetails && fileDetails.length > 0) {
+    fileMetrics = fileDetails.map((file) => {
+      const isEntryPoint = isLikelyEntryPoint(file.filePath);
+      const purityScore = calculateFilePurityScore(
+        file.pureFunctions,
+        file.totalFunctions
+      );
+
+      if (isEntryPoint) {
+        entryPointCount++;
+        // Exclude entry point functions from library calculation
+        libraryPureFunctions -= file.pureFunctions;
+        libraryTotalFunctions -= file.totalFunctions;
+      }
+
+      return {
+        filePath: file.filePath,
+        score: purityScore, // Simplified - just purity for file-level
+        purityScore,
+        isEntryPoint,
+      };
+    });
+  }
+
+  // Calculate library purity score (excluding entry points)
+  const libraryPurityScore = Math.max(
+    0,
+    Math.round(
+      (libraryTotalFunctions > 0
+        ? libraryPureFunctions / libraryTotalFunctions
+        : 0.7) * 100
+    )
+  );
+
+  // Use library score as the main purity score when we have file details
+  const effectivePurityScore =
+    fileDetails && fileDetails.length > 0 ? libraryPurityScore : purityScore;
+
   const rawScore =
     (testCoverageRatio * 0.3 +
-      purityScore * 0.25 +
+      effectivePurityScore * 0.25 +
       dependencyInjectionScore * 0.2 +
       interfaceFocusScore * 0.1 +
       observabilityScore * 0.15) *
@@ -123,9 +243,11 @@ export function calculateTestabilityIndex(params: {
       `Add ~${neededTests} test files to reach 30% coverage ratio — minimum for safe AI assistance`
     );
   }
-  if (purityScore < 50)
+  if (effectivePurityScore < 50)
     recommendations.push(
-      'Extract pure functions from side-effectful code — pure functions are trivially AI-testable'
+      entryPointCount > 0
+        ? `Extract pure functions from library code (${entryPointCount} entry point files excluded) — pure functions are trivially AI-testable`
+        : 'Extract pure functions from side-effectful code — pure functions are trivially AI-testable'
     );
   if (dependencyInjectionScore < 50 && totalClasses > 0)
     recommendations.push(
@@ -141,12 +263,14 @@ export function calculateTestabilityIndex(params: {
     rating,
     dimensions: {
       testCoverageRatio,
-      purityScore,
+      purityScore: effectivePurityScore,
       dependencyInjectionScore,
       interfaceFocusScore,
       observabilityScore,
     },
     aiChangeSafetyRating,
     recommendations,
+    fileMetrics: fileMetrics as any,
+    libraryScore: Math.max(0, fileMetrics ? libraryPurityScore : purityScore),
   };
 }
