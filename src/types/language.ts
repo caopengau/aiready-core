@@ -74,6 +74,8 @@ export interface ExportInfo {
   propertyCount?: number;
   /** Visibility (public, private, protected) */
   visibility?: 'public' | 'private' | 'protected';
+  /** Whether the value is a primitive (string, number, boolean) */
+  isPrimitive?: boolean;
   /** Behavioral metadata for advanced metrics */
   isPure?: boolean;
   hasSideEffects?: boolean;

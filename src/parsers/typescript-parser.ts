@@ -197,7 +197,8 @@ export class TypeScriptParser implements LanguageParser {
                     decl.id.name,
                     'const',
                     node, // Pass the outer ExportNamedDeclaration
-                    code
+                    code,
+                    decl.init
                   )
                 );
               }
@@ -218,12 +219,25 @@ export class TypeScriptParser implements LanguageParser {
     name: string,
     type: any,
     node: any,
-    code: string
+    code: string,
+    initializer?: any
   ): ExportInfo {
     const documentation = this.extractDocumentation(node, code);
     let methodCount: number | undefined;
     let propertyCount: number | undefined;
     let parameters: string[] | undefined;
+    let isPrimitive = false;
+
+    // Determine if it's a primitive type if we have an initializer
+    if (initializer) {
+      if (
+        initializer.type === 'Literal' ||
+        (initializer.type === 'TemplateLiteral' &&
+          initializer.expressions.length === 0)
+      ) {
+        isPrimitive = true;
+      }
+    }
 
     // Resolve internal node if this is an export declaration
     const structNode =
@@ -295,6 +309,7 @@ export class TypeScriptParser implements LanguageParser {
     return {
       name,
       type,
+      isPrimitive,
       loc: node.loc
         ? {
             start: { line: node.loc.start.line, column: node.loc.start.column },
