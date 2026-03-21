@@ -36,7 +36,8 @@ export function calculateMonthlyCost(
   const budget = calculateTokenBudget({
     totalContextTokens: tokenWaste * contextMultiplier,
     wastedTokens: {
-      duplication: tokenWaste * dupRatio * (options?.potentialSavings ? 1.2 : 1),
+      duplication:
+        tokenWaste * dupRatio * (options?.potentialSavings ? 1.2 : 1),
       fragmentation: tokenWaste * fragRatio,
       chattiness: 0.1 * tokenWaste,
     },
@@ -48,8 +49,8 @@ export function calculateMonthlyCost(
 
 /**
  * Calculate precise Token ROI from analyzer metrics.
- * 
- * This is the "Value-Led" monetization engine that quantifies the 
+ *
+ * This is the "Value-Led" monetization engine that quantifies the
  * "Context Tax" savings for a team.
  */
 export function calculateDetailedTokenROI(params: {
@@ -96,7 +97,8 @@ export function calculateDetailedTokenROI(params: {
 
   return {
     monthlySavings: Math.round(cost.total),
-    contextTaxPerDev: Math.round((cost.total / (developerCount || 1)) * 100) / 100,
+    contextTaxPerDev:
+      Math.round((cost.total / (developerCount || 1)) * 100) / 100,
     efficiencyGain: Math.round(budget.efficiencyRatio * 100) / 100,
   };
 }
