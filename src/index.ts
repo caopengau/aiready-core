@@ -12,6 +12,7 @@ export * from './utils/visualization';
 export * from './utils/html-report-builder';
 export * from './utils/normalization';
 export * from './scoring';
+export * from './utils/rating-helpers';
 
 // Business value metrics (v0.10+)
 export * from './business-metrics';
