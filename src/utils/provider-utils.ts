@@ -1,10 +1,7 @@
-import { SpokeOutputSchema } from '../types/schema';
-import type {
-  AnalysisResult,
-  ScanOptions,
-  SpokeOutput,
-  ToolName,
-} from '../types';
+import { SpokeOutputSchema } from '../types/schemas/report';
+import type { AnalysisResult, SpokeOutput } from '../types/schemas/report';
+import type { ScanOptions } from '../types';
+import type { ToolName } from '../types/enums';
 import type { ToolProvider } from '../types/contract';
 import type { ToolScoringOutput } from '../scoring';
 

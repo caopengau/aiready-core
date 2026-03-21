@@ -1,7 +1,7 @@
 import { readFileSync, existsSync } from 'fs';
 import { join, resolve, dirname } from 'path';
 import { pathToFileURL } from 'url';
-import { AIReadyConfigSchema } from '../types/schema';
+import { AIReadyConfigSchema } from '../types/schemas/config';
 import type { AIReadyConfig } from '../types';
 
 const CONFIG_FILES = [
