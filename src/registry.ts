@@ -1,4 +1,4 @@
-import { ToolName } from './types/schema';
+import { ToolName } from './types';
 import { ToolProvider } from './types/contract';
 
 /**

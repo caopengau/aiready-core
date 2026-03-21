@@ -1,20 +1,4 @@
 import { z } from 'zod';
-import {
-  ToolName,
-  IssueType,
-  Severity,
-  Metrics,
-  AnalysisResult,
-  SpokeOutput,
-  UnifiedReport,
-  Location,
-  Issue,
-  UnifiedReportSchema,
-  AnalysisStatus,
-  FRIENDLY_TOOL_NAMES,
-  ToolOptions,
-  AIReadyConfigSchema,
-} from './types/schema';
 import { TokenBudget } from './types/ast';
 import { GraphNode, GraphEdge, GraphData } from './types/visualization';
 import {
@@ -26,14 +10,83 @@ import {
   LeadSourceSchema,
 } from './types/business';
 
+// Import from individual modules to avoid circular dependency
+import {
+  // Enums
+  Severity,
+  SeveritySchema,
+  ToolName,
+  ToolNameSchema,
+  FRIENDLY_TOOL_NAMES,
+  IssueType,
+  IssueTypeSchema,
+  AnalysisStatus,
+  AnalysisStatusSchema,
+  ModelTier,
+  ModelTierSchema,
+} from './types/enums';
+
+import { ToolOptions, LocationSchema } from './types/common';
+
+import { IssueSchema } from './types/schemas/issue';
+
+import { MetricsSchema } from './types/schemas/metrics';
+
+import {
+  AnalysisResultSchema,
+  SpokeSummarySchema,
+  SpokeOutputSchema,
+  UnifiedReportSchema,
+} from './types/schemas/report';
+
+import { AIReadyConfigSchema } from './types/schemas/config';
+
+import type { Location } from './types/common';
+
+import type { Issue } from './types/schemas/issue';
+
+import type { Metrics } from './types/schemas/metrics';
+
+import type {
+  AnalysisResult,
+  SpokeSummary,
+  SpokeOutput,
+  UnifiedReport,
+} from './types/schemas/report';
+
+// Re-export from modular types structure
 export {
+  // Enums
+  ToolName,
+  ToolNameSchema,
+  IssueType,
+  IssueTypeSchema,
+  Severity,
+  SeveritySchema,
+  AnalysisStatus,
+  AnalysisStatusSchema,
+  ModelTier,
+  ModelTierSchema,
+  FRIENDLY_TOOL_NAMES,
+  // Common types
+  ToolOptions,
+  LocationSchema,
+  // Issue
+  IssueSchema,
+  // Metrics
+  MetricsSchema,
+  // Report schemas
+  AnalysisResultSchema,
+  SpokeSummarySchema,
+  SpokeOutputSchema,
+  UnifiedReportSchema,
+  // Config
+  AIReadyConfigSchema,
+  // Visualization and Business
   GraphNode,
   GraphEdge,
   GraphData,
   TokenBudget,
-  UnifiedReportSchema,
-  AnalysisStatus,
-  FRIENDLY_TOOL_NAMES,
   Lead,
   LeadSchema,
   LeadSubmission,
@@ -41,16 +94,15 @@ export {
   LeadSource,
   LeadSourceSchema,
 };
-export { ToolName, IssueType, Severity };
 
 export type {
-  Metrics,
-  AnalysisResult,
-  SpokeOutput,
-  UnifiedReport,
   Location,
   Issue,
-  ToolOptions,
+  Metrics,
+  AnalysisResult,
+  SpokeSummary,
+  SpokeOutput,
+  UnifiedReport,
 };
 
 /**

@@ -6,7 +6,7 @@
 
 import { z } from 'zod';
 import { SpokeOutput, UnifiedReport, ScanOptions } from '../types';
-import { ToolName, SpokeOutputSchema } from './schema';
+import { ToolName, SpokeOutputSchema } from '.';
 import { ToolScoringOutput } from '../scoring';
 import { normalizeSpokeOutput } from '../utils/normalization';
 

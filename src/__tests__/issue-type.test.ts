@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { IssueTypeSchema } from '../types/schema';
+import { IssueTypeSchema } from '../types';
 
 describe('Issue Types', () => {
   it('should validate all known issue types', () => {

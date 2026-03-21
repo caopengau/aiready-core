@@ -4,7 +4,7 @@
  *
  * @lastUpdated 2026-03-18
  */
-import { ToolName } from './types/schema';
+import { ToolName } from './types';
 
 /**
  * Priority levels for actionable recommendations.

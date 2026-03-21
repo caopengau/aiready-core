@@ -8,7 +8,7 @@ import {
 import { join, dirname, resolve as resolvePath } from 'path';
 import chalk from 'chalk';
 import { loadConfig, mergeConfigWithDefaults } from '../index';
-import { Severity, ToolOptions } from '../types/schema';
+import { Severity, ToolOptions } from '../types';
 
 /**
  * Common CLI configuration interface

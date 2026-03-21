@@ -1,5 +1,4 @@
 export * from './types';
-export * from './types/schema';
 export * from './types/language';
 export * from './types/contract';
 export * from './registry';

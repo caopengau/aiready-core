@@ -4,7 +4,7 @@ import {
   ToolNameSchema,
   IssueSchema,
   SpokeOutputSchema,
-} from '../types/schema';
+} from '../types';
 
 describe('Zod Schemas', () => {
   it('should validate valid severities', () => {
