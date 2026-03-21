@@ -5,6 +5,14 @@
  * @lastUpdated 2026-03-18
  */
 import { ToolName } from './types';
+import {
+  ReadinessRating,
+  getRating,
+  getRatingSlug,
+} from './utils/rating-helpers';
+
+// Re-export for client bundle
+export { getRatingSlug, getRating };
 
 /**
  * Priority levels for actionable recommendations.
@@ -14,18 +22,6 @@ export enum RecommendationPriority {
   High = 'high',
   Medium = 'medium',
   Low = 'low',
-}
-
-/**
- * AI Readiness Rating categories.
- * Provides a high-level qualitative assessment based on the numeric score.
- */
-export enum ReadinessRating {
-  Excellent = 'Excellent',
-  Good = 'Good',
-  Fair = 'Fair',
-  NeedsWork = 'Needs Work',
-  Critical = 'Critical',
 }
 
 /**
@@ -417,34 +413,6 @@ export function calculateOverallScore(
       normalized: formulaStr,
     },
   };
-}
-
-/**
- * Convert numeric score to qualitative rating category.
- *
- * @param score The numerical AI readiness score (0-100)
- * @returns The corresponding ReadinessRating category
- */
-export function getRating(score: number): ReadinessRating {
-  if (score >= 90) return ReadinessRating.Excellent;
-  if (score >= 75) return ReadinessRating.Good;
-  if (score >= 60) return ReadinessRating.Fair;
-  if (score >= 40) return ReadinessRating.NeedsWork;
-  return ReadinessRating.Critical;
-}
-
-/**
- * Get a URL-friendly slug representing the rating category.
- *
- * @param score The numerical score
- * @returns A kebab-case string (e.g., 'excellent', 'needs-work')
- */
-export function getRatingSlug(score: number): string {
-  if (score >= 90) return 'excellent';
-  if (score >= 75) return 'good';
-  if (score >= 60) return 'fair';
-  if (score >= 40) return 'needs-work';
-  return 'critical';
 }
 
 /**
