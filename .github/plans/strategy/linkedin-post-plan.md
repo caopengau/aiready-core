@@ -113,18 +113,18 @@ Use a predictable schema so GA reporting is clean.
 - **Day 11 — Mythbuster:** "AI is bad" vs "signals are unclear"
 - **Day 13 — Builder-Friendly:** 3 simple checks non-experts can run
 
-### Week 3
+### Week 3 (The Agentic Readiness Shift)
 
-- **Day 15 — Metric Spotlight:** Context budget explained in plain English
-- **Day 17 — Workflow Post:** Agentic getting-started flow demo
-- **Day 19 — Case Snippet:** ReceiptClaimer lesson learned
-- **Day 21 — Community Ask:** Invite repos for analysis examples
+- **Day 15 — Part 6:** Cognitive Tiering (Tiered Memory Architecture)
+- **Day 17 — Part 7:** The Resilience Fortress (Git-based Mutations)
+- **Day 19 — Part 8:** Observability as Intelligence (Self-Critique)
+- **Day 21 — Part 9:** Human-Agent Co-Management
 
 ### Week 4
 
-- **Day 23 — Blog Teaser:** Next post preview + one chart insight
-- **Day 25 — Practical Refactor Tip:** Collapse one domain this week
-- **Day 27 — Poll:** Biggest AI coding bottleneck today
+- **Day 23 — Part 10:** Recursive Safety (The Guardrail Loop)
+- **Day 25 — Part 11:** Roadmap to Autonomy (Scaling Your Agents)
+- **Day 27 — Part 12:** The Living Repository (Final Vision)
 
 ---
 
@@ -477,7 +477,32 @@ Vote + share your “why” in comments.
 
 ---
 
-If you want, I can also give you:
+**Day 15 — Part 6: Cognitive Tiering**  
+(Published - 2026-03-22)  
 
-- a **pinned first-comment template** for all 14 posts, and
-- a **shorter variant (50–80 words each)** for days when you want quick publishing.
+**Day 17 — Part 7: The Resilience Fortress**  
+
+💀 Most AI assistants are "transient observers" — you ask, they help, they vanish.  
+
+If your AI infrastructure context only exists in the volatile memory of a chat session, your intelligence is at risk. When the session ends, the context dies.  
+
+True "Agentic Readiness" means treating infrastructure as **Mutable Logic State**. Instead of just giving advice, agents should synthesize patches and commit them directly to Git.  
+
+⚡ **The Volatile Trap:** AI generates CloudFormation → Human copy-pastes → Context is lost.  
+🛡️ **The Resilience Fortress:** AI synthesizes patch → Agent commits to Git → Reasoning is versioned & persistent.  
+
+AI provides the speed of action, but humans must own the architecture, risk, and final merge.  
+
+Read Part 7: The Resilience Fortress (Death of the Transient Agent): 🔗 https://getaiready.dev/blog/resilience-fortress?utm_source=linkedin&utm_medium=social&utm_campaign=thought-leadership&utm_content=day17-blog-post  
+
+If your agents aren't committing code, are they building your future or just adding to your noise?  
+
+#AgenticSystems #AIEngineering #DevOps #GitOps #SoftwareArchitecture #AIReady  
+
+---
+
+**Day 19 — Part 8: Observability as Intelligence**  
+
+(Drafting in progress)
+
+---

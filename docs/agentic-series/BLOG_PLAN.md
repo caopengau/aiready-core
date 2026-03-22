@@ -8,8 +8,8 @@ This series explores the evolution of software engineering from human-centric "r
 
 - **Series Status**: In Progress
 - **Total Posts**: 12
-- **Completed**: 4 (Published)
-- **Next Up**: Post 5: Closing the Loop
+- **Completed**: 12 (Drafted/Published)
+- **Next Up**: Final Series Review
 
 ---
 
@@ -39,34 +39,40 @@ This series explores the evolution of software engineering from human-centric "r
   - **Status**: Drafted (LinkedIn)
   - **Focus**: The breakthrough of having agents write code and commit it back to Git.
 
-- [/] **Post 6: Cognitive Tiering: Managing the Multi-Headed Brain**
-  - **Status**: Drafted
+- [x] **Post 6: Cognitive Tiering: Managing the Multi-Headed Brain**
+  - **Status**: Published
   - **Focus**: Tiered memory architectures (Facts vs. Lessons vs. Gaps) and the end of "Prompt Bloat".
   - **Draft**: [06-cognitive-tiering.md](./06-cognitive-tiering.md)
 
-- [ ] **Post 6: The Resilience Fortress: Designing for Disaster**
-  - **Status**: Planned
+- [x] **Post 7: The Resilience Fortress: Designing for Disaster**
+  - **Status**: Drafted
   - **Focus**: Building "unkillable" agents using serverless primitives (Circuit Breakers, Dead Man's Switches).
+  - **Draft**: [07-resilience-fortress.md](./07-resilience-fortress.md)
 
-- [ ] **Post 7: Observability is Intelligence: Visualizing the Unseen**
-  - **Status**: Planned
+- [x] **Post 8: Observability as Intelligence: Visualizing the Unseen**
+  - **Status**: Drafted
   - **Focus**: The importance of transparency in agentic reasoning (Neural Path Visualizer & System Pulse).
+  - **Draft**: [08-observability-intelligence.md](./08-observability-intelligence.md)
 
-- [ ] **Post 8: Human-Agent Co-Management: The Neural Reserve**
-  - **Status**: Planned
+- [x] **Post 9: Human-Agent Co-Management: The Neural Reserve**
+  - **Status**: Drafted
   - **Focus**: Moving from "Block the Agent" to "Guide the Evolution" (Memory garden weeding).
+  - **Draft**: [09-human-agent-co-management.md](./09-human-agent-co-management.md)
 
-- [ ] **Post 9: Recursive Safety: Governing the Autonomous Swarm**
-  - **Status**: Planned
+- [x] **Post 10: Recursive Safety: Governing the Autonomous Swarm**
+  - **Status**: Drafted
   - **Focus**: Preventing runaway loops and the IAM implications of autonomous infrastructure.
+  - **Draft**: [10-recursive-safety.md](./10-recursive-safety.md)
 
-- [ ] **Post 11: The Roadmap to Autonomy: From Sandbox to Prod**
-  - **Status**: Planned
+- [x] **Post 11: The Roadmap to Autonomy: From Sandbox to Prod**
+  - **Status**: Drafted
   - **Focus**: The evolving roadmap—Kanban pipelines, skill marketplaces, and multi-tenant isolation.
+  - **Draft**: [11-roadmap-to-autonomy.md](./11-roadmap-to-autonomy.md)
 
-- [ ] **Post 12: The Living Repository: Reflections on the Future**
-  - **Status**: Planned
+- [x] **Post 12: The Living Repository: Reflections on the Future**
+  - **Status**: Drafted
   - **Focus**: What it means to work on a codebase that is actively working back on you.
+  - **Draft**: [12-living-repository.md](./12-living-repository.md)
 
 ---
 
