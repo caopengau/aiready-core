@@ -49,8 +49,47 @@ export function analyzeGeneralMetadata(
 
   // 1. Documentation extraction (heuristic-based)
   try {
-    let prev: Parser.Node | null = (node as any).previousSibling || null;
-    while (prev && /comment/i.test(prev.type)) {
+    let prev: Parser.Node | null =
+      (node as any).previousNamedSibling ||
+      (node as any).previousSibling ||
+      null;
+
+    // Skip whitespace nodes
+    while (prev && (!prev.type || !prev.text.trim())) {
+      prev = (prev as any).previousSibling || null;
+    }
+
+    // Fallback: search parent children if siblings are missing (some grammars)
+    if (!prev && node.parent) {
+      const children = node.parent.children;
+      const idx = children.indexOf(node);
+      if (idx > 0) {
+        prev = children[idx - 1];
+        // Skip whitespace here too
+        while (prev && idx > 0 && (!prev.type || !prev.text.trim())) {
+          prev = children[idx - 2] || null;
+        }
+      }
+    }
+
+    // Skip attribute lists (common in C#, Java, TypeScript)
+    while (prev && /attribute|decorator/i.test(prev.type)) {
+      prev =
+        (prev as any).previousNamedSibling ||
+        (prev as any).previousSibling ||
+        null;
+      // Skip whitespace after attributes
+      while (prev && (!prev.type || !prev.text.trim())) {
+        prev = (prev as any).previousSibling || null;
+      }
+    }
+
+    while (
+      prev &&
+      (/comment|xml|doc|slash/i.test(prev.type) ||
+        prev.text.trim().startsWith('//') ||
+        prev.text.trim().startsWith('///'))
+    ) {
       const text = prev.text || '';
       // Prefer structured doc comments (/** ... */)
       if (text.trim().startsWith('/**')) {
@@ -76,7 +115,7 @@ export function analyzeGeneralMetadata(
         };
         break;
       }
-      prev = prev.previousSibling;
+      prev = (prev as any).previousSibling || null;
     }
   } catch {
     // best-effort

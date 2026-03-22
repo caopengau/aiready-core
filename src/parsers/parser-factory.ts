@@ -32,6 +32,10 @@ export class ParserFactory {
       const { TypeScriptParser } = await import('./typescript-parser');
       return new TypeScriptParser();
     });
+    this.registerLazyParser(Language.JavaScript, async () => {
+      const { TypeScriptParser } = await import('./typescript-parser');
+      return new TypeScriptParser();
+    });
     this.registerLazyParser(Language.Python, async () => {
       const { PythonParser } = await import('./python-parser');
       return new PythonParser();
@@ -123,17 +127,22 @@ export class ParserFactory {
   }
 
   /**
-   * Check if a file is supported
+   * Check if a file is supported (synchronous check based on extension)
    */
   public isSupported(filePath: string): boolean {
-    return this.getParserForFile(filePath) !== null;
+    const ext = this.getFileExtension(filePath);
+    return this.extensionMap.has(ext);
   }
 
   /**
    * Get all registered languages
    */
   public getSupportedLanguages(): Language[] {
-    return Array.from(this.parsers.keys());
+    const languages = new Set<Language>([
+      ...this.parsers.keys(),
+      ...this.registeredParsers.keys(),
+    ]);
+    return Array.from(languages);
   }
 
   /**

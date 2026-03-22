@@ -91,7 +91,14 @@ export function buildStandardToolScore(
       action,
       estimatedImpact: recommendationImpact,
       priority:
-        score < 50
+        score < 50 ||
+        [
+          'high-risk',
+          'blind-risk',
+          'explosive',
+          'fragile',
+          'critical',
+        ].includes(rating || '')
           ? RecommendationPriority.High
           : RecommendationPriority.Medium,
     })
