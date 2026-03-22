@@ -82,7 +82,7 @@ interface WorkerHandler {
 }
 
 const handler: WorkerHandler = {
-  async scheduled(_event: any, env: any, _ctx: any) {
+  async scheduled(_event: any, env: any) {
     const url = env.URL_TO_CHECK;
     const projectName = env.PROJECT_NAME || 'Unknown Project';
 

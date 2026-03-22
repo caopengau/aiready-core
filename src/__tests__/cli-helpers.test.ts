@@ -25,7 +25,7 @@ import {
   findLatestScanReport,
 } from '../utils/cli-helpers';
 import { join } from 'path';
-import { existsSync, rmSync, mkdirSync, writeFileSync, statSync } from 'fs';
+import { existsSync, rmSync, mkdirSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 
 describe('CLI Helpers Advanced', () => {
@@ -176,7 +176,6 @@ describe('CLI Helpers Advanced', () => {
 
   describe('emitProgress', () => {
     it('should not call onProgress when not provided', () => {
-      const onProgress = vi.fn();
       expect(() => emitProgress(10, 100, 'tool', 'Processing')).not.toThrow();
     });
 
@@ -355,7 +354,7 @@ describe('CLI Helpers Advanced', () => {
       const mockChalk = {
         bgRed: { white: { bold: vi.fn((s) => s) } },
       };
-      const result = getSeverityBadge('critical', mockChalk);
+      getSeverityBadge('critical', mockChalk);
       expect(mockChalk.bgRed.white.bold).toHaveBeenCalled();
     });
 
@@ -363,7 +362,7 @@ describe('CLI Helpers Advanced', () => {
       const mockChalk = {
         bgYellow: { black: { bold: vi.fn((s) => s) } },
       };
-      const result = getSeverityBadge('major', mockChalk);
+      getSeverityBadge('major', mockChalk);
       expect(mockChalk.bgYellow.black.bold).toHaveBeenCalled();
     });
 
@@ -371,7 +370,7 @@ describe('CLI Helpers Advanced', () => {
       const mockChalk = {
         bgBlue: { white: { bold: vi.fn((s) => s) } },
       };
-      const result = getSeverityBadge('minor', mockChalk);
+      getSeverityBadge('minor', mockChalk);
       expect(mockChalk.bgBlue.white.bold).toHaveBeenCalled();
     });
 
@@ -379,7 +378,7 @@ describe('CLI Helpers Advanced', () => {
       const mockChalk = {
         bgCyan: { black: vi.fn((s) => s) },
       };
-      const result = getSeverityBadge('info', mockChalk);
+      getSeverityBadge('info', mockChalk);
       expect(mockChalk.bgCyan.black).toHaveBeenCalled();
     });
 
@@ -387,7 +386,7 @@ describe('CLI Helpers Advanced', () => {
       const mockChalk = {
         bgCyan: { black: vi.fn((s) => s) },
       };
-      const result = getSeverityBadge('unknown', mockChalk);
+      getSeverityBadge('unknown', mockChalk);
       expect(mockChalk.bgCyan.black).toHaveBeenCalled();
     });
   });

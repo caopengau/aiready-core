@@ -76,7 +76,6 @@ export function calculateDetailedTokenROI(params: {
 
   // 1. Calculate the "Context Tax" (Tokens paid per feature/query)
   // Tax = (Context required - Code analyzed) = dependencies + noise
-  const contextTaxTokens = Math.max(0, avgContextBudget - totalTokens);
 
   // 2. Budget for waste
   const budget = calculateTokenBudget({
