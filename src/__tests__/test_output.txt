@@ -1,0 +1,179 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/pengcao/projects/aiready/packages/core/src/__tests__[39m
+
+ [32m✓[39m github-utils.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m business.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m scoring.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m business-metrics.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+[90mstdout[2m | metric-parity.test.ts[2m > [22m[2mMetric Parity[2m > [22m[2mLanguage: typescript[2m > [22m[2mshould extract purity and documentation metadata correctly
+[22m[39m[DEBUG] Exports for typescript: [ [32m'pureFunc'[39m, [32m'impureFunc'[39m ]
+[DEBUG] typescript pureFunc documentation: { content: [32m'* Pure function with documentation'[39m, type: [32m'jsdoc'[39m }
+[DEBUG] typescript pureFunc purity: pure=true, sideEffects=false
+[DEBUG] typescript impureFunc documentation: {
+  content: [32m'* Pure function with documentation\n'[39m +
+    [32m' */\n'[39m +
+    [32m'export function pureFunc(s: string): string {\n'[39m +
+    [32m'  return s.trim();\n'[39m +
+    [32m'}\n'[39m +
+    [32m'\n'[39m +
+    [32m'/**\n'[39m +
+    [32m' * Impure function with documentation'[39m,
+  type: [32m'jsdoc'[39m
+}
+[DEBUG] typescript impureFunc purity: pure=false, sideEffects=true
+
+[90mstdout[2m | metric-parity.test.ts[2m > [22m[2mMetric Parity[2m > [22m[2mLanguage: python[2m > [22m[2mshould extract purity and documentation metadata correctly
+[22m[39m[DEBUG] Exports for python: [ [32m'pure_func'[39m, [32m'impure_func'[39m ]
+[DEBUG] python pureFunc documentation: { content: [32m'Pure function with documentation'[39m, type: [32m'docstring'[39m }
+[DEBUG] python pureFunc purity: pure=true, sideEffects=false
+[DEBUG] python impureFunc documentation: { content: [32m'Impure function with documentation'[39m, type: [32m'docstring'[39m }
+[DEBUG] python impureFunc purity: pure=false, sideEffects=true
+
+[90mstdout[2m | metric-parity.test.ts[2m > [22m[2mMetric Parity[2m > [22m[2mLanguage: java[2m > [22m[2mshould extract purity and documentation metadata correctly
+[22m[39m[DEBUG] Exports for java: [ [32m'MyClass'[39m, [32m'pureFunc'[39m, [32m'impureFunc'[39m ]
+[DEBUG] java pureFunc documentation: { content: [32m'Pure function with documentation'[39m, type: [32m'jsdoc'[39m }
+[DEBUG] java pureFunc purity: pure=true, sideEffects=false
+[DEBUG] java impureFunc documentation: { content: [32m'Impure function with documentation'[39m, type: [32m'jsdoc'[39m }
+[DEBUG] java impureFunc purity: pure=false, sideEffects=true
+
+ [31m❯[39m parser-factory.test.ts [2m([22m[2m9 tests[22m[2m | [22m[31m3 failed[39m[2m)[22m[33m 308[2mms[22m[39m
+     [32m✓[39m should return TypeScript parser for .ts files[32m 274[2mms[22m[39m
+     [32m✓[39m should return TypeScript parser for .tsx files[32m 0[2mms[22m[39m
+[31m     [31m×[31m should return JavaScript parser for .js files[39m[32m 3[2mms[22m[39m
+     [32m✓[39m should return Python parser for .py files[32m 26[2mms[22m[39m
+     [32m✓[39m should return null for unsupported files[32m 0[2mms[22m[39m
+[31m     [31m×[31m should correctly identify supported files[39m[32m 3[2mms[22m[39m
+[31m     [31m×[31m should list all supported languages[39m[32m 1[2mms[22m[39m
+     [32m✓[39m should be case-insensitive for extensions[32m 0[2mms[22m[39m
+     [32m✓[39m should detect language from file path[32m 0[2mms[22m[39m
+[90mstdout[2m | metric-parity.test.ts[2m > [22m[2mMetric Parity[2m > [22m[2mLanguage: csharp[2m > [22m[2mshould extract purity and documentation metadata correctly
+[22m[39m[DEBUG] Exports for csharp: [ [32m'MyClass'[39m, [32m'PureFunc'[39m, [32m'ImpureFunc'[39m ]
+[DEBUG] csharp pureFunc documentation: [90mundefined[39m
+[DEBUG] csharp pureFunc purity: pure=true, sideEffects=false
+
+ [32m✓[39m file-scanner.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 101[2mms[22m[39m
+[90mstdout[2m | metric-parity.test.ts[2m > [22m[2mMetric Parity[2m > [22m[2mLanguage: go[2m > [22m[2mshould extract purity and documentation metadata correctly
+[22m[39m[DEBUG] Exports for go: [ [32m'PureFunc'[39m, [32m'ImpureFunc'[39m ]
+[DEBUG] go pureFunc documentation: { content: [32m'Pure function with documentation'[39m, type: [32m'comment'[39m }
+[DEBUG] go pureFunc purity: pure=true, sideEffects=false
+[DEBUG] go impureFunc documentation: { content: [32m'Impure function with documentation'[39m, type: [32m'comment'[39m }
+[DEBUG] go impureFunc purity: pure=false, sideEffects=true
+
+ [31m❯[39m metric-parity.test.ts [2m([22m[2m5 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 316[2mms[22m[39m
+       [32m✓[39m should extract purity and documentation metadata correctly[32m 287[2mms[22m[39m
+       [32m✓[39m should extract purity and documentation metadata correctly[32m 18[2mms[22m[39m
+       [32m✓[39m should extract purity and documentation metadata correctly[32m 3[2mms[22m[39m
+[31m       [31m×[31m should extract purity and documentation metadata correctly[39m[32m 3[2mms[22m[39m
+       [32m✓[39m should extract purity and documentation metadata correctly[32m 3[2mms[22m[39m
+ [32m✓[39m future-proof-metrics.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m business-metrics.v0.12.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m metrics-structural.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m business-metrics.v0.13.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m change-amplification.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m similarity-utils.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m scoring-helpers.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m config.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m scoring-advanced.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m ast-parser.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m typescript-parser.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m history.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m metrics-agent-grounding.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 1[2mms[22m[39m
+ [32m✓[39m metrics-remediation.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m metrics-testability-index.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 1[2mms[22m[39m
+ [32m✓[39m cli-helpers.test.ts [2m([22m[2m57 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+ [32m✓[39m metrics-ai-signal-clarity.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m metrics-dependency-health.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 1[2mms[22m[39m
+ [32m✓[39m metrics-semantic-distance.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m visualization.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m schema.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m metrics-change-amplification.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m metrics-doc-drift.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m history-git.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 96[2mms[22m[39m
+[90mstderr[2m | tree-sitter-utils.test.ts[2m > [22m[2mTree-sitter Utils[2m > [22m[2mgetWasmPath[2m > [22m[2mshould return null if wasm file not found
+[22m[39m[Parser] WASM file for nonexistent not found. CWD: /Users/pengcao/projects/aiready/packages/core/src/__tests__, DIR: /Users/pengcao/projects/aiready/packages/core/src/__tests__
+
+ [32m✓[39m tree-sitter-utils.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m metrics-cognitive-load.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m language.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m java-parser.test.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 1233[2mms[22m[39m
+ [32m✓[39m python-parser.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 1261[2mms[22m[39m
+ [32m✓[39m metrics.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 1[2mms[22m[39m
+ [32m✓[39m issue-type.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m types.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m registry.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 1[2mms[22m[39m
+ [32m✓[39m go-parser.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 2139[2mms[22m[39m
+     [33m[2m✓[22m[39m should identify Go language and extensions [33m 1253[2mms[22m[39m
+ [32m✓[39m csharp-parser.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 2250[2mms[22m[39m
+     [33m[2m✓[22m[39m should identify C# language and extensions [33m 1216[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 4 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m metric-parity.test.ts[2m > [22mMetric Parity[2m > [22mLanguage: csharp[2m > [22mshould extract purity and documentation metadata correctly
+[31m[1mAssertionError[22m: expected undefined to be defined[39m
+[36m [2m❯[22m metric-parity.test.ts:[2m144:41[22m[39m
+    [90m142| [39m        [34mexpect[39m(pureFunc[33m![39m[33m.[39misPure)[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m143| [39m        [34mexpect[39m(pureFunc[33m![39m[33m.[39mhasSideEffects)[33m.[39m[34mtoBe[39m([35mfalse[39m)[33m;[39m
+    [90m144| [39m        [34mexpect[39m(pureFunc[33m![39m[33m.[39mdocumentation)[33m.[39m[34mtoBeDefined[39m()[33m;[39m
+    [90m   | [39m                                        [31m^[39m
+    [90m145| [39m        expect(pureFunc!.documentation!.content).toContain('Pure funct…
+    [90m146| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m parser-factory.test.ts[2m > [22mParserFactory[2m > [22mshould return JavaScript parser for .js files
+[31m[1mAssertionError[22m: expected undefined to be 'typescript' // Object.is equality[39m
+
+[32m- Expected:[39m 
+"typescript"
+
+[31m+ Received:[39m 
+undefined
+
+[36m [2m❯[22m parser-factory.test.ts:[2m30:30[22m[39m
+    [90m 28| [39m    [35mconst[39m parser [33m=[39m [35mawait[39m [34mgetParser[39m([32m'script.js'[39m)[33m;[39m
+    [90m 29| [39m    [34mexpect[39m(parser)[33m.[39m[34mtoBeDefined[39m()[33m;[39m
+    [90m 30| [39m    expect(parser?.language).toBe(Language.TypeScript); // TS parser h…
+    [90m   | [39m                             [31m^[39m
+    [90m 31| [39m  })[33m;[39m
+    [90m 32| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m parser-factory.test.ts[2m > [22mParserFactory[2m > [22mshould correctly identify supported files
+[31m[1mAssertionError[22m: expected true to be false // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+[36m [2m❯[22m parser-factory.test.ts:[2m50:42[22m[39m
+    [90m 48| [39m    [34mexpect[39m([34misFileSupported[39m([32m'test.cs'[39m))[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m 49| [39m    [34mexpect[39m([34misFileSupported[39m([32m'test.go'[39m))[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m 50| [39m    [34mexpect[39m([34misFileSupported[39m([32m'README.md'[39m))[33m.[39m[34mtoBe[39m([35mfalse[39m)[33m;[39m
+    [90m   | [39m                                         [31m^[39m
+    [90m 51| [39m  })[33m;[39m
+    [90m 52| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m parser-factory.test.ts[2m > [22mParserFactory[2m > [22mshould list all supported languages
+[31m[1mAssertionError[22m: expected [ 'typescript', 'python' ] to include 'java'[39m
+[36m [2m❯[22m parser-factory.test.ts:[2m57:23[22m[39m
+    [90m 55| [39m    [34mexpect[39m(languages)[33m.[39m[34mtoContain[39m([33mLanguage[39m[33m.[39m[33mTypeScript[39m)[33m;[39m
+    [90m 56| [39m    [34mexpect[39m(languages)[33m.[39m[34mtoContain[39m([33mLanguage[39m[33m.[39m[33mPython[39m)[33m;[39m
+    [90m 57| [39m    [34mexpect[39m(languages)[33m.[39m[34mtoContain[39m([33mLanguage[39m[33m.[39m[33mJava[39m)[33m;[39m
+    [90m   | [39m                      [31m^[39m
+    [90m 58| [39m    [34mexpect[39m(languages)[33m.[39m[34mtoContain[39m([33mLanguage[39m[33m.[39m[33mCSharp[39m)[33m;[39m
+    [90m 59| [39m    [34mexpect[39m(languages)[33m.[39m[34mtoContain[39m([33mLanguage[39m[33m.[39m[33mGo[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m41 passed[39m[22m[90m (43)[39m
+[2m      Tests [22m [1m[31m4 failed[39m[22m[2m | [22m[1m[32m230 passed[39m[22m[90m (234)[39m
+[2m   Start at [22m 22:42:00
+[2m   Duration [22m 2.67s[2m (transform 2.29s, setup 0ms, import 5.01s, tests 7.88s, environment 3ms)[22m
+
