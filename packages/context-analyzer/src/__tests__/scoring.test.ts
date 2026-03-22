@@ -38,7 +38,7 @@ describe('Context Scoring', () => {
       const result = calculateContextScore(summary);
 
       expect(result.score).toBeLessThan(70);
-      expect(result.factors.some((f) => f.name === 'Context Budget')).toBe(
+      expect(result.factors.some((f: any) => f.name === 'Context Budget')).toBe(
         true
       );
       expect(result.recommendations.length).toBeGreaterThan(0);
@@ -60,9 +60,13 @@ describe('Context Scoring', () => {
 
       // With depth=12: depthScore=80, rawScore=100*0.35+80*0.25+100*0.25=80, no bonus (frag=0.2 not <0.2)
       expect(result.score).toBe(80);
-      expect(result.factors.some((f) => f.name === 'Import Depth')).toBe(true);
+      expect(result.factors.some((f: any) => f.name === 'Import Depth')).toBe(
+        true
+      );
       expect(
-        result.recommendations.some((r) => r.action.includes('import chains'))
+        result.recommendations.some((r: any) =>
+          r.action.includes('import chains')
+        )
       ).toBe(true);
     });
 
@@ -86,7 +90,9 @@ describe('Context Scoring', () => {
       // Actually frag=0.7 >= 0.2, so no bonus
       // rawScore = 80, no penalties = 80
       expect(result.score).toBeLessThan(85); // Adjusted for new calculation
-      expect(result.factors.some((f) => f.name === 'Fragmentation')).toBe(true);
+      expect(result.factors.some((f: any) => f.name === 'Fragmentation')).toBe(
+        true
+      );
     });
 
     it('should apply critical issue penalties', () => {
@@ -108,9 +114,9 @@ describe('Context Scoring', () => {
       // criticalPenalty = min(20, 5*3) = min(20,15) = 15
       // finalScore = 85 - 15 = 70
       expect(result.score).toBe(70);
-      expect(result.factors.some((f) => f.name === 'Critical Issues')).toBe(
-        true
-      );
+      expect(
+        result.factors.some((f: any) => f.name === 'Critical Issues')
+      ).toBe(true);
     });
 
     it('should handle extreme max budget penalty', () => {
@@ -128,10 +134,10 @@ describe('Context Scoring', () => {
       const result = calculateContextScore(summary);
 
       expect(
-        result.factors.some((f) => f.name === 'Extreme File Detected')
+        result.factors.some((f: any) => f.name === 'Extreme File Detected')
       ).toBe(true);
       expect(
-        result.recommendations.some((r) =>
+        result.recommendations.some((r: any) =>
           r.action.includes('Split large file')
         )
       ).toBe(true);
@@ -214,7 +220,7 @@ describe('Context Scoring', () => {
         // finalScore = 90
         expect(result.score).toBe(90);
         expect(
-          result.factors.some((f) => f.name === 'Well-Organized Codebase')
+          result.factors.some((f: any) => f.name === 'Well-Organized Codebase')
         ).toBe(true);
       });
 
@@ -235,7 +241,7 @@ describe('Context Scoring', () => {
         // No bonus because fragmentation >= 0.2
         expect(result.score).toBe(85); // 100*0.35 + 100*0.25 + 100*0.25 = 85
         expect(
-          result.factors.some((f) => f.name === 'Well-Organized Codebase')
+          result.factors.some((f: any) => f.name === 'Well-Organized Codebase')
         ).toBe(false);
       });
 

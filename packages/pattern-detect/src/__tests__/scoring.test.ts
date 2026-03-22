@@ -98,9 +98,9 @@ describe('Pattern Scoring', () => {
       const result = calculatePatternScore(duplicates, 10);
 
       expect(result.rawMetrics.highImpactDuplicates).toBe(1);
-      expect(result.factors.some((f) => f.name.includes('High-Impact'))).toBe(
-        true
-      );
+      expect(
+        result.factors.some((f: any) => f.name.includes('High-Impact'))
+      ).toBe(true);
     });
 
     it('should generate recommendations for severe issues', () => {

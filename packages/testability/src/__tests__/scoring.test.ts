@@ -44,7 +44,7 @@ describe('Testability Scoring', () => {
     expect(scoring.factors.length).toBe(5);
 
     const coverageFactor = scoring.factors.find(
-      (f) => f.name === 'Test Coverage'
+      (f: any) => f.name === 'Test Coverage'
     );
     expect(coverageFactor?.impact).toBe(30); // 80 - 50
     expect(coverageFactor?.description).toContain(

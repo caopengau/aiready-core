@@ -69,5 +69,57 @@
   - _Visual_: The "Harvester" extracting a pattern and "Broadcasting" it to all spokes.
 
 - **[4:00 - 5:00] Call to Action**:
-  - (Peng) "The IT Department is dead. Long live the Eclawnomy. Start your first mutation today."
+- [x] (Peng) "The IT Department is dead. Long live the Eclawnomy. Start your first mutation today."
   - _Visual_: Links to OpenClaw, ServerlessClaw, and ClawMore.
+
+---
+
+## Episode 5: The White-Collar Shift: From Manager to Orchestrator
+
+**Target Audience**: Managers, project leads, and knowledge workers.
+
+- **[0:00 - 1:00] The Legacy Manager**:
+  - (Peng) "In the prompt era, we managed 'chats'. In the Eclawnomy, we manage 'outcomes'. The most important skill for a white-collar worker in 2026 isn't knowing how to code—it's knowing how to **orchestrate**."
+
+- **[1:00 - 3:00] Orchestration vs. Management**:
+  - Analogy: You aren't the pianist; you're the conductor.
+  - How to use the **6-Layer Stack** to build your own digital department.
+  - Delegating the "boring" (reporting, scheduling, first-pass audits) to Claws.
+
+- **[3:00 - 5:00] The Productivity Leap**:
+  - Real-world scenario: An HR manager using a 'Recruitment Claw' to handle 500 resumes while they focus on the final interview.
+
+---
+
+## Episode 6: Happiness-as-a-Service: The Agentic Work-Life Balance
+
+**Target Audience**: All white-collar workers.
+
+- **[0:00 - 1:00] The Burnout Barrier**:
+  - (Peng) "Why are we still spending 4 hours a day on emails and spreadsheets? GPT-5.4 changed the brain, but the Eclawnomy is changing the _schedule_."
+
+- **[1:00 - 3:30] Removing the Drudgery**:
+  - Examples of "Happiness Agents":
+    - The 'Audit Claw' that finds errors before your boss does.
+    - The 'Digest Claw' that summarizes the 50-page board report into 3 bullet points.
+  - Reclaiming 10-15 hours a week for creative strategy and high-value work.
+
+- **[3:30 - 5:00] Rebranding Your Role**:
+  - You aren't a 'Spreadsheet Specialist'; you're a 'Strategy Architect'. This is how you reclaim your time and your happiness.
+
+---
+
+## Episode 7: Tech-Savvy for the Non-Tech: Your Agentic Up-skilling
+
+**Target Audience**: People who feel "left behind" by AI.
+
+- **[0:00 - 1:00] The Fear of the Black Box**:
+  - (Peng) "You don't need a CS degree to succeed in the Eclawnomy. You just need to be **tech-ready**."
+
+- **[1:00 - 4:00] The Actionable Skills**:
+  - **Step 1: Goal Definition**. How to speak 'Result' instead of 'Prompt'.
+  - **Step 2: Verification**. Learning to trust but verify (The QA Auditor role).
+  - **Step 3: Tool Awareness**. Knowing what an MCP is (even if you never build one).
+
+- **[4:00 - 5:00] Conclusion**:
+  - (Peng) "The bridge is built. You just have to walk it. Welcome to your new career."

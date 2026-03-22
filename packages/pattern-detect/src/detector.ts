@@ -1,4 +1,9 @@
-import { estimateTokens, Severity } from '@aiready/core';
+import {
+  estimateTokens,
+  Severity,
+  calculateStringSimilarity,
+  calculateHeuristicConfidence,
+} from '@aiready/core';
 import { calculateSeverity } from './context-rules';
 import type {
   DuplicatePattern,
@@ -184,50 +189,21 @@ function inferPatternType(keyword: string, name: string): PatternType {
 }
 
 /**
- * Calculate Jaccard similarity between two strings
- * Splitting by non-alphanumeric to be more robust
- *
- * @param a - First string for comparison.
- * @param b - Second string for comparison.
- * @returns Similarity score between 0 and 1.
+ * Local wrapper for core similarity
  */
 function calculateSimilarity(a: string, b: string): number {
-  if (a === b) return 1.0;
-
-  const tokensA = a.split(/[^a-zA-Z0-9]+/).filter((t) => t.length > 0);
-  const tokensB = b.split(/[^a-zA-Z0-9]+/).filter((t) => t.length > 0);
-
-  if (tokensA.length === 0 || tokensB.length === 0) return 0;
-
-  const setA = new Set(tokensA);
-  const setB = new Set(tokensB);
-
-  const intersection = new Set([...setA].filter((x) => setB.has(x)));
-  const union = new Set([...setA, ...setB]);
-
-  return intersection.size / union.size;
+  return calculateStringSimilarity(a, b);
 }
 
 /**
- * Calculate heuristic confidence score for a duplicate detection.
- * Considers similarity, block size, and structural match.
+ * Local wrapper for core confidence
  */
 function calculateConfidence(
   similarity: number,
   tokens: number,
   lines: number
 ): number {
-  // Base confidence is the similarity itself
-  let confidence = similarity;
-
-  // Boost confidence for larger blocks (less likely to be accidental)
-  if (lines > 20) confidence += 0.05;
-  if (tokens > 200) confidence += 0.05;
-
-  // Small blocks are noisier
-  if (lines < 5) confidence -= 0.1;
-
-  return Math.max(0, Math.min(1, confidence));
+  return calculateHeuristicConfidence(similarity, tokens, lines);
 }
 
 /**

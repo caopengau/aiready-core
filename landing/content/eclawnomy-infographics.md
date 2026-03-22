@@ -1,5 +1,21 @@
 # Eclawnomy Infographics & Visual Assets
 
+## 0. The Jargon Decoder: Everyday Analogies for the Agentic Era
+
+**Purpose**: To ground complex terms in familiar concepts for a non-technical audience.
+
+| Term                | Everyday Analogy           | Why This Matters                                                                               |
+| :------------------ | :------------------------- | :--------------------------------------------------------------------------------------------- |
+| **Agent / Claw**    | **Digital Employee**       | It's no longer a tool you _use_; it's a team member you _direct_.                              |
+| **LLM / Brain**     | **The Education**          | The model is the 'degree' the employee holds; their 'reasoning' power.                         |
+| **Tokens / Energy** | **Electricity / Fuel**     | Every thought has a unit cost. You monitor this like your utility bill.                        |
+| **MCP / Port**      | **Universal Power Socket** | A standard way to plug any agent into any tool (GitHub, Stripe, etc.) without custom rewiring. |
+| **Memory**          | **The File Cabinet**       | Agents need a place to remember past work so they don't start from zero every morning.         |
+| **Orchestration**   | **Project Management**     | The logic that coordinates multiple agents to finish a complex goal.                           |
+| **Infrastructure**  | **The Office Space**       | The secure cloud environment where the work actually happens.                                  |
+
+---
+
 ## 1. The Anatomy of a Claw (The Unit Breakdown)
 
 **Purpose**: To demystify the agent for ordinary folks.

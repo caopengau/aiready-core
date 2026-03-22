@@ -1,66 +1,26 @@
-import { type ToolScoringOutput, ToolName } from '@aiready/core';
+import { ToolName, buildStandardToolScore } from '@aiready/core';
 import type { AgentGroundingReport } from './types';
 
 /**
  * Convert agent grounding report into a ToolScoringOutput.
- *
- * @param report - The detailed agent grounding report.
- * @returns Standardized scoring and risk factor breakdown.
- * @lastUpdated 2026-03-18
  */
-export function calculateGroundingScore(
-  report: AgentGroundingReport
-): ToolScoringOutput {
+export function calculateGroundingScore(report: AgentGroundingReport): any {
   const { summary, rawData, recommendations } = report;
 
-  const factors: ToolScoringOutput['factors'] = [
-    {
-      name: 'Structure Clarity',
-      impact: Math.round(summary.dimensions.structureClarityScore - 50),
-      description: `${rawData.deepDirectories} of ${rawData.totalDirectories} dirs exceed recommended depth`,
-    },
-    {
-      name: 'Self-Documentation',
-      impact: Math.round(summary.dimensions.selfDocumentationScore - 50),
-      description: `${rawData.vagueFileNames} of ${rawData.totalFiles} files have vague names`,
-    },
-    {
-      name: 'Entry Points',
-      impact: Math.round(summary.dimensions.entryPointScore - 50),
-      description: rawData.hasRootReadme
-        ? rawData.readmeIsFresh
-          ? 'README present and fresh'
-          : 'README present but stale'
-        : 'No root README',
-    },
-    {
-      name: 'API Clarity',
-      impact: Math.round(summary.dimensions.apiClarityScore - 50),
-      description: `${rawData.untypedExports} of ${rawData.totalExports} exports lack type annotations`,
-    },
-    {
-      name: 'Domain Consistency',
-      impact: Math.round(summary.dimensions.domainConsistencyScore - 50),
-      description: `${rawData.inconsistentDomainTerms} inconsistent domain terms detected`,
-    },
-  ];
-
-  const recs: ToolScoringOutput['recommendations'] = recommendations.map(
-    (action) => ({
-      action,
-      estimatedImpact: 6,
-      priority: summary.score < 50 ? 'high' : 'medium',
-    })
-  );
-
-  return {
+  return buildStandardToolScore({
     toolName: ToolName.AgentGrounding,
     score: summary.score,
-    rawMetrics: {
-      ...rawData,
-      rating: summary.rating,
+    rawData,
+    dimensions: summary.dimensions,
+    dimensionNames: {
+      structureClarityScore: 'Structure Clarity',
+      selfDocumentationScore: 'Self-Documentation',
+      entryPointScore: 'Entry Points',
+      apiClarityScore: 'API Clarity',
+      domainConsistencyScore: 'Domain Consistency',
     },
-    factors,
-    recommendations: recs,
-  };
+    recommendations,
+    recommendationImpact: 6,
+    rating: summary.rating,
+  });
 }

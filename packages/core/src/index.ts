@@ -14,6 +14,8 @@ export * from './utils/report-formatters';
 export * from './utils/normalization';
 export * from './scoring';
 export * from './utils/rating-helpers';
+export * from './utils/scoring-helpers';
+export * from './utils/similarity';
 
 // Business value metrics (v0.10+)
 export * from './business-metrics';
@@ -30,6 +32,12 @@ export * from './parsers/go-parser';
 
 // Future-proof abstraction layer
 export * from './future-proof-metrics';
+export * from './metrics/ai-signal-clarity';
+export * from './metrics/agent-grounding';
+export * from './metrics/testability-index';
+export * from './metrics/doc-drift';
+export * from './metrics/dependency-health';
+export * from './metrics/change-amplification';
 
 // Temporal tracking utilities
 export * from './utils/history';

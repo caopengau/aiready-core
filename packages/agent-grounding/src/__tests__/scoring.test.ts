@@ -43,7 +43,7 @@ describe('Agent Grounding Scoring', () => {
     expect(scoring.factors.length).toBe(5);
 
     const apiClarityFactor = scoring.factors.find(
-      (f) => f.name === 'API Clarity'
+      (f: any) => f.name === 'API Clarity'
     );
     expect(apiClarityFactor?.impact).toBe(0); // 50 - 50
     expect(apiClarityFactor?.description).toContain(

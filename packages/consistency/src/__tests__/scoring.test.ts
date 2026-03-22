@@ -52,12 +52,12 @@ describe('Consistency Scoring', () => {
       // score = 100 - 3 - 4 = 93
       expect(result.score).toBe(93);
       expect(result.rawMetrics.criticalIssues).toBe(2);
-      expect(result.factors.some((f) => f.name === 'Critical Issues')).toBe(
-        true
-      );
-      expect(result.recommendations.some((r) => r.priority === 'high')).toBe(
-        true
-      );
+      expect(
+        result.factors.some((f: any) => f.name === 'Critical Issues')
+      ).toBe(true);
+      expect(
+        result.recommendations.some((r: any) => r.priority === 'high')
+      ).toBe(true);
     });
 
     it('should apply weighted severity penalties', () => {
@@ -109,10 +109,10 @@ describe('Consistency Scoring', () => {
 
       expect(result.recommendations.length).toBeGreaterThan(0);
       expect(
-        result.recommendations.some((r) => r.action.includes('critical'))
+        result.recommendations.some((r: any) => r.action.includes('critical'))
       ).toBe(true);
       expect(
-        result.recommendations.some((r) => r.action.includes('naming'))
+        result.recommendations.some((r: any) => r.action.includes('naming'))
       ).toBe(true);
     });
 
@@ -136,7 +136,7 @@ describe('Consistency Scoring', () => {
       const result = calculateConsistencyScore(issues, 10);
 
       expect(
-        result.recommendations.some((r) => r.action.includes('linter'))
+        result.recommendations.some((r: any) => r.action.includes('linter'))
       ).toBe(true);
     });
 
