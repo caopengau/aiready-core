@@ -57,7 +57,7 @@ export class TypeScriptParser implements LanguageParser {
       });
 
       const imports = this.extractImports(ast);
-      const exports = this.extractExports(ast, code);
+      const exports = this.extractExports(ast, code, filePath);
 
       return {
         exports,
@@ -137,7 +137,11 @@ export class TypeScriptParser implements LanguageParser {
     return imports;
   }
 
-  private extractExports(ast: TSESTree.Program, code: string): ExportInfo[] {
+  private extractExports(
+    ast: TSESTree.Program,
+    code: string,
+    filePath: string
+  ): ExportInfo[] {
     const exports: ExportInfo[] = [];
 
     for (const node of ast.body) {
@@ -156,7 +160,8 @@ export class TypeScriptParser implements LanguageParser {
                 declaration.id.name,
                 'function',
                 node, // Pass the outer ExportNamedDeclaration
-                code
+                code,
+                filePath
               )
             );
           } else if (
@@ -168,7 +173,8 @@ export class TypeScriptParser implements LanguageParser {
                 declaration.id.name,
                 'class',
                 node, // Pass the outer ExportNamedDeclaration
-                code
+                code,
+                filePath
               )
             );
           } else if (declaration.type === 'TSTypeAliasDeclaration') {
@@ -177,7 +183,8 @@ export class TypeScriptParser implements LanguageParser {
                 declaration.id.name,
                 'type',
                 node, // Pass the outer ExportNamedDeclaration
-                code
+                code,
+                filePath
               )
             );
           } else if (declaration.type === 'TSInterfaceDeclaration') {
@@ -186,7 +193,8 @@ export class TypeScriptParser implements LanguageParser {
                 declaration.id.name,
                 'interface',
                 node, // Pass the outer ExportNamedDeclaration
-                code
+                code,
+                filePath
               )
             );
           } else if (declaration.type === 'VariableDeclaration') {
@@ -198,6 +206,7 @@ export class TypeScriptParser implements LanguageParser {
                     'const',
                     node, // Pass the outer ExportNamedDeclaration
                     code,
+                    filePath,
                     decl.init
                   )
                 );
@@ -208,7 +217,9 @@ export class TypeScriptParser implements LanguageParser {
       }
       // 2. ExportDefaultDeclaration
       else if (node.type === 'ExportDefaultDeclaration') {
-        exports.push(this.createExport('default', 'default', node, code));
+        exports.push(
+          this.createExport('default', 'default', node, code, filePath)
+        );
       }
     }
 
@@ -220,6 +231,7 @@ export class TypeScriptParser implements LanguageParser {
     type: any,
     node: any,
     code: string,
+    filePath: string,
     initializer?: any
   ): ExportInfo {
     const documentation = this.extractDocumentation(node, code);
@@ -227,6 +239,7 @@ export class TypeScriptParser implements LanguageParser {
     let propertyCount: number | undefined;
     let parameters: string[] | undefined;
     let isPrimitive = false;
+    let isTyped = false;
 
     // Determine if it's a primitive type if we have an initializer
     if (initializer) {
@@ -246,6 +259,38 @@ export class TypeScriptParser implements LanguageParser {
         : node.type === 'ExportDefaultDeclaration'
           ? node.declaration
           : node;
+
+    // Type detection for TypeScript/JavaScript
+    if (filePath.endsWith('.ts') || filePath.endsWith('.tsx')) {
+      if (
+        structNode.type === 'TSTypeAliasDeclaration' ||
+        structNode.type === 'TSInterfaceDeclaration' ||
+        structNode.type === 'TSEnumDeclaration'
+      ) {
+        isTyped = true;
+      } else if (
+        structNode.type === 'FunctionDeclaration' ||
+        structNode.type === 'TSDeclareFunction'
+      ) {
+        // Check return type and parameters
+        const hasReturnType = !!structNode.returnType;
+        const allParamsTyped =
+          structNode.params.length === 0 ||
+          structNode.params.every((p: any) => !!p.typeAnnotation);
+        isTyped = hasReturnType && allParamsTyped;
+      } else if (structNode.type === 'VariableDeclaration') {
+        // For variables, check if the identifier has a type annotation
+        // or if it's a simple literal (implicit type)
+        isTyped = structNode.declarations.every(
+          (d: any) => !!d.id.typeAnnotation || !!d.init
+        );
+      } else if (structNode.type === 'ClassDeclaration') {
+        isTyped = true; // Classes are structured types
+      }
+    } else if (filePath.endsWith('.js') || filePath.endsWith('.jsx')) {
+      // JavaScript exports are never "explicitly typed" in this context
+      isTyped = false;
+    }
 
     if (
       structNode.type === 'ClassDeclaration' ||
@@ -322,6 +367,7 @@ export class TypeScriptParser implements LanguageParser {
       parameters,
       isPure: this.isLikelyPure(node),
       hasSideEffects: !this.isLikelyPure(node),
+      isTyped,
     };
   }
 

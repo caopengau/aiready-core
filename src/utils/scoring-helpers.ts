@@ -60,6 +60,12 @@ function formatDimensionDescription(
   ) {
     return `${rawData.deepDirectories} of ${rawData.totalDirectories} dirs exceed recommended depth`;
   }
+  if (key === 'apiClarityScore' && rawData.untypedExports !== undefined) {
+    return `${rawData.untypedExports} of ${rawData.totalExports} exports lack type annotations`;
+  }
+  if (key === 'graphStabilityScore') {
+    return `${rawData.score}/100`;
+  }
   return undefined;
 }
 

@@ -79,6 +79,8 @@ export interface ExportInfo {
   /** Behavioral metadata for advanced metrics */
   isPure?: boolean;
   hasSideEffects?: boolean;
+  /** Whether the export has explicit type annotations (TS only) */
+  isTyped?: boolean;
   /** Associated documentation */
   documentation?: {
     content: string;
