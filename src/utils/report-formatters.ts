@@ -1,6 +1,8 @@
 /**
- * Shared HTML report builder utility
+ * Shared HTML report formatting utilities.
  * Provides common template parts for generating self-contained HTML reports.
+ *
+ * @lastUpdated 2026-03-24
  */
 
 export interface ReportOptions {
@@ -24,7 +26,7 @@ export interface TableConfig {
 }
 
 /**
- * Generate the HTML document head with common styles
+ * Generate the HTML document head with common styles.
  */
 export function generateReportHead(title: string): string {
   return `<!DOCTYPE html>
@@ -41,6 +43,9 @@ export function generateReportHead(title: string): string {
     .stat-card { background: #fff; padding: 1rem; border-radius: 6px; text-align: center; border: 1px solid #eaeaea; }
     .stat-value { font-size: 1.8rem; font-weight: bold; color: #2563eb; }
     .stat-label { font-size: 0.875rem; color: #666; text-transform: uppercase; }
+    .hero { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px; margin-bottom: 30px; }
+    .hero h1 { border: none; color: white; margin: 0; }
+    .hero p { margin: 10px 0 0 0; opacity: 0.9; }
     table { width: 100%; border-collapse: collapse; margin-top: 1rem; background: white; border-radius: 4px; overflow: hidden; }
     th, td { text-align: left; padding: 0.875rem 1rem; border-bottom: 1px solid #eaeaea; }
     th { background-color: #f8fafc; font-weight: 600; color: #475569; }
@@ -48,14 +53,30 @@ export function generateReportHead(title: string): string {
     .critical { color: #dc2626; font-weight: bold; }
     .major { color: #ea580c; font-weight: bold; }
     .minor { color: #2563eb; }
+    .issue-critical { color: #dc2626; font-weight: bold; text-transform: uppercase; }
+    .issue-major { color: #ea580c; font-weight: bold; text-transform: uppercase; }
+    .issue-minor { color: #2563eb; font-weight: bold; text-transform: uppercase; }
     code { background: #f1f5f9; padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.875rem; color: #334155; }
     .footer { margin-top: 4rem; text-align: center; color: #94a3b8; font-size: 0.875rem; }
+    a { color: #2563eb; text-decoration: none; }
+    a:hover { text-decoration: underline; }
   </style>
 </head>`;
 }
 
 /**
- * Generate stat cards section
+ * Generate a hero section for the report.
+ */
+export function generateReportHero(title: string, subtitle?: string): string {
+  const subtitleHtml = subtitle ? `<p>${subtitle}</p>` : '';
+  return `<div class="hero">
+    <h1>${title}</h1>
+    ${subtitleHtml}
+  </div>`;
+}
+
+/**
+ * Generate stat cards section.
  */
 export function generateStatCards(cards: StatCard[]): string {
   const cardsHtml = cards
@@ -72,7 +93,20 @@ export function generateStatCards(cards: StatCard[]): string {
 }
 
 /**
- * Generate an HTML table from config
+ * Generate a score card with a single large value.
+ */
+export function generateScoreCard(
+  value: string | number,
+  label: string
+): string {
+  return `<div class="stat-card" style="margin-bottom: 2rem;">
+    <div class="stat-label">${label}</div>
+    <div class="stat-value">${value}</div>
+  </div>`;
+}
+
+/**
+ * Generate an HTML table from configuration.
  */
 export function generateTable(config: TableConfig): string {
   const headersHtml = config.headers.map((h) => `<th>${h}</th>`).join('');
@@ -87,7 +121,31 @@ export function generateTable(config: TableConfig): string {
 }
 
 /**
- * Generate the report footer
+ * Generate an issue summary card.
+ */
+export function generateIssueSummary(
+  critical: number,
+  major: number,
+  minor: number,
+  potentialSavings?: number
+): string {
+  const savingsHtml = potentialSavings
+    ? `<p><strong>Potential Savings:</strong> ${potentialSavings.toLocaleString()} tokens</p>`
+    : '';
+
+  return `<div class="card" style="margin-bottom: 30px;">
+    <h2>⚠️ Issues Summary</h2>
+    <p>
+      <span class="critical">🔴 Critical: ${critical}</span> &nbsp;
+      <span class="major">🟡 Major: ${major}</span> &nbsp;
+      <span class="minor">🔵 Minor: ${minor}</span>
+    </p>
+    ${savingsHtml}
+  </div>`;
+}
+
+/**
+ * Generate the report footer.
  */
 export function generateReportFooter(options: ReportOptions): string {
   const versionText = options.version ? ` v${options.version}` : '';
@@ -111,7 +169,7 @@ export function generateReportFooter(options: ReportOptions): string {
 }
 
 /**
- * Wrap content in a card div
+ * Wrap content in a card div.
  */
 export function wrapInCard(content: string, title?: string): string {
   const titleHtml = title ? `<h2>${title}</h2>` : '';
@@ -122,7 +180,7 @@ export function wrapInCard(content: string, title?: string): string {
 }
 
 /**
- * Generate a complete report by combining all parts
+ * Generate a complete report by combining all parts.
  */
 export function generateCompleteReport(
   options: ReportOptions,

@@ -16,6 +16,36 @@ import { Severity, ToolOptions } from '../types';
  */
 export type CLIOptions = ToolOptions;
 
+/** @internal */
+function ensureDir(path: string): void {
+  const dir = dirname(path);
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
+  }
+}
+
+/** @internal */
+function normalizeSeverity(s: string | undefined): Severity | null {
+  if (!s) return null;
+  const lower = s.toLowerCase();
+  if (['critical', 'high-risk', 'blind-risk'].includes(lower))
+    return Severity.Critical;
+  if (['major', 'moderate-risk'].includes(lower)) return Severity.Major;
+  if (['minor', 'safe'].includes(lower)) return Severity.Minor;
+  if (lower === 'info') return Severity.Info;
+  return null;
+}
+
+/** @internal */
+function getFilesByPattern(dir: string, pattern: RegExp): string[] {
+  if (!existsSync(dir)) return [];
+  try {
+    return readdirSync(dir).filter((f) => pattern.test(f));
+  } catch {
+    return [];
+  }
+}
+
 /**
  * Resolve output file path, defaulting to .aiready directory.
  * Creates parent directories if they don't exist.
@@ -52,10 +82,7 @@ export function resolveOutputPath(
   }
 
   // Ensure parent directory exists (works for both default and custom paths)
-  const parentDir = dirname(outputPath);
-  if (!existsSync(parentDir)) {
-    mkdirSync(parentDir, { recursive: true });
-  }
+  ensureDir(outputPath);
 
   return outputPath;
 }
@@ -106,10 +133,7 @@ export function handleJSONOutput(
 ): void {
   if (outputFile) {
     // Ensure directory exists
-    const dir = dirname(outputFile);
-    if (!existsSync(dir)) {
-      mkdirSync(dir, { recursive: true });
-    }
+    ensureDir(outputFile);
     writeFileSync(outputFile, JSON.stringify(data, null, 2));
     console.log(successMessage || `✅ Results saved to ${outputFile}`);
   } else {
@@ -241,18 +265,15 @@ export function emitProgress(
  * @lastUpdated 2026-03-18
  */
 export function getSeverityColor(severity: string, chalkInstance: any = chalk) {
-  switch (severity.toLowerCase()) {
-    case 'critical':
-    case 'high-risk':
-    case 'blind-risk':
+  const normalized = normalizeSeverity(severity);
+  switch (normalized) {
+    case Severity.Critical:
       return chalkInstance.red;
-    case 'major':
-    case 'moderate-risk':
+    case Severity.Major:
       return chalkInstance.yellow;
-    case 'minor':
-    case 'safe':
+    case Severity.Minor:
       return chalkInstance.green;
-    case 'info':
+    case Severity.Info:
       return chalkInstance.blue;
     default:
       return chalkInstance.white;
@@ -265,15 +286,15 @@ export function getSeverityColor(severity: string, chalkInstance: any = chalk) {
  * @returns Numeric value (4: critical, 3: major, 2: minor, 1: info)
  */
 export function getSeverityValue(s: string | undefined): number {
-  if (!s) return 0;
-  switch (s.toLowerCase()) {
-    case 'critical':
+  const normalized = normalizeSeverity(s);
+  switch (normalized) {
+    case Severity.Critical:
       return 4;
-    case 'major':
+    case Severity.Major:
       return 3;
-    case 'minor':
+    case Severity.Minor:
       return 2;
-    case 'info':
+    case Severity.Info:
       return 1;
     default:
       return 0;
@@ -330,8 +351,6 @@ export function getSeverityEnum(s: string | undefined): any {
       return 'major';
     case 2:
       return 'minor';
-    case 1:
-      return 'info';
     default:
       return 'info';
   }
@@ -347,18 +366,11 @@ export function getSeverityEnum(s: string | undefined): any {
  */
 export function findLatestReport(dirPath: string): string | null {
   const aireadyDir = resolvePath(dirPath, '.aiready');
-  if (!existsSync(aireadyDir)) {
-    return null;
-  }
 
   // Search for new format first, then legacy format
-  let files = readdirSync(aireadyDir).filter(
-    (f) => f.startsWith('aiready-report-') && f.endsWith('.json')
-  );
+  let files = getFilesByPattern(aireadyDir, /^aiready-report-.*\.json$/);
   if (files.length === 0) {
-    files = readdirSync(aireadyDir).filter(
-      (f) => f.startsWith('aiready-scan-') && f.endsWith('.json')
-    );
+    files = getFilesByPattern(aireadyDir, /^aiready-scan-.*\.json$/);
   }
 
   if (files.length === 0) {
@@ -390,14 +402,9 @@ export function findLatestScanReport(
   reportFilePrefix: string
 ): string | null {
   try {
-    let reportFiles: string[] = [];
-    if (existsSync(scanReportsDir)) {
-      const files = readdirSync(scanReportsDir);
-      if (files.length > 0) {
-        const prefixRegex = new RegExp(`^${reportFilePrefix}\\d+\\.json$`);
-        reportFiles = files.filter((file) => prefixRegex.test(file));
-      }
-    }
+    const prefixRegex = new RegExp(`^${reportFilePrefix}\\d+\\.json$`);
+    const reportFiles = getFilesByPattern(scanReportsDir, prefixRegex);
+
     if (reportFiles.length === 0) return null;
 
     // Sort the files by their ID numbers in descending order
