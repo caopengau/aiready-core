@@ -35,6 +35,17 @@ export interface AiSignalClarity {
   topRisk: string;
   /** Actionable recommendations to improve clarity */
   recommendations: string[];
+  /** Metric dimensions for scoring (0-100) */
+  dimensions: {
+    overloadingScore: number;
+    magicLiteralScore: number;
+    booleanTrapScore: number;
+    implicitSideEffectScore: number;
+    deepCallbackScore: number;
+    ambiguityScore: number;
+    documentationScore: number;
+    sizeScore: number;
+  };
 }
 
 /**
@@ -85,6 +96,16 @@ export function calculateAiSignalClarity(params: {
       signals: [],
       topRisk: 'No symbols to analyze',
       recommendations: [],
+      dimensions: {
+        overloadingScore: 100,
+        magicLiteralScore: 100,
+        booleanTrapScore: 100,
+        implicitSideEffectScore: 100,
+        deepCallbackScore: 100,
+        ambiguityScore: 100,
+        documentationScore: 100,
+        sizeScore: 100,
+      },
     };
   }
 
@@ -213,5 +234,21 @@ export function calculateAiSignalClarity(params: {
     signals: signals.filter((s) => s.count > 0),
     topRisk,
     recommendations,
+    dimensions: {
+      overloadingScore: Math.max(0, 100 - overloadSignal.riskContribution * 5),
+      magicLiteralScore: Math.max(0, 100 - magicSignal.riskContribution * 6.6),
+      booleanTrapScore: Math.max(0, 100 - trapSignal.riskContribution * 6.6),
+      implicitSideEffectScore: Math.max(
+        0,
+        100 - sideEffectSignal.riskContribution * 10
+      ),
+      deepCallbackScore: Math.max(
+        0,
+        100 - callbackSignal.riskContribution * 10
+      ),
+      ambiguityScore: Math.max(0, 100 - ambiguousSignal.riskContribution * 20),
+      documentationScore: Math.max(0, 100 - undocSignal.riskContribution * 20),
+      sizeScore: Math.max(0, 100 - largeFileSignal.riskContribution * 4),
+    },
   };
 }

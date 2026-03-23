@@ -4,6 +4,7 @@ export * from './types/contract';
 export * from './registry';
 export * from './utils/file-scanner';
 export * from './utils/cli-helpers';
+export * from './utils/cli-utils';
 export * from './utils/cli-action-helpers';
 export * from './utils/provider-utils';
 export * from './utils/ast-parser';
@@ -56,3 +57,5 @@ export * from './utils/history-git';
 
 // CI/CD Utilities
 export * from './utils/github-utils';
+export * from './utils/analysis-orchestrator';
+export * from './utils/spoke-cli-helpers';
