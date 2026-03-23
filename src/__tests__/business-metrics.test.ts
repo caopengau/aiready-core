@@ -10,7 +10,7 @@ import {
   formatCost,
   formatHours,
   formatAcceptanceRate,
-} from '../business-metrics';
+} from '..';
 import { ToolScoringOutput } from '../scoring';
 
 describe('Business Metrics', () => {

@@ -22,9 +22,6 @@ import {
 // We only keep exports that are core to the future-proof concept here.
 // Other metrics have been moved to the primary package index to reduce
 // the transitive context budget of this module.
-export * from './metrics/cognitive-load';
-export * from './metrics/semantic-distance';
-export * from './metrics/structural-metrics';
 
 /**
  * Calculate the Aggregate Future-Proof Score based on core structural metrics.

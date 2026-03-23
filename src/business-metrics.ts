@@ -13,12 +13,6 @@ import {
 import { calculateProductivityImpact } from './business/productivity-metrics';
 import { getModelPreset } from './business/pricing-models';
 
-export * from './business/pricing-models';
-export * from './business/cost-metrics';
-export * from './business/productivity-metrics';
-export * from './business/risk-metrics';
-export * from './business/comprehension-metrics';
-
 /**
  * Historical score entry for trend tracking.
  * Used to store and compare results across different points in time.
@@ -106,8 +100,6 @@ export function calculateBusinessROI(params: {
     annualValue: Math.round(annualValue),
   };
 }
-
-export { calculateDetailedTokenROI } from './business/cost-metrics';
 
 /**
  * Format currency value for display in console or reports.

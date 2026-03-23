@@ -23,6 +23,11 @@ export * from './utils/code-extractor';
 // Business value metrics (v0.10+)
 export * from './business-metrics';
 export * from './types/business';
+export * from './business/pricing-models';
+export * from './business/cost-metrics';
+export * from './business/productivity-metrics';
+export * from './business/risk-metrics';
+export * from './business/comprehension-metrics';
 
 // Multi-language parser support
 export * from './parsers/parser-factory';
@@ -35,6 +40,9 @@ export * from './parsers/go-parser';
 
 // Future-proof abstraction layer
 export * from './future-proof-metrics';
+export * from './metrics/cognitive-load';
+export * from './metrics/semantic-distance';
+export * from './metrics/structural-metrics';
 export * from './metrics/ai-signal-clarity';
 export * from './metrics/agent-grounding';
 export * from './metrics/testability-index';

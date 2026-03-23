@@ -3,7 +3,7 @@ import {
   calculateMonthlyCost,
   predictAcceptanceRate,
   generateValueChain,
-} from '../business-metrics';
+} from '..';
 import { ToolScoringOutput } from '../scoring';
 
 describe('business-metrics v0.12 evolution', () => {

@@ -3,7 +3,7 @@ import {
   calculateTokenBudget,
   estimateCostFromBudget,
   MODEL_PRICING_PRESETS,
-} from '../business-metrics';
+} from '..';
 
 describe('Token Budget Unit Economics', () => {
   const sampleWastedTokens = {

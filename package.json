@@ -12,14 +12,14 @@
       "import": "./dist/index.mjs"
     },
     "./client": {
-      "types": "./dist/client.d.ts",
-      "require": "./dist/client.js",
-      "import": "./dist/client.mjs"
+      "types": "./dist/client/index.d.ts",
+      "require": "./dist/client/index.js",
+      "import": "./dist/client/index.mjs"
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts src/client.ts --format cjs,esm --dts",
-    "dev": "tsup src/index.ts src/client.ts --format cjs,esm --watch",
+    "build": "tsup src/index.ts src/client/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts src/client/index.ts --format cjs,esm --watch",
     "test": "vitest run --hookTimeout=30000",
     "lint": "eslint src",
     "clean": "rm -rf dist",

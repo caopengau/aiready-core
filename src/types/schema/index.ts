@@ -11,4 +11,4 @@
  */
 
 // Re-export everything from the modular structure
-export * from './index';
+export * from '../index';

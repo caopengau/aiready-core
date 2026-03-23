@@ -12,14 +12,14 @@
  */
 
 // Types - safe for client
-export * from './types';
-export * from './types/language';
+export * from '../types';
+export * from '../types/language';
 
 // Scoring - pure functions, no Node.js dependencies
-export * from './scoring';
+export * from '../scoring';
 
 // Visualization helpers - pure functions
-export * from './utils/visualization';
+export * from '../utils/visualization';
 
 // Re-export visualization types explicitly to ensure they're included in client bundle
 export type {
@@ -28,4 +28,4 @@ export type {
   GraphNode,
   GraphEdge,
   GraphData,
-} from './types/visualization';
+} from '../types/visualization';
