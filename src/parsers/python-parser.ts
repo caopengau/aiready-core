@@ -350,8 +350,8 @@ export class PythonParser extends BaseLanguageParser {
       const fromMatch = line.match(fromImportRegex);
       if (fromMatch) {
         const module = fromMatch[1];
-        const imports_str = fromMatch[2];
-        if (imports_str.trim() === '*') {
+        const importsStr = fromMatch[2];
+        if (importsStr.trim() === '*') {
           imports.push({
             source: module,
             specifiers: ['*'],
@@ -362,7 +362,7 @@ export class PythonParser extends BaseLanguageParser {
           });
           return;
         }
-        const specifiers = imports_str
+        const specifiers = importsStr
           .split(',')
           .map((s) => s.trim().split(' as ')[0]);
         imports.push({

@@ -36,5 +36,8 @@ export {
 // Config schema
 export { AIReadyConfigSchema } from './schemas/config';
 
+// Code block type
+export { CodeBlock } from './code-block';
+
 // Visualization types
 export * from './visualization';

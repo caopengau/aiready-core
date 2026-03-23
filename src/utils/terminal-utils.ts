@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 import { Severity } from '../types';
-import { getSeverityValue } from './cli-utils';
+import { getSeverityValue, getSeverityBadge } from './severity-utils';
 
 /**
  * Get a formatted terminal divider string based on current terminal width.
@@ -68,29 +68,4 @@ export function getSafetyIcon(rating: string): string {
   }
 }
 
-/**
- * Get colored severity badge for console output
- * @param severity Severity level
- * @param chalkInstance Chalk instance (optional)
- * @returns Formatted badge string
- */
-export function getSeverityBadge(
-  severity: Severity | string,
-  chalkInstance: any = chalk
-): string {
-  const val = getSeverityValue(
-    typeof severity === 'string' ? severity : (severity as string)
-  );
-  switch (val) {
-    case 4:
-      return chalkInstance.bgRed.white.bold(' CRITICAL ');
-    case 3:
-      return chalkInstance.bgYellow.black.bold(' MAJOR ');
-    case 2:
-      return chalkInstance.bgBlue.white.bold(' MINOR ');
-    case 1:
-      return chalkInstance.bgCyan.black(' INFO ');
-    default:
-      return chalkInstance.bgCyan.black(' INFO ');
-  }
-}
+export { getSeverityBadge } from './severity-utils';

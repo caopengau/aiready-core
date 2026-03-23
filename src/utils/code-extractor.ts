@@ -1,16 +1,8 @@
 import { estimateTokens } from './metrics';
+import { CodeBlock } from '../types/code-block';
 
-/**
- * Logical code block extracted from source
- */
-export interface CodeBlock {
-  file: string;
-  startLine: number;
-  endLine: number;
-  code: string;
-  tokens: number;
-  patternType: string;
-}
+// Re-export for backward compatibility
+export type { CodeBlock };
 
 /**
  * Infer the type of code pattern based on keywords and naming conventions.
