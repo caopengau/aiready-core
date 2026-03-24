@@ -12,6 +12,20 @@ vi.mock('@aiready/core', async () => {
   };
 });
 
+// Mock fs to prevent ENOENT errors when python-context tries to read files
+vi.mock('fs', () => ({
+  default: {
+    promises: {
+      readFile: vi.fn().mockResolvedValue('# Python file\nprint("hello")'),
+    },
+    existsSync: vi.fn().mockReturnValue(true),
+  },
+  promises: {
+    readFile: vi.fn().mockResolvedValue('# Python file\nprint("hello")'),
+  },
+  existsSync: vi.fn().mockReturnValue(true),
+}));
+
 describe('analyzeContext', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -60,7 +74,7 @@ describe('analyzeContext', () => {
     expect(results).toEqual([]);
   });
 
-  it('should filter Python files when not present', async () => {
+  it('should process both TypeScript and Python files', async () => {
     const mockFiles = ['src/file1.ts', 'src/file2.py'];
     vi.mocked(core.scanFiles).mockResolvedValue(mockFiles);
     vi.mocked(core.readFileContent).mockResolvedValue('export const a = 1;');
@@ -69,9 +83,10 @@ describe('analyzeContext', () => {
       rootDir: '.',
     });
 
-    // Should only process TypeScript files
-    expect(results.length).toBe(1);
-    expect(results[0].file).toBe('src/file1.ts');
+    // Orchestrator processes both TypeScript and Python files
+    expect(results.length).toBe(2);
+    expect(results.some((r) => r.file === 'src/file1.ts')).toBe(true);
+    expect(results.some((r) => r.file === 'src/file2.py')).toBe(true);
   });
 
   it('should use default options when not provided', async () => {

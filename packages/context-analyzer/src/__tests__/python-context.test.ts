@@ -27,6 +27,12 @@ vi.mock('@aiready/core', () => ({
 
 // Mock fs
 vi.mock('fs', () => ({
+  default: {
+    promises: {
+      readFile: vi.fn(),
+    },
+    existsSync: vi.fn(),
+  },
   promises: {
     readFile: vi.fn(),
   },

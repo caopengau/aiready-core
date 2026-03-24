@@ -30,6 +30,7 @@ export function RemediationQueue({
     id: string;
     diff?: string;
   } | null>(null);
+  const [triggeringId, setTriggeringId] = useState<string | null>(null);
 
   const fetchRemediations = useCallback(async () => {
     try {
@@ -60,31 +61,29 @@ export function RemediationQueue({
     (r) => r.status === 'in-progress'
   );
 
-  const _handleSwarm = async (remId: string) => {
+  async function handleTrigger(id: string) {
+    if (triggeringId || hasInProgressRemediation) return;
+
+    setTriggeringId(id);
     try {
       const res = await fetch('/api/remediate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: remId, type: 'swarm' }),
+        body: JSON.stringify({ remediationId: id, type: 'standard' }),
       });
       if (res.ok) {
-        toast.success('Remediation Swarm started');
-        setRemediations((prev) =>
-          prev.map((r) =>
-            r.id === remId
-              ? {
-                  ...r,
-                  status: 'in-progress',
-                  agentStatus: 'Swarm initializing...',
-                }
-              : r
-          )
-        );
+        toast.success('AI Remediation started');
+        fetchRemediations();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || 'Failed to trigger remediation');
       }
     } catch (_err) {
-      toast.error('Failed to start swarm');
+      toast.error('Network error triggering remediation');
+    } finally {
+      setTriggeringId(null);
     }
-  };
+  }
 
   async function handleApprove(id: string) {
     try {
@@ -96,21 +95,6 @@ export function RemediationQueue({
       }
     } catch (_err) {
       console.error('Error approving remediation:', _err);
-    }
-  }
-
-  async function _handleRemediate(id: string) {
-    try {
-      const res = await fetch('/api/remediate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ remediationId: id }),
-      });
-      if (res.ok) {
-        fetchRemediations();
-      }
-    } catch (_err) {
-      console.error('Error triggering remediation:', _err);
     }
   }
 
@@ -128,7 +112,7 @@ export function RemediationQueue({
             Managed ROI
           </span>
           <span className="text-[10px] font-black uppercase tracking-widest bg-slate-800 px-3 py-1 rounded-full border border-slate-700 text-slate-400">
-            Alpha
+            Beta
           </span>
         </div>
       </div>
@@ -249,24 +233,31 @@ export function RemediationQueue({
                     )}
                     {rem.status === 'pending' && rem.rank === 'P0' && (
                       <button
-                        disabled={hasInProgressRemediation}
+                        onClick={() => handleTrigger(rem.id)}
+                        disabled={
+                          hasInProgressRemediation || triggeringId === rem.id
+                        }
                         title={
                           hasInProgressRemediation
-                            ? 'Another remediation is in progress. Please wait for it to complete.'
-                            : 'Autonomous Swarm Remediation is coming soon'
+                            ? 'Another remediation is in progress.'
+                            : 'Trigger AI Remediation'
                         }
                         className={`flex items-center gap-2 px-3 py-1.5 rounded-lg shadow-lg transition-all ${
-                          hasInProgressRemediation
-                            ? 'bg-purple-500/30 text-white/30 cursor-not-allowed'
-                            : 'bg-purple-500/50 text-white/50 cursor-not-allowed'
+                          hasInProgressRemediation || triggeringId === rem.id
+                            ? 'bg-purple-500/30 text-white/30 cursor-not-allowed border border-purple-500/20'
+                            : 'bg-purple-600 hover:bg-purple-500 text-white shadow-purple-500/20 active:scale-95 border border-purple-400/30'
                         }`}
                       >
-                        <span className="text-[10px] font-black uppercase">
-                          {hasInProgressRemediation
-                            ? 'Blocked'
-                            : 'Trigger Swarm'}
+                        <span className="text-[10px] font-black uppercase tracking-tight">
+                          {triggeringId === rem.id
+                            ? 'Starting...'
+                            : 'Fix with AI'}
                         </span>
-                        <Icon name="ZapIcon" className="w-3 h-3" />
+                        {triggeringId === rem.id ? (
+                          <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                          <Icon name="ZapIcon" className="w-3 h-3" />
+                        )}
                       </button>
                     )}
                     {rem.status === 'pending' &&
@@ -283,16 +274,34 @@ export function RemediationQueue({
                         </button>
                       )}
                     {rem.status === 'pending' &&
+                      rem.rank !== 'P0' &&
                       (rem.risk === 'low' || rem.risk === 'medium') && (
                         <button
-                          disabled
-                          title="AI Remediation is coming soon"
-                          className="flex items-center gap-2 px-3 py-1.5 bg-cyan-500/10 text-cyan-500/50 rounded-lg cursor-not-allowed group transition-all"
+                          onClick={() => handleTrigger(rem.id)}
+                          disabled={
+                            hasInProgressRemediation || triggeringId === rem.id
+                          }
+                          title={
+                            hasInProgressRemediation
+                              ? 'Another remediation is in progress.'
+                              : 'Trigger AI Remediation'
+                          }
+                          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all border ${
+                            hasInProgressRemediation || triggeringId === rem.id
+                              ? 'bg-cyan-500/10 text-cyan-500/30 border-cyan-500/10 cursor-not-allowed'
+                              : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30 hover:bg-cyan-500/20 hover:text-cyan-300 active:scale-95'
+                          }`}
                         >
                           <span className="text-[10px] font-bold">
-                            Fix with AI
+                            {triggeringId === rem.id
+                              ? 'Starting...'
+                              : 'Fix with AI'}
                           </span>
-                          <Icon name="ArrowRightIcon" className="w-3 h-3" />
+                          {triggeringId === rem.id ? (
+                            <div className="w-3 h-3 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" />
+                          ) : (
+                            <Icon name="ArrowRightIcon" className="w-3 h-3" />
+                          )}
                         </button>
                       )}
                   </div>

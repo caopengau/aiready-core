@@ -166,46 +166,88 @@ export function useDashboardData(
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
+    input.multiple = true;
 
     input.onchange = async () => {
-      const file = input.files?.[0];
-      if (!file) return;
+      const files = Array.from(input.files || []);
+      if (files.length === 0) return;
 
       setUploadingRepoId(repoId);
       setUploadError(null);
 
-      try {
-        const text = await file.text();
-        const data = JSON.parse(text);
+      let successCount = 0;
+      let failCount = 0;
+      let lastAnalysis: Analysis | null = null;
+      const errors: string[] = [];
 
-        const res = await fetch('/api/analysis/upload', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ repoId, data }),
-        });
+      // Import schema dynamically to avoid heavy client bundle if not needed immediately
+      const { UnifiedReportSchema } = await import('@aiready/core/client');
 
-        const result = await res.json();
-        if (!res.ok) {
-          setUploadError(result.error || 'Upload failed');
-          return;
+      for (const file of files) {
+        try {
+          const text = await file.text();
+          const data = JSON.parse(text);
+
+          // Client-side validation
+          const validation = UnifiedReportSchema.safeParse(data);
+          if (!validation.success) {
+            failCount++;
+            errors.push(
+              `${file.name}: Invalid format - ${validation.error.issues[0].message}`
+            );
+            continue;
+          }
+
+          const res = await fetch('/api/analysis/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ repoId, data }),
+          });
+
+          const result = await res.json();
+          if (!res.ok) {
+            failCount++;
+            errors.push(`${file.name}: ${result.error || 'Upload failed'}`);
+            continue;
+          }
+
+          successCount++;
+          // Keep track of the "latest" one to update UI (simplistic check)
+          if (
+            !lastAnalysis ||
+            new Date(result.analysis.timestamp) >
+              new Date(lastAnalysis.timestamp)
+          ) {
+            lastAnalysis = result.analysis;
+          }
+        } catch (err) {
+          failCount++;
+          errors.push(`${file.name}: System error or invalid JSON`);
         }
+      }
 
+      if (successCount > 0 && lastAnalysis) {
+        const finalAnalysis = lastAnalysis;
         setRepos((prev) =>
           prev.map((r) =>
             r.id === repoId
               ? {
                   ...r,
-                  latestAnalysis: result.analysis,
-                  aiScore: result.analysis.aiScore,
+                  latestAnalysis: finalAnalysis,
+                  aiScore: finalAnalysis.aiScore,
                 }
               : r
           )
         );
-      } catch {
-        setUploadError('Invalid JSON file or network error');
-      } finally {
-        setUploadingRepoId(null);
+        toast.success(`Successfully uploaded ${successCount} report(s).`);
       }
+
+      if (failCount > 0) {
+        setUploadError(`${failCount} file(s) failed to upload.`);
+        errors.forEach((err) => toast.error(err));
+      }
+
+      setUploadingRepoId(null);
     };
 
     input.click();
