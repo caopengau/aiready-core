@@ -130,6 +130,11 @@ export function mergeConfigWithDefaults(
     if (userConfig.scan.exclude) mergedConfig.exclude = userConfig.scan.exclude;
   }
 
+  // Merge gatekeeper options
+  if (userConfig.threshold !== undefined)
+    mergedConfig.threshold = userConfig.threshold;
+  if (userConfig.failOn !== undefined) mergedConfig.failOn = userConfig.failOn;
+
   // Merge tool-specific options (strictly 'tools' map as per schema)
   if (userConfig.tools) {
     if (!mergedConfig.toolConfigs) mergedConfig.toolConfigs = {};

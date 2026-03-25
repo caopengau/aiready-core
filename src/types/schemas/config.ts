@@ -6,12 +6,12 @@ import { z } from 'zod';
  */
 export const AIReadyConfigSchema = z
   .object({
-    /** Target score threshold (0-100) */
-    threshold: z.number().optional(),
-    /** Files or directories to include in scan */
-    include: z.array(z.string()).optional(),
     /** Files or directories to exclude from scan */
     exclude: z.array(z.string()).optional(),
+    /** Fail CI/CD if score below threshold (0-100) */
+    threshold: z.number().optional(),
+    /** Fail on issues: critical, major, any */
+    failOn: z.enum(['critical', 'major', 'any', 'none']).optional(),
     /** Scan-specific configuration */
     scan: z
       .object({
