@@ -31,6 +31,7 @@ export enum ToolName {
   PatternEntropy = 'pattern-entropy',
   ConceptCohesion = 'concept-cohesion',
   SemanticDistance = 'semantic-distance',
+  ContractEnforcement = 'contract-enforcement',
 }
 
 /** Zod schema for ToolName enum */
