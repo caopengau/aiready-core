@@ -17,7 +17,12 @@ export async function runBatchAnalysis<T, R>(
   for (const item of items) {
     processed++;
     emitProgress(processed, items.length, toolId, label, onProgress);
-    const result = await processFn(item);
-    onResult(result);
+    try {
+      const result = await processFn(item);
+      onResult(result);
+    } catch (error) {
+      console.error(`[${toolId}] Error processing ${item}:`, error);
+      // Continue to next item instead of crashing the whole batch
+    }
   }
 }

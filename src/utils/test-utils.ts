@@ -79,6 +79,28 @@ export function detectTestFramework(rootDir: string): boolean {
 }
 
 /**
+ * Check if a file is a type definition, constant file, or other "ignorable"
+ * source file that shouldn't necessarily require its own tests.
+ *
+ * @param filePath - The path to check.
+ * @returns True if the file is ignorable for test ratio purposes.
+ */
+export function isIgnorableSourceFile(filePath: string): boolean {
+  const lower = filePath.toLowerCase();
+  return (
+    lower.endsWith('.d.ts') ||
+    lower.endsWith('types.ts') ||
+    lower.endsWith('interface.ts') ||
+    lower.endsWith('constants.ts') ||
+    lower.includes('/types/') ||
+    lower.includes('/interfaces/') ||
+    lower.includes('/constants/') ||
+    lower.includes('/models/') || // Often just data structures
+    lower.includes('/schemas/') // Often just data validation
+  );
+}
+
+/**
  * Check if a file path belongs to a build artifact or dependency folder.
  *
  * @param filePath - The path to check.
