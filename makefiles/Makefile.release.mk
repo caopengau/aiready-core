@@ -77,7 +77,7 @@ endef
 define commit_and_tag_app
 	version=$$(node -p "require('$(1)/package.json').version"); \
 	$(call log_step,Committing $(3) v$$version...); \
-	cd $(ROOT_DIR) && git add $(2)/package.json; \
+	cd $(ROOT_DIR) && git add . ; \
 	cd $(ROOT_DIR) && git commit -m "chore(release): $(3) v$$version"; \
 	tag_name="$(4)-v$$version"; \
 	$(call log_step,Tagging $$tag_name...); \
@@ -97,7 +97,7 @@ endef
 define commit_and_tag
 	version=$$(node -p "require('$(ROOT_DIR)/packages/$(SPOKE)/package.json').version"); \
 	$(call log_step,Committing @aiready/$(SPOKE) v$$version...); \
-	cd $(ROOT_DIR) && git add packages/$(SPOKE)/package.json; \
+	cd $(ROOT_DIR) && git add . ; \
 	cd $(ROOT_DIR) && git commit -m "chore(release): @aiready/$(SPOKE) v$$version"; \
 	tag_name="$(SPOKE)-v$$version"; \
 	$(call log_step,Tagging $$tag_name...); \
@@ -322,7 +322,7 @@ release-all: ## Release all npm spokes: TYPE=patch|minor|major
 		$(MAKE) -C $(ROOT_DIR) $(call bump_target_for_type,$(TYPE)) SPOKE=$$spoke || exit 1; \
 	done
 	@$(call log_step,Phase 4: Commit + tag all...)
-	@cd $(ROOT_DIR) && git add packages/*/package.json && \
+	@cd $(ROOT_DIR) && git add . && \
 		git commit -m "chore(release): version bumps across spokes" || true
 	@for spoke in $(CORE_SPOKE) $(MIDDLE_SPOKES) $(CLI_SPOKE); do \
 		version=$$(node -p "require('$(ROOT_DIR)/packages/$$spoke/package.json').version"); \

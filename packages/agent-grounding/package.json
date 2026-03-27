@@ -1,6 +1,6 @@
 {
   "name": "@aiready/agent-grounding",
-  "version": "0.14.3",
+  "version": "0.14.4",
   "description": "Measures how well an AI agent can navigate a codebase autonomously without human assistance",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",

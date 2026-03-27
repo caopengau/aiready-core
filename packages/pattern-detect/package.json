@@ -1,6 +1,6 @@
 {
   "name": "@aiready/pattern-detect",
-  "version": "0.17.3",
+  "version": "0.17.4",
   "description": "Semantic duplicate pattern detection for AI-generated code - finds similar implementations that waste AI context tokens",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
