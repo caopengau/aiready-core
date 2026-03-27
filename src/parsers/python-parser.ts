@@ -120,7 +120,9 @@ export class PythonParser extends BaseLanguageParser {
               },
             });
           } else if (child.type === PYTHON_CONSTANTS.NODES.ALIASED_IMPORT) {
-            const nameNode = child.childForFieldName(PYTHON_CONSTANTS.FIELDS.NAME);
+            const nameNode = child.childForFieldName(
+              PYTHON_CONSTANTS.FIELDS.NAME
+            );
             if (nameNode) {
               const source = nameNode.text;
               imports.push({
@@ -142,17 +144,24 @@ export class PythonParser extends BaseLanguageParser {
         }
       } else if (node.type === PYTHON_CONSTANTS.NODES.IMPORT_FROM_STATEMENT) {
         // from typing import List, Optional
-        const moduleNameNode = node.childForFieldName(PYTHON_CONSTANTS.FIELDS.MODULE_NAME);
+        const moduleNameNode = node.childForFieldName(
+          PYTHON_CONSTANTS.FIELDS.MODULE_NAME
+        );
         if (moduleNameNode) {
           const source = moduleNameNode.text;
           const specifiers: string[] = [];
 
           // Find all imported names
           for (const child of node.children) {
-            if (child.type === PYTHON_CONSTANTS.NODES.DOTTED_NAME && child !== moduleNameNode) {
+            if (
+              child.type === PYTHON_CONSTANTS.NODES.DOTTED_NAME &&
+              child !== moduleNameNode
+            ) {
               specifiers.push(child.text);
             } else if (child.type === PYTHON_CONSTANTS.NODES.ALIASED_IMPORT) {
-              const nameNode = child.childForFieldName(PYTHON_CONSTANTS.FIELDS.NAME);
+              const nameNode = child.childForFieldName(
+                PYTHON_CONSTANTS.FIELDS.NAME
+              );
               if (nameNode) specifiers.push(nameNode.text);
             } else if (child.type === PYTHON_CONSTANTS.NODES.WILDCARD_IMPORT) {
               specifiers.push(PYTHON_CONSTANTS.SPECIAL.WILDCARD);
@@ -190,7 +199,10 @@ export class PythonParser extends BaseLanguageParser {
   /**
    * Extract export information using AST walk.
    */
-  protected extractExportsAST(rootNode: Parser.Node, code: string): ExportInfo[] {
+  protected extractExportsAST(
+    rootNode: Parser.Node,
+    code: string
+  ): ExportInfo[] {
     const exports: ExportInfo[] = [];
 
     for (const node of rootNode.children) {
@@ -242,8 +254,13 @@ export class PythonParser extends BaseLanguageParser {
         }
       } else if (node.type === PYTHON_CONSTANTS.NODES.EXPRESSION_STATEMENT) {
         const assignment = node.firstChild;
-        if (assignment && assignment.type === PYTHON_CONSTANTS.NODES.ASSIGNMENT) {
-          const left = assignment.childForFieldName(PYTHON_CONSTANTS.FIELDS.LEFT);
+        if (
+          assignment &&
+          assignment.type === PYTHON_CONSTANTS.NODES.ASSIGNMENT
+        ) {
+          const left = assignment.childForFieldName(
+            PYTHON_CONSTANTS.FIELDS.LEFT
+          );
           if (left && left.type === PYTHON_CONSTANTS.NODES.IDENTIFIER) {
             const name = left.text;
             // Skip __all__ and other internal variables, and private variables
@@ -256,7 +273,10 @@ export class PythonParser extends BaseLanguageParser {
             if (!isInternal && !isPrivate) {
               exports.push({
                 name,
-                type: name === name.toUpperCase() ? PYTHON_CONSTANTS.TYPES.CONST : PYTHON_CONSTANTS.TYPES.VARIABLE,
+                type:
+                  name === name.toUpperCase()
+                    ? PYTHON_CONSTANTS.TYPES.CONST
+                    : PYTHON_CONSTANTS.TYPES.VARIABLE,
                 loc: {
                   start: {
                     line: node.startPosition.row + 1,
@@ -281,7 +301,9 @@ export class PythonParser extends BaseLanguageParser {
    * Extract parameter names from a function definition node.
    */
   private extractParameters(node: Parser.Node): string[] {
-    const paramsNode = node.childForFieldName(PYTHON_CONSTANTS.FIELDS.PARAMETERS);
+    const paramsNode = node.childForFieldName(
+      PYTHON_CONSTANTS.FIELDS.PARAMETERS
+    );
     if (!paramsNode) return [];
 
     return paramsNode.children
@@ -320,7 +342,9 @@ export class PythonParser extends BaseLanguageParser {
         ],
       };
     } catch (error) {
-      const wrapper = new Error(`Failed to parse Python file ${filePath}: ${(error as Error).message}`);
+      const wrapper = new Error(
+        `Failed to parse Python file ${filePath}: ${(error as Error).message}`
+      );
       (wrapper as any).cause = error;
       throw wrapper;
     }
@@ -368,7 +392,9 @@ export class PythonParser extends BaseLanguageParser {
 
       const importMatch = line.match(importRegex);
       if (importMatch) {
-        const modules = importMatch[1].split(',').map((m) => m.trim().split(' as ')[0]);
+        const modules = importMatch[1]
+          .split(',')
+          .map((m) => m.trim().split(' as ')[0]);
         modules.forEach((module) => {
           imports.push({
             source: module,
@@ -397,7 +423,9 @@ export class PythonParser extends BaseLanguageParser {
           });
           return;
         }
-        const specifiers = importsStr.split(',').map((s) => s.trim().split(' as ')[0]);
+        const specifiers = importsStr
+          .split(',')
+          .map((s) => s.trim().split(' as ')[0]);
         imports.push({
           source: module,
           specifiers,
@@ -449,7 +477,8 @@ export class PythonParser extends BaseLanguageParser {
         const nextLines = lines.slice(idx + 1, idx + 4);
         for (const nextLine of nextLines) {
           const docMatch =
-            nextLine.match(/^\s*"""([\s\S]*?)"""/) || nextLine.match(/^\s*'''([\s\S]*?)'''/);
+            nextLine.match(/^\s*"""([\s\S]*?)"""/) ||
+            nextLine.match(/^\s*'''([\s\S]*?)'''/);
           if (docMatch) {
             docContent = docMatch[1].trim();
             break;
@@ -465,7 +494,8 @@ export class PythonParser extends BaseLanguageParser {
         const isImpure =
           name.toLowerCase().includes('impure') ||
           line.includes(PYTHON_CONSTANTS.BUILTINS.PRINT) ||
-          (idx + 1 < lines.length && lines[idx + 1].includes(PYTHON_CONSTANTS.BUILTINS.PRINT));
+          (idx + 1 < lines.length &&
+            lines[idx + 1].includes(PYTHON_CONSTANTS.BUILTINS.PRINT));
 
         exports.push({
           name,
