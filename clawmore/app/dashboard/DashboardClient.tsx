@@ -7,6 +7,7 @@ import { Layers, Zap, Activity, Shield, Terminal } from 'lucide-react';
 interface DashboardClientProps {
   user: any;
   isAdmin?: boolean;
+  pendingCheckout?: boolean;
   status: {
     awsSpendCents: number;
     awsInclusionCents: number;
@@ -16,6 +17,12 @@ interface DashboardClientProps {
     coEvolutionOptIn: boolean;
     autoTopupEnabled: boolean;
     recentMutations: any[];
+    // Real account data
+    activeRepos?: number;
+    awsAccountId?: string | null;
+    repoUrl?: string | null;
+    provisioningStatus?: 'provisioning' | 'complete' | 'failed' | null;
+    planStatus?: string;
   };
 }
 
@@ -23,6 +30,7 @@ export default function DashboardClient({
   user,
   isAdmin: _isAdmin,
   status,
+  pendingCheckout,
 }: DashboardClientProps) {
   const searchParams = useSearchParams();
   const activeTab = searchParams.get('tab') || 'overview';
@@ -37,6 +45,87 @@ export default function DashboardClient({
     status.aiRefillThresholdCents
   );
   const [topupAmountCents, setTopupAmountCents] = React.useState(1000); // $10.00 default
+
+  // Checkout state
+  const [isCheckingOut, setIsCheckingOut] = React.useState(false);
+
+  // Provisioning polling state
+  const [provisionStatus, setProvisionStatus] = React.useState(
+    status.provisioningStatus || 'none'
+  );
+  const [provisionAccountId, setProvisionAccountId] = React.useState(
+    status.awsAccountId
+  );
+  const [provisionRepoUrl, setProvisionRepoUrl] = React.useState(
+    status.repoUrl
+  );
+  const [pollCount, setPollCount] = React.useState(0);
+
+  // Provisioning status polling
+  React.useEffect(() => {
+    if (provisionStatus !== 'provisioning') return;
+    if (pollCount >= 120) return; // Stop after 10 minutes (5s * 120)
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch('/api/account/status');
+        if (res.ok) {
+          const data = await res.json();
+          setProvisionStatus(data.status);
+          if (data.accounts?.[0]) {
+            setProvisionAccountId(data.accounts[0].awsAccountId);
+            setProvisionRepoUrl(data.accounts[0].repoUrl);
+          }
+          if (data.status === 'complete' || data.status === 'failed') {
+            clearInterval(interval);
+          }
+        }
+      } catch (err) {
+        console.error('Provisioning poll error:', err);
+      }
+      setPollCount((c) => c + 1);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [provisionStatus, pollCount]);
+
+  // Checkout handler
+  const handleCheckout = async () => {
+    if (isCheckingOut) return;
+    setIsCheckingOut(true);
+    try {
+      const res = await fetch('/api/billing/checkout', { method: 'POST' });
+      if (!res.ok) throw new Error('Checkout failed');
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (err) {
+      console.error('Checkout error:', err);
+      alert('Failed to start checkout. Please try again.');
+    } finally {
+      setIsCheckingOut(false);
+    }
+  };
+
+  // Manage subscription handler (opens Stripe Customer Portal)
+  const handleManageSubscription = async () => {
+    if (isCheckingOut) return;
+    setIsCheckingOut(true);
+    try {
+      const res = await fetch('/api/billing/portal', { method: 'POST' });
+      if (!res.ok) throw new Error('Portal request failed');
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (err) {
+      console.error('Portal error:', err);
+      alert('Unable to open billing portal. Please contact support.');
+    } finally {
+      setIsCheckingOut(false);
+    }
+  };
 
   // --- Persistence Logic ---
   const saveSettings = async (updates: any) => {
@@ -99,6 +188,59 @@ export default function DashboardClient({
     setDetectedRegion(region);
   }, []);
 
+  // --- Pending Checkout View ---
+  if (pendingCheckout) {
+    return (
+      <div className="max-w-2xl mx-auto py-20 px-6 text-center font-sans animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="bg-zinc-900/50 border border-white/5 rounded-[32px] p-12 shadow-2xl">
+          <div className="w-16 h-16 rounded-2xl bg-cyber-blue/10 border border-cyber-blue/20 flex items-center justify-center mb-8 mx-auto">
+            <Zap className="w-8 h-8 text-cyber-blue" />
+          </div>
+          <h1 className="text-3xl font-black italic tracking-tight mb-4 uppercase">
+            Complete Your <span className="text-cyber-blue">Setup</span>
+          </h1>
+          <p className="text-zinc-400 text-sm leading-relaxed mb-10 max-w-md mx-auto">
+            Your account is ready. Subscribe to the Managed Platform to activate
+            your dedicated AWS infrastructure and unlock autonomous code
+            evolution.
+          </p>
+          <div className="bg-black/40 border border-white/5 rounded-2xl p-6 mb-8">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">
+                Plan
+              </span>
+              <span className="text-sm font-black text-white italic uppercase">
+                Managed Platform
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">
+                Monthly
+              </span>
+              <span className="text-2xl font-black text-cyber-blue italic">
+                $29<span className="text-sm text-zinc-500">/mo</span>
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={handleCheckout}
+            disabled={isCheckingOut}
+            className="w-full py-4 bg-cyber-blue hover:bg-white text-black rounded-2xl text-sm font-black uppercase italic tracking-widest transition-all shadow-[0_0_30px_rgba(0,224,255,0.2)] hover:shadow-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isCheckingOut ? 'Redirecting...' : 'Subscribe Now'}
+          </button>
+          <p className="text-[9px] text-zinc-600 font-mono mt-6 uppercase tracking-widest">
+            Secure checkout powered by Stripe
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // --- Provisioning Banner ---
+  const showProvisioningBanner = provisionStatus === 'provisioning';
+  const showProvisioningFailed = provisionStatus === 'failed';
+
   return (
     <div className="max-w-6xl mx-auto py-10 md:py-16 px-6 sm:px-10 font-sans animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-8">
@@ -127,6 +269,48 @@ export default function DashboardClient({
       </div>
 
       <div className="w-full space-y-12">
+        {/* Provisioning Banner */}
+        {showProvisioningBanner && (
+          <div className="bg-cyber-blue/5 border border-cyber-blue/20 rounded-2xl p-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <div className="flex items-center gap-4">
+              <div className="w-3 h-3 rounded-full bg-cyber-blue animate-pulse shadow-[0_0_12px_rgba(0,224,255,0.8)]" />
+              <div>
+                <p className="text-sm font-black italic text-white uppercase tracking-tight">
+                  Setting Up Your Managed AWS Account
+                </p>
+                <p className="text-[10px] text-zinc-400 font-mono uppercase tracking-widest mt-1">
+                  This usually takes 2-3 minutes. Your dashboard will update
+                  automatically.
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 w-full bg-zinc-800 h-1 rounded-full overflow-hidden">
+              <div
+                className="bg-cyber-blue h-full animate-pulse transition-all duration-1000"
+                style={{ width: '60%' }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Provisioning Failed Banner */}
+        {showProvisioningFailed && (
+          <div className="bg-rose-500/5 border border-rose-500/20 rounded-2xl p-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <div className="flex items-center gap-4">
+              <div className="w-3 h-3 rounded-full bg-rose-500 shadow-[0_0_12px_rgba(239,68,68,0.8)]" />
+              <div>
+                <p className="text-sm font-black italic text-white uppercase tracking-tight">
+                  Provisioning Failed
+                </p>
+                <p className="text-[10px] text-zinc-400 font-mono uppercase tracking-widest mt-1">
+                  There was an issue setting up your account. Please contact
+                  support.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {activeTab === 'overview' ? (
           <div className="bg-zinc-900/50 border border-white/5 rounded-3xl p-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
             <h2 className="text-2xl font-black italic mb-10 tracking-tight text-white uppercase flex items-center gap-3">
@@ -229,22 +413,25 @@ export default function DashboardClient({
                       color: 'text-cyber-purple',
                     },
                     {
-                      label: 'Scans Today',
-                      value: '42',
-                      icon: Zap,
-                      color: 'text-amber-500',
+                      label: 'Active Repos',
+                      value: status.activeRepos ?? 0,
+                      icon: Layers,
+                      color: 'text-cyber-blue',
                     },
                     {
                       label: 'Health Score',
-                      value: '100%',
+                      value:
+                        status.mutationCount > 0
+                          ? `${Math.round((status.recentMutations.filter((m: any) => m.mutationStatus === 'SUCCESS').length / status.mutationCount) * 100)}%`
+                          : '\u2014',
                       icon: Shield,
                       color: 'text-emerald-500',
                     },
                     {
-                      label: 'Active Repos',
-                      value: '1',
-                      icon: Layers,
-                      color: 'text-cyber-blue',
+                      label: 'Plan',
+                      value: status.planStatus || 'FREE',
+                      icon: Zap,
+                      color: 'text-amber-500',
                     },
                   ].map((item, i) => (
                     <div
@@ -511,8 +698,16 @@ export default function DashboardClient({
                       <span className="text-[9px] text-zinc-600 uppercase font-black tracking-widest">
                         Protocol Status
                       </span>
-                      <span className="text-emerald-500 font-black italic text-[10px] uppercase tracking-widest">
-                        PREMIUM_USER
+                      <span
+                        className={`font-black italic text-[10px] uppercase tracking-widest ${
+                          status.planStatus === 'MANAGED'
+                            ? 'text-emerald-500'
+                            : 'text-zinc-500'
+                        }`}
+                      >
+                        {status.planStatus === 'MANAGED'
+                          ? 'MANAGED'
+                          : 'FREE_TIER'}
                       </span>
                     </div>
                     <div className="flex justify-between items-center bg-white/[0.02] p-3 rounded-xl border border-white/5">
@@ -539,7 +734,14 @@ export default function DashboardClient({
                         AWS ID
                       </span>
                       <span className="text-xs font-black text-white italic">
-                        4407-1293-8821
+                        {provisionAccountId
+                          ? provisionAccountId.replace(
+                              /(\d{4})(\d{4})(\d{4})/,
+                              '$1-$2-$3'
+                            )
+                          : provisionStatus === 'provisioning'
+                            ? 'Provisioning...'
+                            : '\u2014'}
                       </span>
                     </div>
                     <div className="flex justify-between items-center pb-4 border-b border-white/5">
@@ -584,8 +786,12 @@ export default function DashboardClient({
                       $29/mo includes managed infrastructure, AI-powered fixes,
                       CI/CD integration, and $10/month in AI credits.
                     </p>
-                    <button className="w-full py-4 bg-white hover:bg-zinc-200 text-black rounded-2xl text-xs font-black uppercase italic tracking-widest transition-all shadow-[0_0_30px_rgba(255,255,255,0.1)] hover:shadow-white/20">
-                      Manage Subscription
+                    <button
+                      onClick={handleManageSubscription}
+                      disabled={isCheckingOut}
+                      className="w-full py-4 bg-white hover:bg-zinc-200 text-black rounded-2xl text-xs font-black uppercase italic tracking-widest transition-all shadow-[0_0_30px_rgba(255,255,255,0.1)] hover:shadow-white/20 disabled:opacity-50"
+                    >
+                      {isCheckingOut ? 'Loading...' : 'Manage Subscription'}
                     </button>
                   </div>
                 </div>

@@ -124,13 +124,14 @@ export default $config({
 
     // SNS Topic for notifications
     const topic = new sst.aws.SnsTopic('LeadNotifications');
-    const notificationEmail =
-      process.env.ADMIN_NOTIFICATION_EMAIL || 'caopengau@gmail.com';
-    new aws.sns.TopicSubscription('LeadEmailSubscription', {
-      topic: topic.arn,
-      protocol: 'email',
-      endpoint: notificationEmail,
-    });
+    const notificationEmail = process.env.ADMIN_NOTIFICATION_EMAIL;
+    if (notificationEmail) {
+      new aws.sns.TopicSubscription('LeadEmailSubscription', {
+        topic: topic.arn,
+        protocol: 'email',
+        endpoint: notificationEmail,
+      });
+    }
 
     // API Gateway for lead submissions (standalone to match landing pattern)
     const api = new sst.aws.ApiGatewayV2('LeadApi', {

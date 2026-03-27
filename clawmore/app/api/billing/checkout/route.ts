@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '../../../../auth';
 import { createPlatformSubscriptionSession } from '../../../../lib/billing';
+import { getUserMetadata } from '../../../../lib/db';
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,10 +14,12 @@ export async function POST(req: NextRequest) {
     const host =
       process.env.NEXT_PUBLIC_APP_URL || `https://${req.headers.get('host')}`;
 
-    // In a real scenario, you'd lookup their stripeCustomerId from DynamoDB first.
-    // If they have one, you pass it here. If not, Stripe creates a new customer.
+    // Lookup existing Stripe customer to avoid duplicates
+    const metadata = await getUserMetadata(session.user.email);
+    const existingCustomerId = metadata?.stripeCustomerId;
 
     const checkoutSession = await createPlatformSubscriptionSession({
+      customerId: existingCustomerId,
       userEmail: session.user.email,
       successUrl: `${host}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
       cancelUrl: `${host}/dashboard`,

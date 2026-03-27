@@ -140,13 +140,13 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
         const isCorrectPassword = credentials?.password === adminPassword;
 
-        // Use the first email from ADMIN_EMAILS or a default for local dev
+        // Use the first email from ADMIN_EMAILS — no hardcoded fallback
         const adminEmails = process.env.ADMIN_EMAILS
           ? process.env.ADMIN_EMAILS.split(',').map((e) => e.trim())
-          : []; // Strict enforcement: no default admin emails
-        const primaryAdminEmail = adminEmails[0] || 'admin@getaiready.dev';
+          : [];
+        const primaryAdminEmail = adminEmails[0];
 
-        if (isCorrectPassword) {
+        if (isCorrectPassword && primaryAdminEmail) {
           return {
             id: 'admin-001',
             name: 'ClawMore Admin',

@@ -19,14 +19,19 @@ export default async function DashboardPage() {
 
   const adminEmails = process.env.ADMIN_EMAILS
     ? process.env.ADMIN_EMAILS.split(',').map((e) => e.trim())
-    : ['admin@example.com'];
+    : [];
   const isAdmin = session?.user?.email
     ? adminEmails.includes(session.user.email)
     : false;
 
-  // Beta Access Control: Check if user is approved
+  // Access Control: Check user status
   const status = await getUserStatus(userEmail);
-  if (status !== 'APPROVED' && !isAdmin) {
+
+  // PENDING users need to complete checkout — show onboarding view
+  const isPendingCheckout = status === 'PENDING';
+
+  // Block truly unauthorized users (not PENDING, not APPROVED, not admin)
+  if (!isPendingCheckout && status !== 'APPROVED' && !isAdmin) {
     redirect(`/unauthorized?email=${encodeURIComponent(userEmail)}`);
   }
 
@@ -45,15 +50,30 @@ export default async function DashboardPage() {
     0
   );
 
+  // Derive real account data
+  const primaryAccount = accounts[0];
+  const awsAccountId = primaryAccount?.awsAccountId || null;
+  const repoUrl = primaryAccount?.repoUrl || null;
+  const provisioningStatus = primaryAccount?.provisioningStatus || null;
+
+  // Determine plan display status
+  const planStatus = metadata?.stripeSubscriptionId ? 'MANAGED' : 'FREE';
+
   const statusData = {
     awsSpendCents: totalSpendCents,
     awsInclusionCents: 1500, // $15.00 base inclusion
     aiTokenBalanceCents: metadata?.aiTokenBalanceCents ?? 0,
     aiRefillThresholdCents: metadata?.aiRefillThresholdCents ?? 100,
-    mutationCount: mutations.length, // Total count could be stored in metadata for efficiency later
+    mutationCount: mutations.length,
     coEvolutionOptIn: metadata?.coEvolutionOptIn ?? false,
     autoTopupEnabled: metadata?.autoTopupEnabled ?? true,
     recentMutations: mutations,
+    // Real account data
+    activeRepos: accounts.length,
+    awsAccountId,
+    repoUrl,
+    provisioningStatus,
+    planStatus,
   };
 
   return (
@@ -61,6 +81,7 @@ export default async function DashboardPage() {
       user={session.user}
       status={statusData as any}
       isAdmin={isAdmin}
+      pendingCheckout={isPendingCheckout}
     />
   );
 }

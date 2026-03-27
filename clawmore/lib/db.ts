@@ -19,6 +19,9 @@ export interface ManagedAccountRecord {
   currentMonthlySpendCents: number;
   reportedOverageCents: number;
   lastCostSync?: string;
+  provisioningStatus?: 'provisioning' | 'complete' | 'failed';
+  provisioningError?: string;
+  repoUrl?: string;
 }
 
 export interface UserMetadata {
@@ -31,6 +34,7 @@ export interface UserMetadata {
   coEvolutionOptIn: boolean;
   autoTopupEnabled: boolean;
   stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
   stripeMutationSubscriptionItemId?: string;
 }
 
@@ -220,4 +224,55 @@ export async function getUserStatus(email: string): Promise<string | null> {
   );
 
   return response.Items?.[0]?.status || null;
+}
+
+export async function updateProvisioningStatus(
+  awsAccountId: string,
+  status: 'provisioning' | 'complete' | 'failed',
+  error?: string,
+  repoUrl?: string
+) {
+  const updateExpr = [
+    'SET provisioningStatus = :status',
+    repoUrl ? ', repoUrl = :repoUrl' : '',
+    error ? ', provisioningError = :error' : '',
+  ]
+    .filter(Boolean)
+    .join('');
+
+  const expressionValues: Record<string, any> = {
+    ':status': status,
+  };
+
+  if (repoUrl) expressionValues[':repoUrl'] = repoUrl;
+  if (error) expressionValues[':error'] = error;
+
+  await docClient.send(
+    new UpdateCommand({
+      TableName: process.env.DYNAMO_TABLE,
+      Key: { PK: `ACCOUNT#${awsAccountId}`, SK: 'METADATA' },
+      UpdateExpression: updateExpr,
+      ExpressionAttributeValues: expressionValues,
+    })
+  );
+}
+
+export async function getProvisioningStatus(email: string): Promise<{
+  status: 'provisioning' | 'complete' | 'failed' | 'none';
+  accounts: ManagedAccountRecord[];
+}> {
+  const accounts = await getManagedAccountsForUser(email);
+
+  if (accounts.length === 0) {
+    return { status: 'none', accounts: [] };
+  }
+
+  const hasProvisioning = accounts.some(
+    (a) => a.provisioningStatus === 'provisioning'
+  );
+  const hasFailed = accounts.some((a) => a.provisioningStatus === 'failed');
+
+  if (hasProvisioning) return { status: 'provisioning', accounts };
+  if (hasFailed) return { status: 'failed', accounts };
+  return { status: 'complete', accounts };
 }

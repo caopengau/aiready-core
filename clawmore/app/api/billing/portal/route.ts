@@ -1,14 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '../../../../auth';
+import { getUserMetadata } from '../../../../lib/db';
 import Stripe from 'stripe';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
-
-const dbClient = new DynamoDBClient({
-  region: process.env.AWS_REGION || 'ap-southeast-2',
-});
-const docClient = DynamoDBDocument.from(dbClient);
-const TableName = process.env.DYNAMO_TABLE || '';
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,23 +15,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Lookup Stripe Customer ID from DynamoDB
-    const { Items } = await docClient.query({
-      TableName,
-      IndexName: 'GSI1',
-      KeyConditionExpression: 'GSI1PK = :email',
-      ExpressionAttributeValues: { ':email': `USER#${session.user.email}` },
-    });
+    // Lookup Stripe Customer ID from user metadata
+    const metadata = await getUserMetadata(session.user.email);
+    const stripeCustomerId = metadata?.stripeCustomerId;
 
-    const stripeCustomerId = Items?.[0]?.stripeCustomerId || 'cus_placeholder'; // fallback for demo
-
-    if (
-      stripeCustomerId === 'cus_placeholder' &&
-      process.env.NODE_ENV === 'production'
-    ) {
+    if (!stripeCustomerId) {
       return NextResponse.json(
-        { error: 'No billing account found' },
-        { status: 400 }
+        { error: 'No billing account found. Please subscribe first.' },
+        { status: 404 }
       );
     }
 
