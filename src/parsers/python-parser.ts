@@ -11,10 +11,66 @@ import { analyzeNodeMetadata } from './metadata-utils';
 import { BaseLanguageParser } from './base-parser';
 
 /**
+ * Constants for Python Tree-sitter node types and special strings.
+ */
+const PYTHON_CONSTANTS = {
+  NODES: {
+    IMPORT_STATEMENT: 'import_statement',
+    IMPORT_FROM_STATEMENT: 'import_from_statement',
+    DOTTED_NAME: 'dotted_name',
+    ALIASED_IMPORT: 'aliased_import',
+    WILDCARD_IMPORT: 'wildcard_import',
+    FUNCTION_DEFINITION: 'function_definition',
+    CLASS_DEFINITION: 'class_definition',
+    EXPRESSION_STATEMENT: 'expression_statement',
+    ASSIGNMENT: 'assignment',
+    IDENTIFIER: 'identifier',
+    TYPED_PARAMETER: 'typed_parameter',
+    DEFAULT_PARAMETER: 'default_parameter',
+  },
+  FIELDS: {
+    NAME: 'name',
+    MODULE_NAME: 'module_name',
+    LEFT: 'left',
+    PARAMETERS: 'parameters',
+  },
+  SPECIAL: {
+    WILDCARD: '*',
+    DUNDER_ALL: '__all__',
+    DUNDER_VERSION: '__version__',
+    DUNDER_AUTHOR: '__author__',
+    DUNDER_INIT: '__init__',
+    DUNDER_STR: '__str__',
+    DUNDER_REPR: '__repr__',
+    DUNDER_NAME: '__name__',
+    DUNDER_MAIN: '__main__',
+    DUNDER_FILE: '__file__',
+    DUNDER_DOC: '__doc__',
+    DUNDER_DICT: '__dict__',
+    DUNDER_CLASS: '__class__',
+    DUNDER_MODULE: '__module__',
+    DUNDER_BASES: '__bases__',
+    MAIN_VAL: '__main__',
+  },
+  BUILTINS: {
+    PRINT: 'print(',
+    INPUT: 'input(',
+    OPEN: 'open(',
+  },
+  TYPES: {
+    FUNCTION: 'function',
+    CLASS: 'class',
+    VARIABLE: 'variable',
+    CONST: 'const',
+    DOCSTRING: 'docstring',
+  },
+} as const;
+
+/**
  * Python Parser implementation using tree-sitter.
  * Handles AST-based and Regex-based extraction of imports and exports.
  *
- * @lastUpdated 2026-03-18
+ * @lastUpdated 2026-03-27
  */
 export class PythonParser extends BaseLanguageParser {
   readonly language = Language.Python;
@@ -26,31 +82,28 @@ export class PythonParser extends BaseLanguageParser {
 
   /**
    * Analyze metadata for a Python node (purity, side effects).
-   *
-   * @param node - Tree-sitter node to analyze.
-   * @param code - Source code for context.
-   * @returns Partial ExportInfo containing discovered metadata.
    */
   analyzeMetadata(node: Parser.Node, code: string): Partial<ExportInfo> {
     return analyzeNodeMetadata(node, code, {
-      sideEffectSignatures: ['print(', 'input(', 'open('],
+      sideEffectSignatures: [
+        PYTHON_CONSTANTS.BUILTINS.PRINT,
+        PYTHON_CONSTANTS.BUILTINS.INPUT,
+        PYTHON_CONSTANTS.BUILTINS.OPEN,
+      ],
     });
   }
 
   /**
    * Extract import information using AST walk.
-   *
-   * @param rootNode - Root node of the Python AST.
-   * @returns Array of discovered FileImport objects.
    */
   protected extractImportsAST(rootNode: Parser.Node): FileImport[] {
     const imports: FileImport[] = [];
 
     const processImportNode = (node: Parser.Node) => {
-      if (node.type === 'import_statement') {
+      if (node.type === PYTHON_CONSTANTS.NODES.IMPORT_STATEMENT) {
         // import os, sys
         for (const child of node.children) {
-          if (child.type === 'dotted_name') {
+          if (child.type === PYTHON_CONSTANTS.NODES.DOTTED_NAME) {
             const source = child.text;
             imports.push({
               source,
@@ -66,8 +119,10 @@ export class PythonParser extends BaseLanguageParser {
                 },
               },
             });
-          } else if (child.type === 'aliased_import') {
-            const nameNode = child.childForFieldName('name');
+          } else if (child.type === PYTHON_CONSTANTS.NODES.ALIASED_IMPORT) {
+            const nameNode = child.childForFieldName(
+              PYTHON_CONSTANTS.FIELDS.NAME
+            );
             if (nameNode) {
               const source = nameNode.text;
               imports.push({
@@ -87,22 +142,29 @@ export class PythonParser extends BaseLanguageParser {
             }
           }
         }
-      } else if (node.type === 'import_from_statement') {
+      } else if (node.type === PYTHON_CONSTANTS.NODES.IMPORT_FROM_STATEMENT) {
         // from typing import List, Optional
-        const moduleNameNode = node.childForFieldName('module_name');
+        const moduleNameNode = node.childForFieldName(
+          PYTHON_CONSTANTS.FIELDS.MODULE_NAME
+        );
         if (moduleNameNode) {
           const source = moduleNameNode.text;
           const specifiers: string[] = [];
 
           // Find all imported names
           for (const child of node.children) {
-            if (child.type === 'dotted_name' && child !== moduleNameNode) {
+            if (
+              child.type === PYTHON_CONSTANTS.NODES.DOTTED_NAME &&
+              child !== moduleNameNode
+            ) {
               specifiers.push(child.text);
-            } else if (child.type === 'aliased_import') {
-              const nameNode = child.childForFieldName('name');
+            } else if (child.type === PYTHON_CONSTANTS.NODES.ALIASED_IMPORT) {
+              const nameNode = child.childForFieldName(
+                PYTHON_CONSTANTS.FIELDS.NAME
+              );
               if (nameNode) specifiers.push(nameNode.text);
-            } else if (child.type === 'wildcard_import') {
-              specifiers.push('*');
+            } else if (child.type === PYTHON_CONSTANTS.NODES.WILDCARD_IMPORT) {
+              specifiers.push(PYTHON_CONSTANTS.SPECIAL.WILDCARD);
             }
           }
 
@@ -129,9 +191,6 @@ export class PythonParser extends BaseLanguageParser {
     // Only process module-level imports
     for (const node of rootNode.children) {
       processImportNode(node);
-      // Also check for imports inside any top-level statements if necessary,
-      // but usually imports are at top level or inside functions.
-      // For now, we only care about module-level imports as per existing requirements.
     }
 
     return imports;
@@ -139,10 +198,6 @@ export class PythonParser extends BaseLanguageParser {
 
   /**
    * Extract export information using AST walk.
-   *
-   * @param rootNode - Root node of the Python AST.
-   * @param code - Source code for documentation extraction.
-   * @returns Array of discovered ExportInfo objects.
    */
   protected extractExportsAST(
     rootNode: Parser.Node,
@@ -151,8 +206,8 @@ export class PythonParser extends BaseLanguageParser {
     const exports: ExportInfo[] = [];
 
     for (const node of rootNode.children) {
-      if (node.type === 'function_definition') {
-        const nameNode = node.childForFieldName('name');
+      if (node.type === PYTHON_CONSTANTS.NODES.FUNCTION_DEFINITION) {
+        const nameNode = node.childForFieldName(PYTHON_CONSTANTS.FIELDS.NAME);
         if (nameNode) {
           const name = nameNode.text;
           // Skip private functions (starting with _) unless it's a dunder name (starts with __)
@@ -161,7 +216,7 @@ export class PythonParser extends BaseLanguageParser {
             const metadata = this.analyzeMetadata(node, code);
             exports.push({
               name,
-              type: 'function',
+              type: PYTHON_CONSTANTS.TYPES.FUNCTION,
               loc: {
                 start: {
                   line: node.startPosition.row + 1,
@@ -177,13 +232,13 @@ export class PythonParser extends BaseLanguageParser {
             });
           }
         }
-      } else if (node.type === 'class_definition') {
-        const nameNode = node.childForFieldName('name');
+      } else if (node.type === PYTHON_CONSTANTS.NODES.CLASS_DEFINITION) {
+        const nameNode = node.childForFieldName(PYTHON_CONSTANTS.FIELDS.NAME);
         if (nameNode) {
           const metadata = this.analyzeMetadata(node, code);
           exports.push({
             name: nameNode.text,
-            type: 'class',
+            type: PYTHON_CONSTANTS.TYPES.CLASS,
             loc: {
               start: {
                 line: node.startPosition.row + 1,
@@ -197,23 +252,31 @@ export class PythonParser extends BaseLanguageParser {
             ...metadata,
           });
         }
-      } else if (node.type === 'expression_statement') {
+      } else if (node.type === PYTHON_CONSTANTS.NODES.EXPRESSION_STATEMENT) {
         const assignment = node.firstChild;
-        if (assignment && assignment.type === 'assignment') {
-          const left = assignment.childForFieldName('left');
-          if (left && left.type === 'identifier') {
+        if (
+          assignment &&
+          assignment.type === PYTHON_CONSTANTS.NODES.ASSIGNMENT
+        ) {
+          const left = assignment.childForFieldName(
+            PYTHON_CONSTANTS.FIELDS.LEFT
+          );
+          if (left && left.type === PYTHON_CONSTANTS.NODES.IDENTIFIER) {
             const name = left.text;
             // Skip __all__ and other internal variables, and private variables
             const isInternal =
-              name === '__all__' ||
-              name === '__version__' ||
-              name === '__author__';
+              name === PYTHON_CONSTANTS.SPECIAL.DUNDER_ALL ||
+              name === PYTHON_CONSTANTS.SPECIAL.DUNDER_VERSION ||
+              name === PYTHON_CONSTANTS.SPECIAL.DUNDER_AUTHOR;
             const isPrivate = name.startsWith('_') && !name.startsWith('__');
 
             if (!isInternal && !isPrivate) {
               exports.push({
                 name,
-                type: name === name.toUpperCase() ? 'const' : 'variable',
+                type:
+                  name === name.toUpperCase()
+                    ? PYTHON_CONSTANTS.TYPES.CONST
+                    : PYTHON_CONSTANTS.TYPES.VARIABLE,
                 loc: {
                   start: {
                     line: node.startPosition.row + 1,
@@ -236,24 +299,26 @@ export class PythonParser extends BaseLanguageParser {
 
   /**
    * Extract parameter names from a function definition node.
-   *
-   * @param node - Function definition node.
-   * @returns Array of parameter name strings.
    */
   private extractParameters(node: Parser.Node): string[] {
-    const paramsNode = node.childForFieldName('parameters');
+    const paramsNode = node.childForFieldName(
+      PYTHON_CONSTANTS.FIELDS.PARAMETERS
+    );
     if (!paramsNode) return [];
 
     return paramsNode.children
       .filter(
         (c: Parser.Node) =>
-          c.type === 'identifier' ||
-          c.type === 'typed_parameter' ||
-          c.type === 'default_parameter'
+          c.type === PYTHON_CONSTANTS.NODES.IDENTIFIER ||
+          c.type === PYTHON_CONSTANTS.NODES.TYPED_PARAMETER ||
+          c.type === PYTHON_CONSTANTS.NODES.DEFAULT_PARAMETER
       )
       .map((c: Parser.Node) => {
-        if (c.type === 'identifier') return c.text;
-        if (c.type === 'typed_parameter' || c.type === 'default_parameter') {
+        if (c.type === PYTHON_CONSTANTS.NODES.IDENTIFIER) return c.text;
+        if (
+          c.type === PYTHON_CONSTANTS.NODES.TYPED_PARAMETER ||
+          c.type === PYTHON_CONSTANTS.NODES.DEFAULT_PARAMETER
+        ) {
           return c.firstChild?.text || 'unknown';
         }
         return 'unknown';
@@ -262,10 +327,6 @@ export class PythonParser extends BaseLanguageParser {
 
   /**
    * Fallback regex-based parsing when tree-sitter is unavailable.
-   *
-   * @param code - Source code content.
-   * @param filePath - Path to the file being parsed.
-   * @returns Consolidated ParseResult.
    */
   protected parseRegex(code: string, filePath: string): ParseResult {
     try {
@@ -296,20 +357,20 @@ export class PythonParser extends BaseLanguageParser {
       classPattern: /^[A-Z][a-zA-Z0-9]*$/,
       constantPattern: /^[A-Z][A-Z0-9_]*$/,
       exceptions: [
-        '__init__',
-        '__str__',
-        '__repr__',
-        '__name__',
-        '__main__',
-        '__file__',
-        '__doc__',
-        '__all__',
-        '__version__',
-        '__author__',
-        '__dict__',
-        '__class__',
-        '__module__',
-        '__bases__',
+        PYTHON_CONSTANTS.SPECIAL.DUNDER_INIT,
+        PYTHON_CONSTANTS.SPECIAL.DUNDER_STR,
+        PYTHON_CONSTANTS.SPECIAL.DUNDER_REPR,
+        PYTHON_CONSTANTS.SPECIAL.DUNDER_NAME,
+        PYTHON_CONSTANTS.SPECIAL.DUNDER_MAIN,
+        PYTHON_CONSTANTS.SPECIAL.DUNDER_FILE,
+        PYTHON_CONSTANTS.SPECIAL.DUNDER_DOC,
+        PYTHON_CONSTANTS.SPECIAL.DUNDER_ALL,
+        PYTHON_CONSTANTS.SPECIAL.DUNDER_VERSION,
+        PYTHON_CONSTANTS.SPECIAL.DUNDER_AUTHOR,
+        PYTHON_CONSTANTS.SPECIAL.DUNDER_DICT,
+        PYTHON_CONSTANTS.SPECIAL.DUNDER_CLASS,
+        PYTHON_CONSTANTS.SPECIAL.DUNDER_MODULE,
+        PYTHON_CONSTANTS.SPECIAL.DUNDER_BASES,
       ],
     };
   }
@@ -351,10 +412,10 @@ export class PythonParser extends BaseLanguageParser {
       if (fromMatch) {
         const module = fromMatch[1];
         const importsStr = fromMatch[2];
-        if (importsStr.trim() === '*') {
+        if (importsStr.trim() === PYTHON_CONSTANTS.SPECIAL.WILDCARD) {
           imports.push({
             source: module,
-            specifiers: ['*'],
+            specifiers: [PYTHON_CONSTANTS.SPECIAL.WILDCARD],
             loc: {
               start: { line: idx + 1, column: 0 },
               end: { line: idx + 1, column: line.length },
@@ -394,7 +455,7 @@ export class PythonParser extends BaseLanguageParser {
       if (classMatch) {
         exports.push({
           name: classMatch[1],
-          type: 'class',
+          type: PYTHON_CONSTANTS.TYPES.CLASS,
           visibility: 'public',
           isPure: true,
           hasSideEffects: false,
@@ -432,17 +493,18 @@ export class PythonParser extends BaseLanguageParser {
 
         const isImpure =
           name.toLowerCase().includes('impure') ||
-          line.includes('print(') ||
-          (idx + 1 < lines.length && lines[idx + 1].includes('print('));
+          line.includes(PYTHON_CONSTANTS.BUILTINS.PRINT) ||
+          (idx + 1 < lines.length &&
+            lines[idx + 1].includes(PYTHON_CONSTANTS.BUILTINS.PRINT));
 
         exports.push({
           name,
-          type: 'function',
+          type: PYTHON_CONSTANTS.TYPES.FUNCTION,
           visibility: 'public',
           isPure: !isImpure,
           hasSideEffects: isImpure,
           documentation: docContent
-            ? { content: docContent, type: 'docstring' }
+            ? { content: docContent, type: PYTHON_CONSTANTS.TYPES.DOCSTRING }
             : undefined,
           loc: {
             start: { line: idx + 1, column: 0 },
