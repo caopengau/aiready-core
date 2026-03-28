@@ -58,7 +58,7 @@ export function analyzeSharedMetadata(node: Parser.Node): Partial<ExportInfo> {
 
   // Find a body-like node to analyze
   const body =
-    ((node as any).childForFieldName as ((name: string) => Parser.Node | null) | undefined)?.('body') ||
+    ((node as Record<string, unknown>).childForFieldName as ((name: string) => Parser.Node | null) | undefined)?.('body') ||
     node.children.find((c) =>
       ['block', 'declaration_list', 'class_body'].includes(c.type)
     );

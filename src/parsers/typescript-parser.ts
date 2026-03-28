@@ -37,8 +37,8 @@ export class TypeScriptParser implements LanguageParser {
         comment: true,
         jsx: filePath.endsWith('x'),
       });
-    } catch (error) {
-      const err = error as any;
+    } catch (error: unknown) {
+      const err = error as Error & { lineNumber?: number; column?: number };
       throw new ParseError(err.message || 'Unknown error', filePath, {
         line: err.lineNumber || 1,
         column: err.column || 0,

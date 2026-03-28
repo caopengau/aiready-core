@@ -86,7 +86,7 @@ export class CSharpParser extends BaseLanguageParser {
             start: { line: idx + 1, column: 0 },
             end: { line: idx + 1, column: line.length },
           },
-        } as any);
+        });
       }
 
       const methodMatch = line.match(methodRegex);

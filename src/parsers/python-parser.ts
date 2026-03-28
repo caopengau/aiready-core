@@ -344,7 +344,7 @@ export class PythonParser extends BaseLanguageParser {
         `Failed to parse Python file ${filePath}: ${message}`
       );
       if (error instanceof Error) {
-        (wrapper as any).cause = error;
+        (wrapper as unknown as Record<string, unknown>).cause = error;
       }
       throw wrapper;
     }

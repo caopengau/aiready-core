@@ -21,7 +21,7 @@ export function extractFileImports(ast: TSESTree.Program): FileImport[] {
         if (spec.type === 'ImportSpecifier') {
           const imported = spec.imported;
           const importName =
-            imported.type === 'Identifier' ? imported.name : (imported as any).value;
+            imported.type === 'Identifier' ? imported.name : (imported as { value: string }).value;
           specifiers.push(importName);
         } else if (spec.type === 'ImportDefaultSpecifier') {
           specifiers.push('default');
@@ -75,8 +75,8 @@ export function extractExportsWithDependencies(
           if (spec.type === 'ExportSpecifier') {
             const name =
               spec.exported.type === 'Identifier'
-                ? (spec.exported as any).name
-                : (spec.exported as any).value as string;
+                ? (spec.exported as { name: string }).name
+                : (spec.exported as { value: string }).value;
             exports.push({
               name,
               type: 'const' as ExportWithImports['type'], // Simplified, could be any type from source
@@ -99,17 +99,17 @@ export function extractExportsWithDependencies(
         dependencies: [],
         typeReferences: [],
         loc: node.loc,
-      } as any);
+      });
     } else if (node.type === 'ExportAllDeclaration') {
       // Handle export * from './y'
-      const source = (node as any).source.value as string;
+      const source = (node as { source: { value: string } }).source.value;
       let name = '*';
 
       if (node.exported) {
         name =
-          (node.exported as any).type === 'Identifier'
-            ? (node.exported as any).name
-            : (node.exported as any).value as string;
+          node.exported.type === 'Identifier'
+            ? (node.exported as { name: string }).name
+            : (node.exported as { value: string }).value;
       }
 
       exports.push({
@@ -120,7 +120,7 @@ export function extractExportsWithDependencies(
         dependencies: [],
         typeReferences: [],
         loc: node.loc,
-      } as any);
+      });
     }
   }
 
@@ -181,16 +181,16 @@ export function findUsedImports(
     // Recursively visit child nodes
     for (const key in n) {
       if (key === 'parent') continue;
-      const value = (n as any)[key];
+      const value = (n as Record<string, unknown>)[key];
       if (value && typeof value === 'object') {
         if (Array.isArray(value)) {
           value.forEach((child) => {
             if (child && typeof child === 'object' && 'type' in child) {
-              visit(child as any);
+              visit(child as TSESTree.Node);
             }
           });
         } else if ('type' in value) {
-          visit(value as any);
+          visit(value as TSESTree.Node);
         }
       }
     }

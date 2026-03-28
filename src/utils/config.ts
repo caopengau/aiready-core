@@ -91,7 +91,7 @@ export async function loadConfig(
         );
         try {
           // Attach original error as cause when supported
-          (configError as any).cause =
+          (configError as unknown as Record<string, unknown>).cause =
             error instanceof Error ? error : undefined;
         } catch {
           /* ignore */
