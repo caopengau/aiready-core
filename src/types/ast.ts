@@ -14,11 +14,20 @@ export interface SourceRange {
   end: SourceLocation;
 }
 
-import { ExportInfo } from './language';
+export type ExportType =
+  | 'function'
+  | 'class'
+  | 'interface'
+  | 'type'
+  | 'const'
+  | 'var'
+  | 'enum'
+  | 'module'
+  | 'unknown';
 
 export interface ExportWithImports {
   name: string;
-  type: ExportInfo['type'];
+  type: ExportType;
   source?: string; // Module being re-exported from
   imports: string[]; // Imports used within this export's scope
   dependencies: string[]; // Other exports from same file this depends on
