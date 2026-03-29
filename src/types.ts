@@ -1,16 +1,6 @@
 import { z } from 'zod';
-import { TokenBudget } from './types/ast';
-import { GraphNode, GraphEdge, GraphData } from './types/visualization';
-import {
-  Lead,
-  LeadSchema,
-  LeadSubmission,
-  LeadSubmissionSchema,
-  LeadSource,
-  LeadSourceSchema,
-} from './types/business';
 
-// Import from individual modules to avoid circular dependency
+// Import from barrel export to reduce import depth
 import {
   // Enums
   Severity,
@@ -24,36 +14,44 @@ import {
   AnalysisStatusSchema,
   ModelTier,
   ModelTierSchema,
-} from './types/enums';
-
-import { ToolOptions, ScanOptions, LocationSchema } from './types/common';
-
-import { IssueSchema } from './types/schemas/issue';
-import type { Issue, IssueOverlay } from './types/schemas/issue';
-
-import { MetricsSchema } from './types/schemas/metrics';
-
-import {
+  // Common types
+  ToolOptions,
+  ScanOptions,
+  LocationSchema,
+  Location,
+  // Issue
+  IssueSchema,
+  Issue,
+  IssueOverlay,
+  // Metrics
+  MetricsSchema,
+  Metrics,
+  // Report schemas
   AnalysisResultSchema,
   SpokeSummarySchema,
   SpokeOutputSchema,
   UnifiedReportSchema,
-} from './types/schemas/report';
-
-import { AIReadyConfigSchema } from './types/schemas/config';
-
-import type { Location } from './types/common';
-
-import type { Metrics } from './types/schemas/metrics';
-
-import type {
   AnalysisResult,
   SpokeSummary,
   SpokeOutput,
   UnifiedReport,
-} from './types/schemas/report';
+  // Config
+  AIReadyConfigSchema,
+  // Visualization
+  GraphNode,
+  GraphEdge,
+  GraphData,
+  TokenBudget,
+  // Business
+  Lead,
+  LeadSchema,
+  LeadSubmission,
+  LeadSubmissionSchema,
+  LeadSource,
+  LeadSourceSchema,
+} from './types/index';
 
-// Re-export from modular types structure
+// Re-export all types from the barrel export
 export {
   // Enums
   ToolName,

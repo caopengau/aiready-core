@@ -42,7 +42,7 @@ export interface CommonASTNode {
   type: string;
   loc?: SourceRange;
   // Language-specific data can be stored here
-  raw?: any;
+  raw?: unknown;
 }
 
 /**
@@ -177,7 +177,7 @@ export interface LanguageParser {
   canHandle(filePath: string): boolean;
 
   /**
-   * Get the raw AST for advanced querying
+   * Parse the source code into a language-specific AST
    * @param code - Source code to parse
    * @param filePath - Path to the file
    */

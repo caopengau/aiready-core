@@ -116,13 +116,13 @@ export async function loadConfig(
  * @param defaults The default configuration object
  * @returns Merged configuration with all defaults applied
  */
-export function mergeConfigWithDefaults(
+export function mergeConfigWithDefaults<T extends Record<string, any>>(
   userConfig: AIReadyConfig | null,
-  defaults: any
-): any {
+  defaults: T
+): T {
   if (!userConfig) return defaults;
 
-  const mergedConfig = { ...defaults };
+  const mergedConfig = { ...defaults } as any;
 
   // Merge scan options
   if (userConfig.scan) {
@@ -140,8 +140,9 @@ export function mergeConfigWithDefaults(
     if (!mergedConfig.toolConfigs) mergedConfig.toolConfigs = {};
     for (const [toolName, toolConfig] of Object.entries(userConfig.tools)) {
       if (typeof toolConfig === 'object' && toolConfig !== null) {
-        mergedConfig.toolConfigs[toolName] = {
-          ...mergedConfig.toolConfigs[toolName],
+        const toolConfigs = mergedConfig.toolConfigs as Record<string, unknown>;
+        toolConfigs[toolName] = {
+          ...(toolConfigs[toolName] as Record<string, unknown>),
           ...toolConfig,
         };
       }
@@ -150,8 +151,11 @@ export function mergeConfigWithDefaults(
 
   // Merge output preferences
   if (userConfig.output) {
-    mergedConfig.output = { ...mergedConfig.output, ...userConfig.output };
+    mergedConfig.output = {
+      ...(mergedConfig.output as Record<string, unknown>),
+      ...userConfig.output,
+    };
   }
 
-  return mergedConfig;
+  return mergedConfig as T;
 }

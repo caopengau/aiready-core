@@ -1,11 +1,14 @@
 import type { ToolScoringOutput } from '../scoring';
-import type { CognitiveLoad } from './cognitive-load';
-import type { PatternEntropy, ConceptCohesion } from './structural-metrics';
-import type { AiSignalClarity } from './ai-signal-clarity';
-import type { AgentGroundingScore } from './agent-grounding';
-import type { TestabilityIndex } from './testability-index';
-import type { DocDriftRisk } from './doc-drift';
-import type { DependencyHealthScore } from './dependency-health';
+import type {
+  CognitiveLoad,
+  PatternEntropy,
+  ConceptCohesion,
+  AiSignalClarity,
+  AgentGroundingScore,
+  TestabilityIndex,
+  DocDriftRisk,
+  DependencyHealthScore,
+} from './index';
 
 /**
  * Parameters for generating comprehensive future-proof recommendations.

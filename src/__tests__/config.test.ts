@@ -38,7 +38,7 @@ describe('Config Loader', () => {
     const merged = mergeConfigWithDefaults(userConfig as any, defaults);
 
     expect(merged.include).toEqual(['src/*.ts']);
-    expect(merged.toolConfigs['context-analyzer'].maxDepth).toBe(10);
+    expect((merged.toolConfigs as any)['context-analyzer'].maxDepth).toBe(10);
   });
 
   it('should support strict tools mapping', () => {
@@ -48,6 +48,6 @@ describe('Config Loader', () => {
     };
 
     const merged = mergeConfigWithDefaults(userConfig as any, defaults);
-    expect(merged.toolConfigs['patterns'].minSimilarity).toBe(0.8);
+    expect((merged.toolConfigs as any)['patterns'].minSimilarity).toBe(0.8);
   });
 });

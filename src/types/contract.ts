@@ -48,14 +48,14 @@ export interface ToolProvider {
  */
 export function validateSpokeOutput(
   toolName: string,
-  output: any
+  output: unknown
 ): { valid: boolean; errors: string[] } {
   if (!output) {
     return { valid: false, errors: ['Output is null or undefined'] };
   }
 
   // Contract strictly requires the spoke to provide a summary
-  if (!output.summary) {
+  if (!(output as Record<string, unknown>).summary) {
     return { valid: false, errors: [`${toolName}: missing 'summary'`] };
   }
 
@@ -87,7 +87,7 @@ export function validateSpokeOutput(
  */
 export function validateWithSchema<T>(
   schema: z.ZodSchema<T>,
-  data: any
+  data: unknown
 ): { valid: boolean; data?: T; errors?: string[] } {
   const result = schema.safeParse(data);
   if (result.success) {
