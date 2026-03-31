@@ -109,7 +109,18 @@ export function extractCodeBlocks(file: string, content: string): CodeBlock[] {
     });
   }
 
-  return blocks;
+  // Filter out re-export blocks that are not true logic duplication
+  return blocks.filter((block) => {
+    const code = block.code.trim();
+    // Skip re-export patterns: export { X } from './Y' or export { X, Y } from './Z'
+    if (/^export\s+\{[^}]+\}\s*(from\s+['"][^'"]+['"])?\s*;?\s*$/.test(code))
+      return false;
+    // Skip barrel re-exports: export * from './Y'
+    if (/^export\s+\*\s+from\s+/.test(code)) return false;
+    // Skip namespace re-exports: export * as X from './Y'
+    if (/^export\s+\*\s+as\s+\w+\s+from\s+/.test(code)) return false;
+    return true;
+  });
 }
 
 /**
