@@ -27,7 +27,7 @@
     "build": "./tooling/scripts/build.sh build",
     "test": "./tooling/scripts/build.sh test",
     "lint": "./tooling/scripts/build.sh lint",
-    "dev": "turbo run dev --filter=!@aiready/platform --concurrency 11",
+    "dev": "turbo run dev --filter=!@aiready/platform --filter=!@aiready/serverlessclaw --concurrency 11",
     "clean": "turbo run clean && rm -rf node_modules",
     "consume-reports": "node ./tooling/scripts/consume-aiready-reports.js",
     "graph": "nx graph",

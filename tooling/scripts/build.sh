@@ -25,7 +25,7 @@ fi
 
 if [ "$SILENT" = "1" ]; then
   # Use turbo-compatible silence
-  turbo run "$TASK" "${ARGS[@]}" --output-logs=errors-only
+  turbo run "$TASK" "${ARGS[@]}" --filter=!@aiready/serverlessclaw --output-logs=errors-only
 else
-  turbo run "$TASK" "${ARGS[@]}"
+  turbo run "$TASK" "${ARGS[@]}" --filter=!@aiready/serverlessclaw
 fi

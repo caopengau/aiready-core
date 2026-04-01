@@ -16,13 +16,13 @@ ifneq (,$(wildcard apps/landing/.env))
 	include apps/landing/.env
 	export
 endif
-
 # Dynamics discover all packages in packages/ directory
 # Exclude skills (skills.sh distribution only, not npm)
-ALL_SPOKES := $(filter-out skills, $(notdir $(wildcard packages/*)) $(notdir $(wildcard apps/*)))
+# Exclude serverlessclaw (standalone monorepo)
+ALL_SPOKES := $(filter-out skills serverlessclaw, $(notdir $(wildcard packages/*)) $(notdir $(wildcard apps/*)))
 
 # All applications in apps/ directory
-ALL_APPS := $(notdir $(wildcard apps/*))
+ALL_APPS := $(filter-out serverlessclaw, $(notdir $(wildcard apps/*)))
 
 # Spokes that are subject to quality checks (lint, format, type-check)
 # This includes the standard spokes in packages/ plus top-level apps
@@ -39,11 +39,11 @@ SPOKE_DIR = $(if $(wildcard packages/$(1)),packages/$(1),$(if $(wildcard apps/$(
 # This ensures new packages require explicit opt-in before being mirrored/published.
 
 # Spokes that have public GitHub mirrors via subtree split
-PUBLIC_GITHUB_SPOKES := agent-grounding ai-signal-clarity change-amplification cli components consistency context-analyzer contract-enforcement core deps doc-drift mcp-server pattern-detect testability visualizer
+PUBLIC_GITHUB_SPOKES := agent-grounding ai-signal-clarity ast-mcp-server change-amplification cli components consistency context-analyzer contract-enforcement core deps doc-drift mcp-server pattern-detect testability visualizer
 
 # Spokes that are published to npm registry
 # Note: skills is excluded (published via Paks/Smithery, not npm)
-NPM_PUBLISH_SPOKES := agent-grounding ai-signal-clarity change-amplification cli consistency context-analyzer contract-enforcement core deps doc-drift pattern-detect testability visualizer
+NPM_PUBLISH_SPOKES := agent-grounding ai-signal-clarity ast-mcp-server change-amplification cli consistency context-analyzer contract-enforcement core deps doc-drift pattern-detect testability visualizer
 
 # Resolve root directory relative to this file
 ROOT_DIR ?= $(abspath $(dir $(lastword $(MAKEFILE_LIST)))/../../..)
