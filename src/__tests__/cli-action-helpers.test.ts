@@ -1,11 +1,29 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   getReportTimestamp,
   resolveOutputFormat,
   formatStandardReport,
+  handleStandardJSONOutput,
+  prepareActionConfig,
 } from '../utils/cli-action-helpers';
+import {
+  loadMergedConfig,
+  resolveOutputPath,
+  handleJSONOutput,
+} from '../utils/cli-helpers';
+
+// Mock cli-helpers
+vi.mock('../utils/cli-helpers', () => ({
+  loadMergedConfig: vi.fn(),
+  resolveOutputPath: vi.fn(),
+  handleJSONOutput: vi.fn(),
+}));
 
 describe('cli-action-helpers', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   describe('getReportTimestamp', () => {
     it('should generate a timestamp in YYYYMMDD-HHMMSS format', () => {
       const timestamp = getReportTimestamp();
@@ -97,6 +115,58 @@ describe('cli-action-helpers', () => {
       expect(report.existing).toBe(true);
       expect(report.summary.old).toBe(true);
       expect(report.summary.executionTime).toBe(2.0);
+    });
+  });
+
+  describe('handleStandardJSONOutput', () => {
+    it('should resolve path and handle output', () => {
+      (resolveOutputPath as any).mockReturnValue('/resolved/path.json');
+
+      handleStandardJSONOutput({
+        outputData: { test: true },
+        outputFile: 'out.json',
+        resolvedDir: '/work',
+        prefix: 'test-prefix',
+      });
+
+      expect(resolveOutputPath).toHaveBeenCalledWith(
+        'out.json',
+        expect.stringContaining('test-prefix-'),
+        '/work'
+      );
+      expect(handleJSONOutput).toHaveBeenCalledWith(
+        { test: true },
+        '/resolved/path.json',
+        expect.stringContaining('✅ Results saved to /resolved/path.json')
+      );
+    });
+  });
+
+  describe('prepareActionConfig', () => {
+    it('should resolve directory and load config', async () => {
+      const defaults = { opt: 1 };
+      const cliOptions = { opt: 2 };
+      (loadMergedConfig as any).mockResolvedValue({ opt: 2, merged: true });
+
+      const result = await prepareActionConfig(
+        '/some/dir',
+        defaults,
+        cliOptions
+      );
+
+      expect(result.resolvedDir).toContain('/some/dir');
+      expect(result.finalOptions).toEqual({ opt: 2, merged: true });
+      expect(loadMergedConfig).toHaveBeenCalledWith(
+        expect.stringContaining('/some/dir'),
+        defaults,
+        cliOptions
+      );
+    });
+
+    it('should handle null directory', async () => {
+      (loadMergedConfig as any).mockResolvedValue({});
+      const result = await prepareActionConfig(null as any, {}, {});
+      expect(result.resolvedDir).toBe(process.cwd());
     });
   });
 });

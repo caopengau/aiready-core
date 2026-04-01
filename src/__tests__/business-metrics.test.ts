@@ -10,6 +10,8 @@ import {
   formatCost,
   formatHours,
   formatAcceptanceRate,
+  calculateBusinessROI,
+  generateValueChain,
 } from '..';
 import { ToolScoringOutput } from '../scoring';
 
@@ -145,6 +147,83 @@ describe('Business Metrics', () => {
     it('should format acceptance rate correctly', () => {
       expect(formatAcceptanceRate(0.75)).toBe('75%');
       expect(formatAcceptanceRate(0.5)).toBe('50%');
+    });
+
+    it('formatCost should handle boundary values', () => {
+      expect(formatCost(1)).toBe('$1');
+      expect(formatCost(999)).toBe('$999');
+      expect(formatCost(1000)).toBe('$1.0k');
+    });
+
+    it('formatHours should handle boundary values', () => {
+      expect(formatHours(1)).toBe('1.0h');
+      expect(formatHours(7.9)).toBe('7.9h');
+      expect(formatHours(8)).toBe('8h');
+      expect(formatHours(39)).toBe('39h');
+      expect(formatHours(40)).toBe('1.0 weeks');
+    });
+  });
+
+  describe('calculateBusinessROI', () => {
+    it('should calculate ROI with default values', () => {
+      const params = {
+        tokenWaste: 1000,
+        issues: [{ severity: 'critical' }, { severity: 'major' }],
+      };
+
+      const roi = calculateBusinessROI(params);
+
+      expect(roi.monthlySavings).toBeGreaterThan(0);
+      expect(roi.productivityGainHours).toBe(6); // 4 + 2
+      expect(roi.annualValue).toBeGreaterThan(0);
+    });
+
+    it('should handle custom developer count and model', () => {
+      const params = {
+        tokenWaste: 1000,
+        issues: [],
+        developerCount: 10,
+        modelId: 'gpt-4o',
+      };
+
+      const roi = calculateBusinessROI(params);
+      expect(roi.monthlySavings).toBeGreaterThan(0);
+    });
+  });
+
+  describe('generateValueChain', () => {
+    it('should generate value chain for duplicate-pattern', () => {
+      const result = generateValueChain({
+        issueType: 'duplicate-pattern',
+        count: 5,
+        severity: 'critical',
+      });
+
+      expect(result.issueType).toBe('duplicate-pattern');
+      expect(result.businessOutcome?.riskLevel).toBe('high');
+      expect(result.aiImpact?.scoreImpact).toBe(-15);
+    });
+
+    it('should generate value chain for context-fragmentation', () => {
+      const result = generateValueChain({
+        issueType: 'context-fragmentation',
+        count: 10,
+        severity: 'major',
+      });
+
+      expect(result.businessOutcome?.riskLevel).toBe('critical');
+      expect(result.aiImpact?.scoreImpact).toBe(-5);
+    });
+
+    it('should handle unknown issue type', () => {
+      const result = generateValueChain({
+        issueType: 'unknown',
+        count: 1,
+        severity: 'minor',
+      });
+
+      expect(result.businessOutcome?.riskLevel).toBe('moderate');
+      expect(result.developerImpact?.productivityLoss).toBe(0.05);
     });
   });
 });

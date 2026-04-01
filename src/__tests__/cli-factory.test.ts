@@ -156,9 +156,9 @@ describe('cli-factory', () => {
       const runAction = vi.fn().mockResolvedValue({ success: true });
       const command = createStandardCommand('test', 'desc', runAction);
 
-      // Directly trigger the action
-      const actionFn = (command as any)._actionHandler;
-      await actionFn({ json: true });
+      // Avoid actual exit during test
+      command.exitOverride();
+      await command.parseAsync(['node', 'test', '--json']);
 
       expect(runAction).toHaveBeenCalled();
       expect(consoleLogSpy).toHaveBeenCalledWith(
@@ -170,8 +170,11 @@ describe('cli-factory', () => {
       const runAction = vi.fn().mockRejectedValue(new Error('action error'));
       const command = createStandardCommand('test', 'desc', runAction);
 
-      const actionFn = (command as any)._actionHandler;
-      await expect(actionFn([])).rejects.toThrow('process.exit called');
+      command.exitOverride();
+      // commander might call process.exit(1) through our action handler
+      await expect(command.parseAsync(['node', 'test'])).rejects.toThrow(
+        'process.exit called'
+      );
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         expect.stringContaining('critical error: action error')
