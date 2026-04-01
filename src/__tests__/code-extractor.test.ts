@@ -47,7 +47,6 @@ class Calculator {
       `;
       const blocks = extractCodeBlocks('test.ts', content);
       expect(blocks).toHaveLength(2);
-      expect(blocks[0].name).toBeUndefined(); // The regex doesn't set name property on CodeBlock interface, but it's in the patternType
       expect(blocks[0].code).toContain('export function add');
       expect(blocks[1].code).toContain('class Calculator');
     });

@@ -26,7 +26,7 @@ describe('spoke-cli-helpers', () => {
       issues: [],
     });
 
-    const report = await executeSpokeCli(
+    const report: any = await executeSpokeCli(
       'TestSpoke',
       'Testing spoke',
       { rootDir: '.' },

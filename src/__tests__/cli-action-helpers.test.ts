@@ -68,7 +68,7 @@ describe('cli-action-helpers', () => {
     });
 
     it('should include scoring if provided', () => {
-      const results = [];
+      const results: any[] = [];
       const summary = {};
       const elapsedTime = '0.5';
       const score = { score: 80, rating: 'A', breakdown: {} } as any;

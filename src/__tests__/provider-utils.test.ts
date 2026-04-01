@@ -64,9 +64,9 @@ describe('provider-utils', () => {
 
       expect(output.results).toEqual(results);
       expect(output.summary).toEqual(summary);
-      expect(output.metadata.toolName).toBe('test-tool');
-      expect(output.metadata.version).toBe('1.0.0');
-      expect(output.metadata.timestamp).toBeDefined();
+      expect(output.metadata!.toolName).toBe('test-tool');
+      expect(output.metadata!.version).toBe('1.0.0');
+      expect(output.metadata!.timestamp).toBeDefined();
     });
   });
 
