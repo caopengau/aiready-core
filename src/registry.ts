@@ -29,7 +29,6 @@ export class ToolRegistry {
    * @param provider The tool provider to register
    */
   register(provider: ToolProvider): void {
-    // console.log(`[${this.id}] Registering tool: ${provider.id} (${provider.alias.join(', ')})`);
     this.providers.set(provider.id, provider);
   }
 
