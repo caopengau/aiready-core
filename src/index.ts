@@ -61,3 +61,4 @@ export * from './utils/github-utils';
 export * from './utils/analysis-orchestrator';
 export * from './utils/spoke-cli-helpers';
 export * from './utils/test-utils';
+export * from './utils/error-utils';
