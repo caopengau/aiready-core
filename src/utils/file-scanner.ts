@@ -348,6 +348,7 @@ export function getFileExtension(filePath: string): string {
  * @returns True if the file has a source code extension
  */
 export function isSourceFile(filePath: string): boolean {
+  if (filePath.endsWith('.d.ts')) return false;
   const ext = getFileExtension(filePath);
   return ['ts', 'tsx', 'js', 'jsx', 'py', 'java', 'go', 'rs'].includes(ext);
 }

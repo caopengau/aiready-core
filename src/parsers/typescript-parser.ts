@@ -416,7 +416,10 @@ export class TypeScriptParser implements LanguageParser {
           : (sn as TSESTree.FunctionDeclaration).body;
 
       if (body && body.type === 'BlockStatement') {
-        const bodyContent = JSON.stringify(body);
+        // Use a BigInt-aware replacer to avoid ParseError: Do not know how to serialize a BigInt
+        const bodyContent = JSON.stringify(body, (_, v) =>
+          typeof v === 'bigint' ? v.toString() : v
+        );
         // Look for common side-effect indicators in the stringified AST
         if (
           bodyContent.includes('"name":"console"') ||
