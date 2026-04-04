@@ -67,7 +67,7 @@ describe('report-formatters', () => {
     expect(html).toContain('Critical: 1');
     expect(html).toContain('Major: 2');
     expect(html).toContain('Minor: 3');
-    expect(html).toContain('Potential Savings: 1,000 tokens');
+    expect(html).toContain('Potential Savings: </strong>1,000 tokens');
   });
 
   it('should generate report footer with links', () => {
