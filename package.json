@@ -21,6 +21,7 @@
     "build": "tsup src/index.ts src/client/index.ts --format cjs,esm --dts",
     "dev": "tsup src/index.ts src/client/index.ts --format cjs,esm --watch",
     "test": "vitest run --hookTimeout=30000",
+    "test:coverage": "vitest run --coverage",
     "lint": "eslint src",
     "clean": "rm -rf dist",
     "prepublishOnly": "pnpm build",

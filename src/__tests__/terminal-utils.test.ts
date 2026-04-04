@@ -3,14 +3,40 @@ import {
   getTerminalDivider,
   getScoreBar,
   getSafetyIcon,
-  getSeverityBadge,
-} from '../utils/cli-utils';
+  printTerminalHeader,
+} from '../utils/terminal-utils';
+import { getSeverityBadge } from '../utils/severity-utils';
 import chalk from 'chalk';
 
 describe('Terminal Utils', () => {
-  it('getTerminalDivider should return a string of correct length', () => {
+  it('getTerminalDivider should handle missing process.stdout.columns', () => {
+    const originalColumns = process.stdout.columns;
+    Object.defineProperty(process.stdout, 'columns', {
+      value: undefined,
+      configurable: true,
+    });
+
     const divider = getTerminalDivider(chalk.cyan, 40);
     expect(divider).toContain('━');
+
+    Object.defineProperty(process.stdout, 'columns', {
+      value: originalColumns,
+      configurable: true,
+    });
+  });
+
+  it('getTerminalDivider should cap at maxWidth', () => {
+    const divider = getTerminalDivider(chalk.cyan, 10);
+    // Strip ANSI escape codes to check physical length
+    const plain = divider.replace(/\u001b\[.*?m/g, '');
+    expect(plain.length).toBe(10);
+  });
+
+  it('printTerminalHeader should execute without error', () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    printTerminalHeader('Test Header');
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
   });
 
   it('getScoreBar should handle boundaries', () => {
