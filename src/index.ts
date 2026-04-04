@@ -1,4 +1,5 @@
 export * from './types';
+export * from './constants/aws';
 export * from './types/language';
 export * from './types/contract';
 export * from './registry';
