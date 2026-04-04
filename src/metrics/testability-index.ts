@@ -38,17 +38,24 @@ function isLikelyEntryPoint(filePath: string): boolean {
   const basename = filePath.split('/').pop() || '';
   const lowerBasename = basename.toLowerCase();
 
-  // CLI entry point patterns
+  // CLI, Infrastructure, and Entry Point patterns
   const entryPointPatterns = [
     'cli',
     'main',
     'bin',
-    'index', // often used as entry point
+    'index',
     'run',
     'serve',
     'start',
     'boot',
     'init',
+    'parser',
+    'config',
+    'setup',
+    'adapter',
+    'provider',
+    'handler',
+    'vending',
   ];
 
   // Check if filename matches entry point patterns
@@ -67,8 +74,15 @@ function isLikelyEntryPoint(filePath: string): boolean {
     return true;
   }
 
-  // Check for common CLI directories
-  const cliDirPatterns = ['/bin/', '/cli/', '/cmd/', '/commands/'];
+  // Check for common CLI and Side-Effect-Heavy directories
+  const cliDirPatterns = [
+    '/bin/',
+    '/cli/',
+    '/cmd/',
+    '/commands/',
+    '/apps/',
+    '/functions/',
+  ];
   if (cliDirPatterns.some((p) => filePath.includes(p))) {
     return true;
   }
