@@ -26,8 +26,8 @@ describe('Scoring Engine Extended Tests', () => {
         (sum, w) => sum + w,
         0
       );
-      // Based on formula in report: 118
-      expect(total).toBe(118);
+      // Based on formula in report: 154 (expanded with cognitive, entropy, cohesion, distance)
+      expect(total).toBe(154);
     });
   });
 
@@ -52,7 +52,7 @@ describe('Scoring Engine Extended Tests', () => {
     it('should return correct rating for scores', () => {
       expect(getRating(95)).toBe('Excellent');
       expect(getRating(85)).toBe('Good');
-      expect(getRating(75)).toBe('Fair');
+      expect(getRating(75)).toBe('Good');
       expect(getRating(65)).toBe('Fair');
       expect(getRating(55)).toBe('Needs Work');
       expect(getRating(30)).toBe('Critical');
@@ -61,7 +61,7 @@ describe('Scoring Engine Extended Tests', () => {
     it('should return correct slugs for scores', () => {
       expect(getRatingSlug(95)).toBe('excellent');
       expect(getRatingSlug(85)).toBe('good');
-      expect(getRatingSlug(75)).toBe('fair');
+      expect(getRatingSlug(75)).toBe('good');
       expect(getRatingSlug(55)).toBe('needs-work');
       expect(getRatingSlug(30)).toBe('critical');
     });

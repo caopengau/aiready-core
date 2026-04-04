@@ -67,6 +67,10 @@ export const DEFAULT_TOOL_WEIGHTS: Record<string, number> = {
   [ToolName.DependencyHealth]: 6,
   [ToolName.ChangeAmplification]: 8,
   [ToolName.ContractEnforcement]: 10,
+  [ToolName.CognitiveLoad]: 8,
+  [ToolName.PatternEntropy]: 8,
+  [ToolName.ConceptCohesion]: 10,
+  [ToolName.SemanticDistance]: 10,
 };
 
 /**
