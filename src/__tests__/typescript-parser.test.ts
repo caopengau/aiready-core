@@ -113,15 +113,58 @@ describe('TypeScript Parser', () => {
     expect(result.exports[1].isPure).toBe(true);
   });
 
-  it('should extract class constructor parameters', () => {
+  it('should extract class constructor parameters including TS parameter properties', () => {
     const code = `
       export class Service {
-        constructor(public db: any, private logger: any) {}
+        constructor(public db: any, private logger: any, simple: string) {}
       }
     `;
     const result = parser.parse(code, 'test.ts');
-    expect(result.exports[0].name).toBe('Service');
-    expect(result.exports[0].type).toBe('class');
-    expect(result.exports[0].parameters).toEqual(['db', 'logger']);
+    expect(result.exports[0].parameters).toEqual(['db', 'logger', 'simple']);
+  });
+
+  it('should handle namespace imports and other specifiers', () => {
+    const code = `
+      import * as fs from 'fs';
+      import defaultExport from 'module';
+      import { a as b } from 'module';
+      export const x = 1;
+    `;
+    const result = parser.parse(code, 'test.ts');
+    expect(result.imports[0].specifiers).toContain('*');
+    expect(result.imports[1].specifiers).toContain('default');
+    expect(result.imports[2].specifiers).toContain('a');
+  });
+
+  it('should handle non-identifier function parameters correctly', () => {
+    const code = `
+      export function destructure({ a, b }: any, [c]: number[]) {
+        return a + b + c;
+      }
+    `;
+    const result = parser.parse(code, 'test.ts');
+    // It should filter out the undefineds from non-identifier params
+    expect(result.exports[0].parameters).toEqual([]);
+  });
+
+  it('should handle BigInt in side-effect analysis without throwing', () => {
+    const code = `
+      export function useBigInt() {
+        const x = 100n;
+        return x;
+      }
+    `;
+    // This previously might have failed during JSON.stringify if not handled
+    const result = parser.parse(code, 'test.ts');
+    expect(result.exports[0].isPure).toBe(true);
+  });
+
+  it('should treat function signatures without bodies as pure/safe', () => {
+    const code = `
+      export declare function overload(x: string): void;
+      export declare function overload(x: number): void;
+    `;
+    const result = parser.parse(code, 'test.ts');
+    expect(result.exports[0].isPure).toBe(true);
   });
 });

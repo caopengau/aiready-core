@@ -77,6 +77,10 @@ describe('scoring', () => {
         )
       ).toBe(5);
     });
+
+    it('should fall back to 5 for unknown tool and missing config/profile', () => {
+      expect(getToolWeight('generic-tool', {})).toBe(5);
+    });
   });
 
   describe('parseWeightString', () => {

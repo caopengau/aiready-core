@@ -409,7 +409,11 @@ export class TypeScriptParser implements LanguageParser {
     if (sn.type === 'VariableDeclaration' && sn.kind === 'const') return true;
 
     // For functions, check if the body has obvious side effects
-    if (sn.type === 'FunctionDeclaration' || sn.type === 'MethodDefinition') {
+    if (
+      sn.type === 'FunctionDeclaration' ||
+      sn.type === 'TSDeclareFunction' ||
+      sn.type === 'MethodDefinition'
+    ) {
       const body =
         sn.type === 'MethodDefinition'
           ? (sn.value as TSESTree.FunctionExpression).body

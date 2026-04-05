@@ -36,10 +36,8 @@
 [90mstdout[2m | src/__tests__/health-check.test.ts[2m > [22m[2mcheckHealth[2m > [22m[2mhandles non-Error thrown values
 [22m[39m[HealthCheck] Attempt 2 failed for https://example.com. Retrying in 2000ms...
 
- [32m✓[39m src/__tests__/report-formatters.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 20[2mms[22m[39m
- [32m✓[39m src/__tests__/parser-factory.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 288[2mms[22m[39m
- [32m✓[39m src/__tests__/ast-visitor.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 25[2mms[22m[39m
- [32m✓[39m src/__tests__/typescript-parser.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 29[2mms[22m[39m
+ [32m✓[39m src/__tests__/report-formatters.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m src/__tests__/config.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 17[2mms[22m[39m
 [90mstdout[2m | src/__tests__/metric-parity.test.ts[2m > [22m[2mMetric Parity[2m > [22m[2mLanguage: typescript[2m > [22m[2mshould extract purity and documentation metadata correctly
 [22m[39m[DEBUG] Exports for typescript: [ [32m'pureFunc'[39m, [32m'impureFunc'[39m ]
 [DEBUG] typescript pureFunc documentation: { content: [32m'* Pure function with documentation'[39m, type: [32m'jsdoc'[39m }
@@ -57,6 +55,9 @@
 }
 [DEBUG] typescript impureFunc purity: pure=false, sideEffects=true
 
+ [32m✓[39m src/__tests__/typescript-parser.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 43[2mms[22m[39m
+ [32m✓[39m src/__tests__/ast-visitor.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 37[2mms[22m[39m
+ [32m✓[39m src/__tests__/parser-factory.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 284[2mms[22m[39m
 [90mstdout[2m | src/__tests__/metric-parity.test.ts[2m > [22m[2mMetric Parity[2m > [22m[2mLanguage: python[2m > [22m[2mshould extract purity and documentation metadata correctly
 [22m[39m[DEBUG] Exports for python: [ [32m'pure_func'[39m, [32m'impure_func'[39m ]
 [DEBUG] python pureFunc documentation: { content: [32m'Pure function with documentation'[39m, type: [32m'docstring'[39m }
@@ -85,88 +86,86 @@
 [DEBUG] go impureFunc documentation: { content: [32m'Impure function with documentation'[39m, type: [32m'comment'[39m }
 [DEBUG] go impureFunc purity: pure=false, sideEffects=true
 
- [32m✓[39m src/__tests__/ast-parser.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 26[2mms[22m[39m
- [32m✓[39m src/__tests__/metric-parity.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 362[2mms[22m[39m
-       [33m[2m✓[22m[39m should extract purity and documentation metadata correctly [33m 337[2mms[22m[39m
- [32m✓[39m src/__tests__/config.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 14[2mms[22m[39m
- [32m✓[39m src/__tests__/history.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 14[2mms[22m[39m
- [32m✓[39m src/__tests__/business.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 8[2mms[22m[39m
- [32m✓[39m src/__tests__/provider-utils.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 9[2mms[22m[39m
- [32m✓[39m src/__tests__/scoring-snapshots.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 8[2mms[22m[39m
- [32m✓[39m src/__tests__/fs-utils.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 7[2mms[22m[39m
- [32m✓[39m src/__tests__/cli-action-helpers.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 8[2mms[22m[39m
- [32m✓[39m src/__tests__/dependency-analyzer.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m src/__tests__/metric-parity.test.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 336[2mms[22m[39m
+ [32m✓[39m src/__tests__/fs-utils.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 6[2mms[22m[39m
  [32m✓[39m src/__tests__/cli-factory.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 13[2mms[22m[39m
- [32m✓[39m src/__tests__/cli-utils.test.ts [2m([22m[2m40 tests[22m[2m)[22m[32m 15[2mms[22m[39m
- [32m✓[39m src/__tests__/contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
- [32m✓[39m src/__tests__/file-scanner.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 8[2mms[22m[39m
- [32m✓[39m src/__tests__/metrics-cognitive-load.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 2[2mms[22m[39m
- [32m✓[39m src/__tests__/test-utils.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 7[2mms[22m[39m
- [32m✓[39m src/__tests__/terminal-utils.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 3[2mms[22m[39m
- [32m✓[39m src/__tests__/scoring.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 6[2mms[22m[39m
- [32m✓[39m src/__tests__/java-parser.test.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 1134[2mms[22m[39m
- [32m✓[39m src/__tests__/python-parser.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 1149[2mms[22m[39m
- [32m✓[39m src/__tests__/di-container.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 5[2mms[22m[39m
- [32m✓[39m src/__tests__/testability-index.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 6[2mms[22m[39m
- [32m✓[39m src/__tests__/metrics-structural.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 5[2mms[22m[39m
- [32m✓[39m src/__tests__/analysis-orchestrator.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
- [32m✓[39m src/__tests__/code-extractor.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 6[2mms[22m[39m
- [32m✓[39m src/__tests__/normalization.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/__tests__/cli-utils.test.ts [2m([22m[2m40 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/__tests__/dependency-analyzer.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m src/__tests__/provider-utils.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 17[2mms[22m[39m
  [32m✓[39m src/__tests__/spoke-cli-helpers.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
- [32m✓[39m src/__tests__/github-utils.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
- [32m✓[39m src/__tests__/change-amplification.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 5[2mms[22m[39m
- [32m✓[39m src/__tests__/metrics-semantic-distance.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
- [32m✓[39m src/__tests__/history-git.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 7[2mms[22m[39m
- [32m✓[39m src/__tests__/reporting.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 8[2mms[22m[39m
- [32m✓[39m src/__tests__/cli-helpers.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
- [32m✓[39m src/__tests__/schema.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 5[2mms[22m[39m
- [32m✓[39m src/__tests__/issue-type.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/__tests__/di-container.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/__tests__/history.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/__tests__/ast-parser.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m src/__tests__/file-scanner.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/__tests__/business.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/__tests__/code-extractor.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/__tests__/cli-action-helpers.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/__tests__/contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/__tests__/scoring.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/__tests__/scoring-snapshots.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/__tests__/scoring-extended.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/__tests__/metrics-ai-signal-clarity.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/__tests__/risk-metrics.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/__tests__/python-parser.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 1108[2mms[22m[39m
+ [32m✓[39m src/__tests__/rating-helpers.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/__tests__/java-parser.test.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 1132[2mms[22m[39m
+ [32m✓[39m src/__tests__/normalization.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 5[2mms[22m[39m
  [32m✓[39m src/__tests__/visualization.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 5[2mms[22m[39m
- [32m✓[39m src/__tests__/metrics-change-amplification.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 7[2mms[22m[39m
- [32m✓[39m src/__tests__/severity-utils.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 4[2mms[22m[39m
- [32m✓[39m src/__tests__/rating-helpers.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 4[2mms[22m[39m
- [32m✓[39m src/__tests__/risk-metrics.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 4[2mms[22m[39m
- [32m✓[39m src/__tests__/cost-metrics.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 3[2mms[22m[39m
- [32m✓[39m src/__tests__/scoring-helpers.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 10[2mms[22m[39m
- [32m✓[39m src/__tests__/scoring-extended.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 3[2mms[22m[39m
- [32m✓[39m src/__tests__/future-proof-metrics.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 5[2mms[22m[39m
- [32m✓[39m src/__tests__/progress-utils.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 6[2mms[22m[39m
- [32m✓[39m src/__tests__/scoring-advanced.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
- [32m✓[39m src/__tests__/metrics-ai-signal-clarity.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 3[2mms[22m[39m
- [32m✓[39m src/__tests__/business-metrics.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 4[2mms[22m[39m
- [32m✓[39m src/__tests__/similarity-utils.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/__tests__/github-utils.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/__tests__/severity-utils.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/__tests__/terminal-utils.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 3[2mms[22m[39m
  [32m✓[39m src/__tests__/tree-sitter-utils.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 3[2mms[22m[39m
- [32m✓[39m src/__tests__/metrics.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
- [32m✓[39m src/__tests__/registry.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 7[2mms[22m[39m
- [32m✓[39m src/__tests__/language.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 2[2mms[22m[39m
- [32m✓[39m src/__tests__/metrics-remediation.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 4[2mms[22m[39m
- [32m✓[39m src/__tests__/metrics-testability-index.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 4[2mms[22m[39m
- [32m✓[39m src/__tests__/metrics-doc-drift.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 2[2mms[22m[39m
- [32m✓[39m src/__tests__/go-parser.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 2269[2mms[22m[39m
-     [33m[2m✓[22m[39m should identify Go language and extensions [33m 1120[2mms[22m[39m
- [32m✓[39m src/__tests__/metrics-agent-grounding.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 2[2mms[22m[39m
- [32m✓[39m src/__tests__/metrics-dependency-health.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/__tests__/test-utils.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/__tests__/change-amplification.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/__tests__/schema.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/__tests__/cost-metrics.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/__tests__/history-git.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/__tests__/testability-index.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/__tests__/metrics-structural.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/__tests__/analysis-orchestrator.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/__tests__/reporting.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/__tests__/cli-helpers.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/__tests__/business-metrics.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/__tests__/progress-utils.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/__tests__/metrics-remediation.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/__tests__/future-proof-metrics.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/__tests__/scoring-advanced.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/__tests__/scoring-helpers.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/__tests__/issue-type.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 3[2mms[22m[39m
  [32m✓[39m src/__tests__/types.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 2[2mms[22m[39m
- [32m✓[39m src/__tests__/business-metrics.v0.12.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 3[2mms[22m[39m
- [32m✓[39m src/__tests__/color-utils.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 4[2mms[22m[39m
- [32m✓[39m src/__tests__/time-utils.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
- [32m✓[39m src/__tests__/csharp-parser.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 2395[2mms[22m[39m
-     [33m[2m✓[22m[39m should identify C# language and extensions [33m 1142[2mms[22m[39m
+ [32m✓[39m src/__tests__/similarity-utils.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/__tests__/metrics-testability-index.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/__tests__/registry.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/__tests__/metrics-doc-drift.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/__tests__/metrics-cognitive-load.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/__tests__/metrics-dependency-health.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/__tests__/metrics-agent-grounding.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/__tests__/go-parser.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 2226[2mms[22m[39m
+     [33m[2m✓[22m[39m should identify Go language and extensions [33m 1133[2mms[22m[39m
+ [32m✓[39m src/__tests__/metrics-change-amplification.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/__tests__/metrics-semantic-distance.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/__tests__/language.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/__tests__/color-utils.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/__tests__/metrics.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
  [32m✓[39m src/__tests__/error-utils.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/__tests__/time-utils.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m src/__tests__/csharp-parser.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 2389[2mms[22m[39m
+     [33m[2m✓[22m[39m should identify C# language and extensions [33m 1125[2mms[22m[39m
+ [32m✓[39m src/__tests__/business-metrics.v0.12.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 3[2mms[22m[39m
  [32m✓[39m src/__tests__/business-metrics.v0.13.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 2[2mms[22m[39m
- [32m✓[39m src/__tests__/health-check.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 4069[2mms[22m[39m
-     [33m[2m✓[22m[39m checks health and reports on unhealthy [33m 4003[2mms[22m[39m
+ [32m✓[39m src/__tests__/health-check.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 4081[2mms[22m[39m
+     [33m[2m✓[22m[39m checks health and reports on unhealthy [33m 4005[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m71 passed[39m[22m[90m (71)[39m
-[2m      Tests [22m [1m[32m464 passed[39m[22m[90m (464)[39m
-[2m   Start at [22m 10:11:41
-[2m   Duration [22m 4.54s[2m (transform 2.05s, setup 0ms, import 8.24s, tests 12.11s, environment 5ms)[22m
+[2m      Tests [22m [1m[32m471 passed[39m[22m[90m (471)[39m
+[2m   Start at [22m 10:16:20
+[2m   Duration [22m 4.50s[2m (transform 2.26s, setup 0ms, import 8.16s, tests 11.99s, environment 7ms)[22m
 
 [34m % [39m[2mCoverage report from [22m[33mv8[39m
 -------------------|---------|----------|---------|---------|-------------------
 File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
 -------------------|---------|----------|---------|---------|-------------------
-All files          |    89.7 |    79.53 |    90.9 |   90.99 |                   
+All files          |   90.01 |    80.07 |    90.9 |   91.24 |                   
  src               |      98 |    91.66 |   94.87 |   97.87 |                   
   ...ss-metrics.ts |     100 |      100 |     100 |     100 |                   
   ...of-metrics.ts |   94.28 |     87.5 |      50 |   94.28 | 77,188            
@@ -197,7 +196,7 @@ All files          |    89.7 |    79.53 |    90.9 |   90.99 |
  src/monitoring    |    88.5 |    72.91 |   83.33 |   89.02 |                   
   aws-signer.ts    |     100 |       75 |     100 |     100 | 53                
   health-check.ts  |   82.75 |    72.72 |   71.42 |   83.01 | ...32-133,170-178 
- src/parsers       |    82.7 |    71.06 |   86.89 |   84.09 |                   
+ src/parsers       |   83.58 |     72.3 |   86.89 |    84.9 |                   
   base-parser.ts   |      50 |       60 |      50 |   58.33 | 30-43,59,72-89    
   csharp-parser.ts |   92.55 |    74.44 |   82.35 |   92.22 | ...13,228,233,268 
   go-parser.ts     |   89.13 |    68.18 |   88.88 |   89.28 | ...94,117,208,232 
@@ -207,7 +206,7 @@ All files          |    89.7 |    79.53 |    90.9 |   90.99 |
   python-parser.ts |   76.64 |    66.01 |   84.21 |   78.62 | ...56-467,486-491 
   ...rser-utils.ts |   67.64 |    63.41 |     100 |   69.35 | ...48-149,156-158 
   ...tter-utils.ts |   87.09 |    84.84 |     100 |   90.56 | 9,36-37,146,156   
-  ...ipt-parser.ts |   87.69 |    77.24 |    91.3 |   90.24 | ...17,334,354,436 
+  ...ipt-parser.ts |   93.07 |    82.14 |    91.3 |   95.12 | ...,88-90,105,334 
  src/types         |      92 |    81.81 |      75 |   91.39 |                   
   ast.ts           |       0 |        0 |       0 |       0 |                   
   business.ts      |     100 |      100 |     100 |     100 |                   
@@ -223,7 +222,7 @@ All files          |    89.7 |    79.53 |    90.9 |   90.99 |
   issue.ts         |     100 |      100 |     100 |     100 |                   
   metrics.ts       |     100 |      100 |     100 |     100 |                   
   report.ts        |     100 |      100 |     100 |     100 |                   
- src/utils         |   93.64 |    85.98 |   93.12 |   94.46 |                   
+ src/utils         |   93.75 |    86.28 |   93.12 |   94.46 |                   
   ...chestrator.ts |     100 |      100 |     100 |     100 |                   
   ast-parser.ts    |       0 |        0 |       0 |       0 |                   
   ast-visitor.ts   |   98.07 |    85.85 |     100 |     100 | ...23-232,240-247 
@@ -237,7 +236,7 @@ All files          |    89.7 |    79.53 |    90.9 |   90.99 |
   di-container.ts  |   97.29 |    78.94 |   95.45 |     100 | 161-176           
   error-utils.ts   |       0 |        0 |       0 |       0 | 11-67             
   file-scanner.ts  |    90.8 |    78.18 |   71.42 |   92.77 | ...31-234,248,321 
-  fs-utils.ts      |   97.82 |     82.6 |     100 |     100 | 87,142-147        
+  fs-utils.ts      |     100 |     91.3 |     100 |     100 | 146-147           
   github-utils.ts  |     100 |    91.42 |     100 |     100 | 65-66,70          
   history-git.ts   |     100 |     87.5 |     100 |     100 | 20                
   history.ts       |     100 |    94.11 |     100 |     100 | 143               
@@ -258,4 +257,3 @@ All files          |    89.7 |    79.53 |    90.9 |   90.99 |
   test-utils.ts    |     100 |      100 |     100 |     100 |                   
   visualization.ts |     100 |      100 |     100 |     100 |                   
 -------------------|---------|----------|---------|---------|-------------------
- ELIFECYCLE  Command failed with exit code 1.

@@ -93,21 +93,6 @@ describe('fs-utils', () => {
       logSpy.mockRestore();
     });
 
-    it('should fall back to default weight for unknown tool in profile', () => {
-      expect(
-        getToolWeight(
-          'unknown-tool',
-          undefined,
-          undefined,
-          ScoringProfile.Agentic
-        )
-      ).toBe(5);
-    });
-
-    it('should fall back to 5 for unknown tool and missing config/profile', () => {
-      expect(getToolWeight('generic-tool', {})).toBe(5);
-    });
-
     it('should log to console if no file provided', () => {
       const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       handleJSONOutput({ b: 2 });
