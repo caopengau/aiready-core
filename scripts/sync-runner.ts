@@ -1,5 +1,5 @@
 import { Resource } from 'sst';
-import { GitHubIssueResolverAgent, IssueContext } from '../src/growth/agents';
+import { GitHubIssueResolverAgent } from '../src/growth/agents';
 import { GitHubService } from '../src/services/github-service';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -19,17 +19,17 @@ async function run() {
 
   const payload = JSON.parse(payloadBody);
   const githubToken = (Resource as any).GithubServiceToken.value;
-  const minimaxApiKey = (Resource as any).MinimaxApiKey.value;
+  const _minimaxApiKey = (Resource as any).MinimaxApiKey.value;
 
   if (!githubToken) {
     console.error('[SyncRunner] GithubServiceToken not found in Resource');
     process.exit(1);
   }
 
-  const githubService = new GitHubService(githubToken);
+  const _githubService = new GitHubService(githubToken);
   const resolver = new GitHubIssueResolverAgent({
     trustedAuthors: ['pengcao'], // Standardizing on the user's handle
-    generate: async (prompt: string) => {
+    generate: async (_prompt: string) => {
       // In a real runner, we would call Minimax/LLM here.
       // For now, we'll use a mock or a simple pass-through if it's a known command.
       console.log('[SyncRunner] Agent generating response...');
@@ -86,8 +86,9 @@ async function run() {
     } else {
       console.log(`[SyncRunner] Unsupported event type: ${eventType}`);
     }
-  } catch (error: any) {
-    console.error('[SyncRunner] Error during execution:', error.message);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('[SyncRunner] Error during execution:', message);
     process.exit(1);
   } finally {
     try {
